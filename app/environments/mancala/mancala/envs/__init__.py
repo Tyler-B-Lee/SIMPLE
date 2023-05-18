@@ -1,0 +1,1 @@
+from mancala.envs.mancala import MancalaEnv

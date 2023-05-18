@@ -1,0 +1,1 @@
+from minecraftcg.envs.minecraftcg import MinecraftCGEnv
