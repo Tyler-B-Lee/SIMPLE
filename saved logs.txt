@@ -1,0 +1,3673 @@
+Logging to logs
+/home/selfplay/.local/lib/python3.6/site-packages/gym/logger.py:30: UserWarning: WARN: Box bound precision lowered by casting to float32
+  warnings.warn(colorize('%s: %s'%('WARN', msg % args), 'yellow'))
+        Marquise de Cat draws: Tax Collector
+        Marquise de Cat draws: Favor of the Foxes
+        Marquise de Cat draws: Woodland Runners
+        Eyrie Dynasties draws: Ambush! (Fox)
+        Eyrie Dynasties draws: Foxfolk Steel
+        Eyrie Dynasties draws: Root Tea (Fox)
+Loading _model_00009_0_0.3_1041920_.zip
+Loading best_model.zip
+
+Playing 1 games...
+        Marquise de Cat draws: Tax Collector
+        Marquise de Cat draws: Woodland Runners
+        Marquise de Cat draws: Foxfolk Steel
+        Eyrie Dynasties draws: Bake Sale
+        Eyrie Dynasties draws: A Visit to Friends
+        Eyrie Dynasties draws: Sword
+Player 1 = _model_00009_0_0.3_1041920_
+Player 2 = best_model
+                --- GAME START --- Start Player: Eyrie Dynasties
+
+Legal actions: [1, 3, 9, 12]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.07
+Top 5 actions: ['1: 0.27', '9: 0.26', '12: 0.24', '3: 0.23', '3023: 0.0']
+Masked ->
+Top 5 actions: ['1: 0.27', '9: 0.26', '12: 0.24', '3: 0.23', '3023: 0.0']
+Best action 1
+Sampled action 1 chosen
+Keep placed in clearing 0
+                THE KEEP token placed in clearing 0
+                Placing 1 Marquise de Cat warriors in clearing 0
+                Placing 1 Marquise de Cat warriors in clearing 1
+                Placing 1 Marquise de Cat warriors in clearing 2
+                Placing 1 Marquise de Cat warriors in clearing 3
+                Placing 1 Marquise de Cat warriors in clearing 4
+                Placing 1 Marquise de Cat warriors in clearing 5
+                Placing 1 Marquise de Cat warriors in clearing 6
+                Placing 1 Marquise de Cat warriors in clearing 7
+                Placing 1 Marquise de Cat warriors in clearing 8
+                Placing 1 Marquise de Cat warriors in clearing 9
+                Placing 1 Marquise de Cat warriors in clearing 10
+1 Marquise warrior placed in each clearing except 11
+
+Legal actions: [25, 26, 28, 29]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value 0.04
+Top 5 actions: ['29: 0.37', '25: 0.25', '28: 0.22', '26: 0.15', '3021: 0.0']
+Masked ->
+Top 5 actions: ['29: 0.37', '25: 0.25', '28: 0.22', '26: 0.15', '3021: 0.0']
+Best action 29
+Sampled action 29 chosen
+                Sawmill placed in clearing 4
+
+Legal actions: [37, 38, 40, 41]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value 0.03
+Top 5 actions: ['40: 0.32', '38: 0.3', '37: 0.19', '41: 0.18', '3023: 0.0']
+Masked ->
+Top 5 actions: ['40: 0.32', '38: 0.3', '37: 0.19', '41: 0.18', '3023: 0.0']
+Best action 40
+Sampled action 38 chosen
+                Workshop placed in clearing 1
+
+Legal actions: [49, 50, 52, 53]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value 0.03
+Top 5 actions: ['53: 0.35', '49: 0.25', '52: 0.24', '50: 0.16', '3024: 0.0']
+Masked ->
+Top 5 actions: ['53: 0.35', '49: 0.25', '52: 0.24', '50: 0.16', '3024: 0.0']
+Best action 53
+Sampled action 50 chosen
+                Recruiter placed in clearing 1
+
+Legal actions: [4358, 4359, 4360, 4361]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.22
+Top 5 actions: ['4361: 0.31', '4360: 0.28', '4358: 0.22', '4359: 0.19', '3018: 0.0']
+Masked ->
+Top 5 actions: ['4361: 0.31', '4360: 0.28', '4358: 0.22', '4359: 0.19', '3018: 0.0']
+Best action 4361
+Sampled action 4361 chosen
+                Roost placed in clearing 11
+                Placing 6 Eyrie Dynasties warriors in clearing 11
+        New Leader Chosen: Despot
+                Card Loyal Vizier added to decree at Move
+                Card Loyal Vizier added to decree at Build
+--- STARTING TURN 1 ---
+        Resetting for Eyrie's Turn...
+Choosing what to add to decree...
+
+Legal actions: [4369, 4370, 4394, 4411, 4412, 4436, 4453, 4454, 4478, 4495, 4496, 4520]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.17
+Top 5 actions: ['4436: 0.15', '4495: 0.12', '4496: 0.1', '4412: 0.1', '4478: 0.09']
+Masked ->
+Top 5 actions: ['4436: 0.15', '4495: 0.12', '4496: 0.1', '4412: 0.1', '4478: 0.09']
+Best action 4436
+Sampled action 4412 chosen
+        Bake Sale removed from hand of Eyrie Dynasties
+                Card Bake Sale added to decree at Move
+Choosing whether to add 2nd card to decree...
+
+Legal actions: [0, 4369, 4394, 4411, 4436, 4453, 4478, 4495, 4520]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.17
+Top 5 actions: ['4436: 0.21', '4495: 0.18', '4478: 0.12', '4411: 0.12', '4369: 0.09']
+Masked ->
+Top 5 actions: ['4436: 0.21', '4495: 0.18', '4478: 0.12', '4411: 0.12', '4369: 0.09']
+Best action 4436
+Sampled action 4495 chosen
+        A Visit to Friends removed from hand of Eyrie Dynasties
+                Card A Visit to Friends added to decree at Build
+        Tallying required decree...
+--- Moving on to Daylight ---
+        Crafting power: [0, 1, 0]
+> Moving onto step 2 of Daylight...
+Choosing decree-resolving action...
+
+Legal actions: [4129, 4130, 4131, 4132, 4133, 4134, 4154, 4155, 4156, 4157, 4158, 4159, 4229, 4230, 4231, 4232, 4233, 4234]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.23
+Top 5 actions: ['4233: 0.1', '4234: 0.09', '4134: 0.08', '4230: 0.07', '4231: 0.06']
+Masked ->
+Top 5 actions: ['4233: 0.1', '4234: 0.09', '4134: 0.08', '4230: 0.07', '4231: 0.06']
+Best action 4233
+Sampled action 4157 chosen
+>> Decree: MOVE
+                Moving 4 warriors of Eyrie Dynasties from 11 to 7
+        Fulfilled Rabbit Move requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [2829, 2830, 2831, 2832, 2929, 2930, 2931, 2932, 3054, 3055, 3056, 3057, 4129, 4130, 4154, 4155, 4229, 4230]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.18
+Top 5 actions: ['4230: 0.08', '2929: 0.08', '2831: 0.07', '2930: 0.06', '4130: 0.06']
+Masked ->
+Top 5 actions: ['4230: 0.08', '2929: 0.08', '2831: 0.07', '2930: 0.06', '4130: 0.06']
+Best action 4230
+Sampled action 3055 chosen
+>> Decree: MOVE
+                Moving 2 warriors of Eyrie Dynasties from 7 to 11
+        Fulfilled Bird Move requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [32]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.18
+Top 5 actions: ['32: 1.0', '0: 0.0', '3022: 0.0', '3021: 0.0', '3020: 0.0']
+Masked ->
+Top 5 actions: ['32: 1.0', '0: 0.0', '3022: 0.0', '3021: 0.0', '3020: 0.0']
+Best action 32
+Sampled action 32 chosen
+>> Decree: BUILD
+                Roost placed in clearing 7
+        Fulfilled Bird Build requirement on Decree
+>> TURMOILING
+        Eyrie Dynasties Points changed by -2
+                New Score: [0, 0]
+Choosing new leader after turmoil...
+
+Legal actions: [4358, 4359, 4360]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.22
+Top 5 actions: ['4360: 0.41', '4358: 0.32', '4359: 0.28', '3020: 0.0', '3019: 0.0']
+Masked ->
+Top 5 actions: ['4360: 0.41', '4358: 0.32', '4359: 0.28', '3020: 0.0', '3019: 0.0']
+Best action 4360
+Sampled action 4358 chosen
+        New Leader Chosen: Builder
+                Card Loyal Vizier added to decree at Recruit
+                Card Loyal Vizier added to decree at Move
+--- Moving on to Evening ---
+        Eyrie Dynasties Points changed by 1
+                New Score: [0, 1]
+        Eyrie Dynasties draws: Armorers
+--- End of Eyrie Turn ---
+
+        Resetting for Marquise's Turn...
+        Producing wood at sawmills...
+        1 Wood can be placed automatically...
+                Wood token placed in clearing 4
+Finished placing wood.
+--- Moving on to Daylight ---
+        Crafting power: [0, 1, 0]
+Checking for Crafting / use of Birdsong Cards...
+
+Legal actions: [0, 97]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value 0.05
+Top 5 actions: ['97: 0.62', '0: 0.38', '3011: 0.0', '3012: 0.0', '3013: 0.0']
+Masked ->
+Top 5 actions: ['97: 0.62', '0: 0.38', '3011: 0.0', '3012: 0.0', '3013: 0.0']
+Best action 97
+Sampled action 0 chosen
+- Chose to Skip
+Checking for next Daylight Step 2 action (3 actions left)...
+
+Legal actions: [0, 20, 25, 27, 28, 29, 30, 31, 33, 34, 35, 37, 39, 40, 41, 42, 43, 45, 46, 47, 49, 51, 52, 53, 54, 55, 57, 58, 59, 124, 127, 569, 704, 754, 779, 979, 1029, 1304, 1354, 1454, 1579, 1629, 1704, 1879, 2004, 2079, 2254, 2279, 2329, 2379, 2429, 2604, 2654, 2754, 2829, 2929, 3179, 3204, 3304, 3579, 3629, 3804, 3904, 3954]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value 0.04
+Top 5 actions: ['40: 0.04', '29: 0.04', '35: 0.04', '39: 0.04', '43: 0.04']
+Masked ->
+Top 5 actions: ['40: 0.04', '29: 0.04', '35: 0.04', '39: 0.04', '43: 0.04']
+Best action 40
+Sampled action 42 chosen
+Building a Workshop in clearing 5
+        Wood Cost: 1
+                Workshop placed in clearing 5
+        Marquise de Cat Points changed by 2
+                New Score: [2, 1]
+        Removing 1 wood solely from clearing 4...
+Checking for next Daylight Step 2 action (2 actions left)...
+
+Legal actions: [0, 20, 124, 127, 569, 704, 754, 779, 979, 1029, 1304, 1354, 1454, 1579, 1629, 1704, 1879, 2004, 2079, 2254, 2279, 2329, 2379, 2429, 2604, 2654, 2754, 2829, 2929, 3179, 3204, 3304, 3579, 3629, 3804, 3904, 3954]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value 0.07
+Top 5 actions: ['124: 0.05', '3204: 0.04', '3304: 0.04', '127: 0.03', '2754: 0.03']
+Masked ->
+Top 5 actions: ['124: 0.05', '3204: 0.04', '3304: 0.04', '127: 0.03', '2754: 0.03']
+Best action 124
+Sampled action 2829 chosen
+                Moving 1 warriors of Marquise de Cat from 7 to 2
+Finding 2nd move of march...
+
+Legal actions: [0, 704, 754, 779, 979, 1029, 1304, 1305, 1354, 1355, 1454, 1455, 1579, 1629, 1704, 1879, 2004, 2079, 2254, 2279, 2329, 2379, 2429, 2604, 2654, 2754, 3179, 3204, 3304, 3579, 3629, 3804, 3904, 3954]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value 0.09
+Top 5 actions: ['3204: 0.04', '3304: 0.04', '1355: 0.04', '2754: 0.03', '779: 0.03']
+Masked ->
+Top 5 actions: ['3204: 0.04', '3304: 0.04', '1355: 0.04', '2754: 0.03', '779: 0.03']
+Best action 3204
+Sampled action 2004 chosen
+                Moving 1 warriors of Marquise de Cat from 4 to 5
+Checking for next Daylight Step 2 action (1 actions left)...
+
+Legal actions: [0, 124, 127, 569, 704, 754, 779, 979, 1029, 1304, 1305, 1354, 1355, 1454, 1455, 1579, 1629, 1704, 2254, 2255, 2279, 2280, 2329, 2330, 2379, 2380, 2429, 2430, 2604, 2654, 2754, 3179, 3204, 3304, 3579, 3629, 3804, 3904, 3954]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value 0.06
+Top 5 actions: ['124: 0.05', '3204: 0.04', '3304: 0.03', '2330: 0.03', '1355: 0.03']
+Masked ->
+Top 5 actions: ['124: 0.05', '3204: 0.04', '3304: 0.03', '2330: 0.03', '1355: 0.03']
+Best action 124
+Sampled action 2330 chosen
+                Moving 2 warriors of Marquise de Cat from 5 to 6
+Finding 2nd move of march...
+
+Legal actions: [0, 704, 754, 779, 979, 1029, 1304, 1305, 1354, 1355, 1454, 1455, 1579, 1629, 1704, 2604, 2605, 2606, 2654, 2655, 2656, 2754, 2755, 2756, 3179, 3204, 3304, 3579, 3629, 3804, 3904, 3954]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value 0.05
+Top 5 actions: ['2606: 0.05', '2605: 0.05', '3204: 0.04', '3304: 0.04', '1355: 0.04']
+Masked ->
+Top 5 actions: ['2606: 0.05', '2605: 0.05', '3204: 0.04', '3304: 0.04', '1355: 0.04']
+Best action 2606
+Sampled action 1579 chosen
+                Moving 1 warriors of Marquise de Cat from 3 to 0
+Checking for next Daylight Step 2 action (0 actions left)...
+
+Legal actions: [0, 124]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value 0.03
+Top 5 actions: ['124: 0.74', '0: 0.26', '3023: 0.0', '3022: 0.0', '3021: 0.0']
+Masked ->
+Top 5 actions: ['124: 0.74', '0: 0.26', '3023: 0.0', '3022: 0.0', '3021: 0.0']
+Best action 124
+Sampled action 124 chosen
+Spending a bird card to gain an action:
+        Woodland Runners removed from hand of Marquise de Cat
+        Woodland Runners added to discard pile
+Checking for next Daylight Step 2 action (1 actions left)...
+
+Legal actions: [0, 127, 704, 705, 754, 755, 779, 780, 979, 1029, 1304, 1305, 1354, 1355, 1454, 1455, 2604, 2605, 2606, 2654, 2655, 2656, 2754, 2755, 2756, 3179, 3204, 3304, 3579, 3629, 3804, 3904, 3954]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value 0.06
+Top 5 actions: ['2606: 0.05', '2605: 0.05', '3204: 0.04', '3304: 0.04', '1355: 0.04']
+Masked ->
+Top 5 actions: ['2606: 0.05', '2605: 0.05', '3204: 0.04', '3304: 0.04', '1355: 0.04']
+Best action 2606
+Sampled action 779 chosen
+                Moving 1 warriors of Marquise de Cat from 0 to 4
+Finding 2nd move of march...
+
+Legal actions: [0, 704, 754, 779, 979, 1029, 1304, 1305, 1354, 1355, 1454, 1455, 1879, 2004, 2079, 2604, 2605, 2606, 2654, 2655, 2656, 2754, 2755, 2756, 3179, 3204, 3304, 3579, 3629, 3804, 3904, 3954]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value 0.06
+Top 5 actions: ['2606: 0.05', '2605: 0.05', '3204: 0.04', '3304: 0.04', '1355: 0.04']
+Masked ->
+Top 5 actions: ['2606: 0.05', '2605: 0.05', '3204: 0.04', '3304: 0.04', '1355: 0.04']
+Best action 2606
+Sampled action 2079 chosen
+                Moving 1 warriors of Marquise de Cat from 4 to 8
+        End of Daylight phase (no more actions)
+--- Moving on to Evening ---
+        Marquise de Cat draws: Protection Racket
+--- End of Marquise Turn ---
+
+        Resetting for Eyrie's Turn...
+Choosing what to add to decree...
+
+Legal actions: [4367, 4394, 4409, 4436, 4451, 4478, 4493, 4520]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.26
+Top 5 actions: ['4493: 0.22', '4436: 0.21', '4409: 0.12', '4478: 0.12', '4451: 0.11']
+Masked ->
+Top 5 actions: ['4493: 0.22', '4436: 0.21', '4409: 0.12', '4478: 0.12', '4451: 0.11']
+Best action 4493
+Sampled action 4394 chosen
+        Sword removed from hand of Eyrie Dynasties
+                Card Sword added to decree at Recruit
+Choosing whether to add 2nd card to decree...
+
+Legal actions: [0, 4367, 4409, 4451, 4493]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.27
+Top 5 actions: ['4493: 0.36', '4409: 0.21', '4451: 0.17', '4367: 0.14', '0: 0.12']
+Masked ->
+Top 5 actions: ['4493: 0.36', '4409: 0.21', '4451: 0.17', '4367: 0.14', '0: 0.12']
+Best action 4493
+Sampled action 0 chosen
+- Chose to Skip
+        Tallying required decree...
+--- Moving on to Daylight ---
+        Crafting power: [0, 1, 1]
+Checking for Crafting / use of Birdsong Cards...
+
+Legal actions: [0, 66]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.34
+Top 5 actions: ['0: 0.56', '66: 0.44', '3023: 0.0', '3022: 0.0', '3021: 0.0']
+Masked ->
+Top 5 actions: ['0: 0.56', '66: 0.44', '3023: 0.0', '3022: 0.0', '3021: 0.0']
+Best action 0
+Sampled action 0 chosen
+- Chose to Skip
+Choosing decree-resolving action...
+
+Legal actions: [8, 12]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.32
+Top 5 actions: ['12: 0.51', '8: 0.49', '3023: 0.0', '3022: 0.0', '3021: 0.0']
+Masked ->
+Top 5 actions: ['12: 0.51', '8: 0.49', '3023: 0.0', '3022: 0.0', '3021: 0.0']
+Best action 12
+Sampled action 8 chosen
+>> Decree: RECRUIT
+                Placing 1 Eyrie Dynasties warriors in clearing 7
+        Fulfilled Bird Recruit requirement on Decree
+>> TURMOILING
+        Eyrie Dynasties Points changed by -2
+                New Score: [2, 0]
+Choosing new leader after turmoil...
+
+Legal actions: [4359, 4360]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.34
+Top 5 actions: ['4360: 0.6', '4359: 0.4', '0: 0.0', '3021: 0.0', '3020: 0.0']
+Masked ->
+Top 5 actions: ['4360: 0.6', '4359: 0.4', '0: 0.0', '3021: 0.0', '3020: 0.0']
+Best action 4360
+Sampled action 4360 chosen
+        New Leader Chosen: Commander
+                Card Loyal Vizier added to decree at Move
+                Card Loyal Vizier added to decree at Battle
+--- Moving on to Evening ---
+        Eyrie Dynasties Points changed by 1
+                New Score: [2, 1]
+        Eyrie Dynasties draws: Stand and Deliver!
+--- End of Eyrie Turn ---
+
+        Resetting for Marquise's Turn...
+        Producing wood at sawmills...
+        1 Wood can be placed automatically...
+                Wood token placed in clearing 4
+Finished placing wood.
+--- Moving on to Daylight ---
+        Crafting power: [0, 1, 1]
+> Moving onto step 2 of Daylight...
+Checking for next Daylight Step 2 action (3 actions left)...
+
+Legal actions: [0, 25, 27, 29, 31, 33, 34, 35, 49, 51, 53, 55, 57, 58, 59, 127, 704, 754, 779, 979, 1029, 1304, 1305, 1354, 1355, 1454, 1455, 2604, 2605, 2606, 2654, 2655, 2656, 2754, 2755, 2756, 3179, 3180, 3204, 3205, 3304, 3305, 3579, 3629, 3804, 3904, 3954]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value 0.08
+Top 5 actions: ['29: 0.07', '35: 0.07', '25: 0.05', '27: 0.04', '34: 0.04']
+Masked ->
+Top 5 actions: ['29: 0.07', '35: 0.07', '25: 0.05', '27: 0.04', '34: 0.04']
+Best action 29
+Sampled action 1355 chosen
+                Moving 2 warriors of Marquise de Cat from 2 to 3
+Finding 2nd move of march...
+
+Legal actions: [0, 704, 754, 779, 979, 1029, 1579, 1580, 1629, 1630, 1704, 1705, 2604, 2605, 2606, 2654, 2655, 2656, 2754, 2755, 2756, 3179, 3180, 3204, 3205, 3304, 3305, 3579, 3629, 3804, 3904, 3954]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value 0.08
+Top 5 actions: ['2606: 0.05', '3205: 0.05', '2605: 0.05', '3204: 0.04', '3304: 0.04']
+Masked ->
+Top 5 actions: ['2606: 0.05', '3205: 0.05', '2605: 0.05', '3204: 0.04', '3304: 0.04']
+Best action 2606
+Sampled action 2755 chosen
+                Moving 2 warriors of Marquise de Cat from 6 to 11
+Checking for next Daylight Step 2 action (2 actions left)...
+
+Legal actions: [0, 24, 25, 28, 29, 31, 33, 34, 35, 49, 52, 53, 55, 57, 58, 59, 127, 704, 754, 779, 979, 1029, 1579, 1580, 1629, 1630, 1704, 1705, 2604, 2654, 2754, 3179, 3180, 3204, 3205, 3304, 3305, 3579, 3629, 3804, 3904, 3954, 4129, 4130, 4229, 4230]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value 0.07
+Top 5 actions: ['29: 0.07', '35: 0.07', '25: 0.05', '28: 0.04', '34: 0.04']
+Masked ->
+Top 5 actions: ['29: 0.07', '35: 0.07', '25: 0.05', '28: 0.04', '34: 0.04']
+Best action 29
+Sampled action 59 chosen
+Building a Recruiter in clearing 10
+        Wood Cost: 1
+                Recruiter placed in clearing 10
+        Marquise de Cat Points changed by 1
+                New Score: [3, 1]
+        Removing 1 wood solely from clearing 4...
+Checking for next Daylight Step 2 action (1 actions left)...
+
+Legal actions: [0, 24, 127, 704, 754, 779, 979, 1029, 1579, 1580, 1629, 1630, 1704, 1705, 2604, 2654, 2754, 3179, 3180, 3204, 3205, 3304, 3305, 3579, 3629, 3804, 3904, 3954, 4129, 4130, 4229, 4230]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value 0.07
+Top 5 actions: ['24: 0.07', '3205: 0.05', '3204: 0.04', '3304: 0.04', '127: 0.04']
+Masked ->
+Top 5 actions: ['24: 0.07', '3205: 0.05', '3204: 0.04', '3304: 0.04', '127: 0.04']
+Best action 24
+Sampled action 1629 chosen
+                Moving 1 warriors of Marquise de Cat from 3 to 2
+Finding 2nd move of march...
+
+Legal actions: [0, 704, 754, 779, 979, 1029, 1304, 1354, 1454, 1579, 1629, 1704, 2604, 2654, 2754, 3179, 3180, 3204, 3205, 3304, 3305, 3579, 3629, 3804, 3904, 3954, 4129, 4130, 4229, 4230]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value 0.05
+Top 5 actions: ['3205: 0.05', '3204: 0.05', '3304: 0.05', '2754: 0.04', '779: 0.04']
+Masked ->
+Top 5 actions: ['3205: 0.05', '3204: 0.05', '3304: 0.05', '2754: 0.04', '779: 0.04']
+Best action 3205
+Sampled action 2604 chosen
+                Moving 1 warriors of Marquise de Cat from 6 to 5
+        End of Daylight phase (no more actions)
+--- Moving on to Evening ---
+        Marquise de Cat draws: Brutal Tactics
+--- End of Marquise Turn ---
+
+        Resetting for Eyrie's Turn...
+Choosing what to add to decree...
+
+Legal actions: [4367, 4393, 4409, 4435, 4451, 4477, 4493, 4519]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.26
+Top 5 actions: ['4493: 0.23', '4519: 0.17', '4409: 0.13', '4435: 0.13', '4451: 0.11']
+Masked ->
+Top 5 actions: ['4493: 0.23', '4519: 0.17', '4409: 0.13', '4435: 0.13', '4451: 0.11']
+Best action 4493
+Sampled action 4435 chosen
+        Stand and Deliver! removed from hand of Eyrie Dynasties
+                Card Stand and Deliver! added to decree at Move
+Choosing whether to add 2nd card to decree...
+
+Legal actions: [0, 4367, 4409, 4451, 4493]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.27
+Top 5 actions: ['4493: 0.36', '4409: 0.21', '4451: 0.17', '4367: 0.14', '0: 0.12']
+Masked ->
+Top 5 actions: ['4493: 0.36', '4409: 0.21', '4451: 0.17', '4367: 0.14', '0: 0.12']
+Best action 4493
+Sampled action 4493 chosen
+        Armorers removed from hand of Eyrie Dynasties
+                Card Armorers added to decree at Build
+        Tallying required decree...
+--- Moving on to Daylight ---
+        Crafting power: [0, 1, 1]
+> Moving onto step 2 of Daylight...
+Choosing decree-resolving action...
+
+Legal actions: [2829, 2830, 2831, 2929, 2930, 2931, 3054, 3055, 3056, 4129, 4130, 4131, 4132, 4154, 4155, 4156, 4157, 4229, 4230, 4231, 4232]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.27
+Top 5 actions: ['4230: 0.07', '2929: 0.06', '2831: 0.06', '4231: 0.06', '2930: 0.05']
+Masked ->
+Top 5 actions: ['4230: 0.07', '2929: 0.06', '2831: 0.06', '4231: 0.06', '2930: 0.05']
+Best action 4230
+Sampled action 2831 chosen
+>> Decree: MOVE
+                Moving 3 warriors of Eyrie Dynasties from 7 to 2
+        Fulfilled Fox Move requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [1304, 1305, 1306, 1354, 1355, 1356, 1454, 1455, 1456, 4129, 4130, 4131, 4132, 4154, 4155, 4156, 4157, 4229, 4230, 4231, 4232]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.26
+Top 5 actions: ['4230: 0.07', '4231: 0.06', '4232: 0.06', '4157: 0.06', '4130: 0.05']
+Masked ->
+Top 5 actions: ['4230: 0.07', '4231: 0.06', '4232: 0.06', '4157: 0.06', '4130: 0.05']
+Best action 4230
+Sampled action 4229 chosen
+>> Decree: MOVE
+                Moving 1 warriors of Eyrie Dynasties from 11 to 10
+        Fulfilled Bird Move requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [15, 23, 24]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.19
+Top 5 actions: ['23: 0.43', '24: 0.32', '15: 0.25', '0: 0.0', '3022: 0.0']
+Masked ->
+Top 5 actions: ['23: 0.43', '24: 0.32', '15: 0.25', '0: 0.0', '3022: 0.0']
+Best action 23
+Sampled action 15 chosen
+>> Decree: BATTLE
+        Fulfilled Bird Battle requirement on Decree
+        --- BATTLE STARTED: Eyrie Dynasties Attacks Marquise de Cat in clearing 2
+Marquise de Cat chose not to ambush
+--- DICE ROLL: [2, 2]
+Eyrie Dynasties is led by the Commander (+1 hit dealt)
+--- Dealing hits to defender...
+- Removed 1 Marquise de Cat warrior from clearing 2
+--- Dealing hits to attacker...
+- Removed 1 Eyrie Dynasties warrior from clearing 2
+--- BATTLE FINISHED
+
+Legal actions: [0, 648]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.11
+Top 5 actions: ['648: 0.66', '0: 0.34', '3023: 0.0', '3022: 0.0', '3021: 0.0']
+Masked ->
+Top 5 actions: ['648: 0.66', '0: 0.34', '3023: 0.0', '3022: 0.0', '3021: 0.0']
+Best action 648
+Sampled action 648 chosen
+        Field Hospitals activated, Marquise recovered 1 warrior(s)
+                Placing 1 Marquise de Cat warriors in clearing 0
+        Brutal Tactics removed from hand of Marquise de Cat
+        Brutal Tactics added to discard pile
+Choosing decree-resolving action...
+
+Legal actions: [27]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.19
+Top 5 actions: ['27: 1.0', '0: 0.0', '3022: 0.0', '3021: 0.0', '3020: 0.0']
+Masked ->
+Top 5 actions: ['27: 1.0', '0: 0.0', '3022: 0.0', '3021: 0.0', '3020: 0.0']
+Best action 27
+Sampled action 27 chosen
+>> Decree: BUILD
+                Roost placed in clearing 2
+        Fulfilled Bird Build requirement on Decree
+>>> DECREE COMPLETED
+--- Moving on to Evening ---
+        Eyrie Dynasties Points changed by 2
+                New Score: [3, 3]
+        Eyrie Dynasties draws: Birdy Bindle
+        Eyrie Dynasties draws: Root Tea (Rabbit)
+--- End of Eyrie Turn ---
+
+        Resetting for Marquise's Turn...
+        Producing wood at sawmills...
+        1 Wood can be placed automatically...
+                Wood token placed in clearing 4
+Finished placing wood.
+--- Moving on to Daylight ---
+        Crafting power: [0, 1, 1]
+> Moving onto step 2 of Daylight...
+Checking for next Daylight Step 2 action (3 actions left)...
+
+Legal actions: [0, 23, 24, 25, 28, 29, 33, 34, 35, 127, 704, 705, 754, 755, 779, 780, 979, 1029, 1579, 1629, 1704, 2254, 2279, 2329, 2379, 2429, 3179, 3180, 3204, 3205, 3304, 3305, 3579, 3629, 3804, 3904, 3954, 4229, 4230]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.05
+Top 5 actions: ['29: 0.09', '35: 0.08', '25: 0.06', '28: 0.05', '34: 0.05']
+Masked ->
+Top 5 actions: ['29: 0.09', '35: 0.08', '25: 0.06', '28: 0.05', '34: 0.05']
+Best action 29
+Sampled action 3179 chosen
+                Moving 1 warriors of Marquise de Cat from 8 to 4
+Finding 2nd move of march...
+
+Legal actions: [0, 704, 705, 754, 755, 779, 780, 979, 1029, 1579, 1629, 1704, 1879, 2004, 2079, 2254, 2279, 2329, 2379, 2429, 3179, 3204, 3304, 3579, 3629, 3804, 3904, 3954, 4229, 4230]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.06
+Top 5 actions: ['3204: 0.05', '3304: 0.05', '779: 0.04', '3179: 0.04', '780: 0.04']
+Masked ->
+Top 5 actions: ['3204: 0.05', '3304: 0.05', '779: 0.04', '3179: 0.04', '780: 0.04']
+Best action 3204
+Sampled action 1029 chosen
+                Moving 1 warriors of Marquise de Cat from 1 to 2
+Checking for next Daylight Step 2 action (2 actions left)...
+
+Legal actions: [0, 15, 23, 24, 25, 28, 29, 33, 34, 35, 127, 704, 705, 754, 755, 779, 780, 1304, 1354, 1579, 1629, 1704, 1879, 2004, 2079, 2254, 2279, 2329, 2379, 2429, 3179, 3204, 3304, 3579, 3629, 3804, 3904, 3954, 4229, 4230]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.07
+Top 5 actions: ['29: 0.09', '35: 0.08', '25: 0.06', '28: 0.05', '34: 0.05']
+Masked ->
+Top 5 actions: ['29: 0.09', '35: 0.08', '25: 0.06', '28: 0.05', '34: 0.05']
+Best action 29
+Sampled action 2329 chosen
+                Moving 1 warriors of Marquise de Cat from 5 to 6
+Finding 2nd move of march...
+
+Legal actions: [0, 704, 705, 754, 755, 779, 780, 1304, 1354, 1579, 1629, 1704, 1879, 2004, 2079, 2604, 2654, 2754, 3179, 3204, 3304, 3579, 3629, 3804, 3904, 3954, 4129, 4130, 4229, 4230]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.08
+Top 5 actions: ['3204: 0.05', '3304: 0.05', '2754: 0.04', '779: 0.04', '4130: 0.04']
+Masked ->
+Top 5 actions: ['3204: 0.05', '3304: 0.05', '2754: 0.04', '779: 0.04', '4130: 0.04']
+Best action 3204
+Sampled action 1579 chosen
+                Moving 1 warriors of Marquise de Cat from 3 to 0
+Checking for next Daylight Step 2 action (1 actions left)...
+
+Legal actions: [0, 15, 23, 24, 25, 29, 31, 33, 34, 35, 127, 704, 705, 706, 754, 755, 756, 779, 780, 781, 1304, 1879, 2004, 2079, 2604, 2654, 2754, 3179, 3204, 3304, 3579, 3629, 3804, 3904, 3954, 4129, 4130, 4229, 4230]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.09
+Top 5 actions: ['29: 0.09', '35: 0.08', '25: 0.06', '34: 0.05', '33: 0.05']
+Masked ->
+Top 5 actions: ['29: 0.09', '35: 0.08', '25: 0.06', '34: 0.05', '33: 0.05']
+Best action 29
+Sampled action 781 chosen
+                Moving 3 warriors of Marquise de Cat from 0 to 4
+Finding 2nd move of march...
+
+Legal actions: [0, 1304, 1879, 1880, 1881, 1882, 2004, 2005, 2006, 2007, 2079, 2080, 2081, 2082, 2604, 2654, 2754, 3179, 3204, 3304, 3579, 3629, 3804, 3904, 3954, 4129, 4130, 4229, 4230]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.11
+Top 5 actions: ['3204: 0.05', '3304: 0.05', '2007: 0.04', '2082: 0.04', '2754: 0.04']
+Masked ->
+Top 5 actions: ['3204: 0.05', '3304: 0.05', '2007: 0.04', '2082: 0.04', '2754: 0.04']
+Best action 3204
+Sampled action 4229 chosen
+                Moving 1 warriors of Marquise de Cat from 11 to 10
+        End of Daylight phase (no more actions)
+--- Moving on to Evening ---
+        Marquise de Cat draws: Sappers
+--- End of Marquise Turn ---
+
+        Resetting for Eyrie's Turn...
+Choosing what to add to decree...
+
+Legal actions: [4372, 4387, 4414, 4429, 4456, 4471, 4498, 4513]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.05
+Top 5 actions: ['4498: 0.16', '4387: 0.14', '4372: 0.14', '4513: 0.13', '4414: 0.12']
+Masked ->
+Top 5 actions: ['4498: 0.16', '4387: 0.14', '4372: 0.14', '4513: 0.13', '4414: 0.12']
+Best action 4498
+Sampled action 4513 chosen
+        Root Tea (Rabbit) removed from hand of Eyrie Dynasties
+                Card Root Tea (Rabbit) added to decree at Build
+Choosing whether to add 2nd card to decree...
+
+Legal actions: [0, 4372, 4414, 4456, 4498]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.05
+Top 5 actions: ['4498: 0.26', '4372: 0.23', '4414: 0.21', '0: 0.17', '4456: 0.13']
+Masked ->
+Top 5 actions: ['4498: 0.26', '4372: 0.23', '4414: 0.21', '0: 0.17', '4456: 0.13']
+Best action 4498
+Sampled action 0 chosen
+- Chose to Skip
+        Tallying required decree...
+--- Moving on to Daylight ---
+        Crafting power: [1, 1, 1]
+Checking for Crafting / use of Birdsong Cards...
+
+Legal actions: [0, 71]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.09
+Top 5 actions: ['71: 0.68', '0: 0.32', '3040: 0.0', '3010: 0.0', '3011: 0.0']
+Masked ->
+Top 5 actions: ['71: 0.68', '0: 0.32', '3040: 0.0', '3010: 0.0', '3011: 0.0']
+Best action 71
+Sampled action 71 chosen
+        Eyrie Dynasties crafts: Bag
+        Eyrie Dynasties Points changed by 1
+                New Score: [3, 4]
+        Birdy Bindle removed from hand of Eyrie Dynasties
+        Birdy Bindle added to discard pile
+> Moving onto step 2 of Daylight...
+Choosing decree-resolving action...
+
+Legal actions: [1304, 1305, 1354, 1355, 1454, 1455, 3954, 4129, 4130, 4131, 4154, 4155, 4156, 4229, 4230, 4231]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.03
+Top 5 actions: ['4230: 0.09', '4231: 0.08', '4130: 0.07', '1355: 0.07', '4131: 0.07']
+Masked ->
+Top 5 actions: ['4230: 0.09', '4231: 0.08', '4130: 0.07', '1355: 0.07', '4131: 0.07']
+Best action 4230
+Sampled action 1305 chosen
+>> Decree: MOVE
+                Moving 2 warriors of Eyrie Dynasties from 2 to 1
+        Fulfilled Bird Move requirement on Decree
+>> TURMOILING
+        Eyrie Dynasties Points changed by -3
+                New Score: [3, 1]
+Choosing new leader after turmoil...
+
+Legal actions: [4359]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.12
+Top 5 actions: ['4359: 1.0', '0: 0.0', '3022: 0.0', '3021: 0.0', '3020: 0.0']
+Masked ->
+Top 5 actions: ['4359: 1.0', '0: 0.0', '3022: 0.0', '3021: 0.0', '3020: 0.0']
+Best action 4359
+Sampled action 4359 chosen
+        New Leader Chosen: Charismatic
+                Card Loyal Vizier added to decree at Recruit
+                Card Loyal Vizier added to decree at Battle
+--- Moving on to Evening ---
+        Eyrie Dynasties Points changed by 2
+                New Score: [3, 3]
+        Eyrie Dynasties draws: Scouting Party
+        Eyrie Dynasties draws: Royal Claim
+--- End of Eyrie Turn ---
+
+        Resetting for Marquise's Turn...
+        Producing wood at sawmills...
+        1 Wood can be placed automatically...
+                Wood token placed in clearing 4
+Finished placing wood.
+--- Moving on to Daylight ---
+        Crafting power: [0, 1, 1]
+> Moving onto step 2 of Daylight...
+Checking for next Daylight Step 2 action (3 actions left)...
+
+Legal actions: [0, 15, 23, 24, 29, 31, 33, 34, 35, 41, 43, 45, 46, 47, 53, 55, 57, 58, 59, 123, 127, 473, 1879, 1880, 1881, 1882, 2004, 2005, 2006, 2007, 2079, 2080, 2081, 2082, 2604, 2654, 2754, 3179, 3204, 3304, 3579, 3629, 3804, 3805, 3904, 3905, 3954, 3955, 4129, 4229]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.07
+Top 5 actions: ['29: 0.06', '35: 0.06', '43: 0.05', '45: 0.05', '46: 0.05']
+Masked ->
+Top 5 actions: ['29: 0.06', '35: 0.06', '43: 0.05', '45: 0.05', '46: 0.05']
+Best action 29
+Sampled action 1880 chosen
+                Moving 2 warriors of Marquise de Cat from 4 to 0
+Finding 2nd move of march...
+
+Legal actions: [0, 704, 705, 754, 755, 779, 780, 1879, 1880, 2004, 2005, 2079, 2080, 2604, 2654, 2754, 3179, 3204, 3304, 3579, 3629, 3804, 3805, 3904, 3905, 3954, 3955, 4129, 4229]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.07
+Top 5 actions: ['3204: 0.05', '3304: 0.05', '2754: 0.04', '779: 0.04', '3179: 0.04']
+Masked ->
+Top 5 actions: ['3204: 0.05', '3304: 0.05', '2754: 0.04', '779: 0.04', '3179: 0.04']
+Best action 3204
+Sampled action 3955 chosen
+                Moving 2 warriors of Marquise de Cat from 10 to 11
+Checking for next Daylight Step 2 action (2 actions left)...
+
+Legal actions: [0, 15, 24, 25, 29, 31, 33, 34, 37, 41, 43, 45, 46, 49, 53, 55, 57, 58, 123, 127, 473, 704, 705, 754, 755, 779, 780, 1879, 1880, 2004, 2005, 2079, 2080, 2604, 2654, 2754, 3179, 3204, 3304, 3579, 3629, 4129, 4130, 4131]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.13
+Top 5 actions: ['29: 0.07', '43: 0.06', '45: 0.06', '46: 0.05', '25: 0.05']
+Masked ->
+Top 5 actions: ['29: 0.07', '43: 0.06', '45: 0.06', '46: 0.05', '25: 0.05']
+Best action 29
+Sampled action 37 chosen
+Building a Workshop in clearing 0
+        Wood Cost: 2
+                Workshop placed in clearing 0
+        Marquise de Cat Points changed by 2
+                New Score: [5, 3]
+        Removing 2 wood solely from clearing 4...
+Checking for next Daylight Step 2 action (1 actions left)...
+
+Legal actions: [0, 15, 24, 123, 127, 473, 704, 705, 754, 755, 779, 780, 1879, 1880, 2004, 2005, 2079, 2080, 2604, 2654, 2754, 3179, 3204, 3304, 3579, 3629, 4129, 4130, 4131]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.11
+Top 5 actions: ['24: 0.08', '3204: 0.05', '3304: 0.05', '127: 0.04', '15: 0.04']
+Masked ->
+Top 5 actions: ['24: 0.08', '3204: 0.05', '3304: 0.05', '127: 0.04', '15: 0.04']
+Best action 24
+Sampled action 127 chosen
+Attempting to Recruit:
+        Warriors can be recruited automatically...
+                Placing 1 Marquise de Cat warriors in clearing 1
+                Placing 1 Marquise de Cat warriors in clearing 10
+Checking for next Daylight Step 2 action (0 actions left)...
+
+Legal actions: [0, 123]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.12
+Top 5 actions: ['123: 0.6', '0: 0.4', '3011: 0.0', '3012: 0.0', '3013: 0.0']
+Masked ->
+Top 5 actions: ['123: 0.6', '0: 0.4', '3011: 0.0', '3012: 0.0', '3013: 0.0']
+Best action 123
+Sampled action 0 chosen
+- Forfeiting remaining daylight actions...
+--- Moving on to Evening ---
+        Marquise de Cat draws: Mouse-in-a-Sack
+--- End of Marquise Turn ---
+
+        Resetting for Eyrie's Turn...
+Choosing what to add to decree...
+
+Legal actions: [4391, 4399, 4433, 4441, 4475, 4483, 4517, 4525]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.11
+Top 5 actions: ['4517: 0.2', '4433: 0.2', '4475: 0.17', '4525: 0.13', '4441: 0.1']
+Masked ->
+Top 5 actions: ['4517: 0.2', '4433: 0.2', '4475: 0.17', '4525: 0.13', '4441: 0.1']
+Best action 4517
+Sampled action 4441 chosen
+        Royal Claim removed from hand of Eyrie Dynasties
+                Card Royal Claim added to decree at Move
+Choosing whether to add 2nd card to decree...
+
+Legal actions: [0, 4391, 4433, 4475, 4517]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.06
+Top 5 actions: ['4517: 0.28', '4433: 0.28', '4475: 0.24', '0: 0.12', '4391: 0.08']
+Masked ->
+Top 5 actions: ['4517: 0.28', '4433: 0.28', '4475: 0.24', '0: 0.12', '4391: 0.08']
+Best action 4517
+Sampled action 4517 chosen
+        Scouting Party removed from hand of Eyrie Dynasties
+                Card Scouting Party added to decree at Build
+        Tallying required decree...
+--- Moving on to Daylight ---
+        Crafting power: [1, 1, 1]
+> Moving onto step 2 of Daylight...
+Choosing decree-resolving action...
+
+Legal actions: [3, 8, 12]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.07
+Top 5 actions: ['12: 0.39', '8: 0.37', '3: 0.23', '0: 0.0', '3023: 0.0']
+Masked ->
+Top 5 actions: ['12: 0.39', '8: 0.37', '3: 0.23', '0: 0.0', '3023: 0.0']
+Best action 12
+Sampled action 8 chosen
+>> Decree: RECRUIT
+                Placing 2 Eyrie Dynasties warriors in clearing 7
+        Fulfilled Bird Recruit requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [1029, 1030, 2829, 2830, 2929, 2930, 3054, 3055, 3954, 4129, 4130, 4131, 4154, 4155, 4156, 4229, 4230, 4231]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.06
+Top 5 actions: ['4230: 0.08', '2929: 0.08', '4231: 0.07', '2930: 0.06', '4130: 0.06']
+Masked ->
+Top 5 actions: ['4230: 0.08', '2929: 0.08', '4231: 0.07', '2930: 0.06', '4130: 0.06']
+Best action 4230
+Sampled action 4230 chosen
+>> Decree: MOVE
+                Moving 2 warriors of Eyrie Dynasties from 11 to 10
+        Fulfilled Bird Move requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [14, 23, 24]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.06
+Top 5 actions: ['23: 0.41', '24: 0.3', '14: 0.29', '0: 0.0', '3022: 0.0']
+Masked ->
+Top 5 actions: ['23: 0.41', '24: 0.3', '14: 0.29', '0: 0.0', '3022: 0.0']
+Best action 23
+Sampled action 23 chosen
+>> Decree: BATTLE
+        Fulfilled Bird Battle requirement on Decree
+        --- BATTLE STARTED: Eyrie Dynasties Attacks Marquise de Cat in clearing 10
+Marquise de Cat chose not to ambush
+--- DICE ROLL: [3, 0]
+--- Dealing hits to defender...
+- Removed 1 Marquise de Cat warrior from clearing 10
+-- Recruiter destroyed in clearing 10
+        Eyrie Dynasties Points changed by 1
+                New Score: [5, 4]
+--- Dealing hits to attacker...
+--- BATTLE FINISHED
+
+Legal actions: [0, 660, 665]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.18
+Top 5 actions: ['660: 0.35', '665: 0.34', '0: 0.31', '3012: 0.0', '3013: 0.0']
+Masked ->
+Top 5 actions: ['660: 0.35', '665: 0.34', '0: 0.31', '3012: 0.0', '3013: 0.0']
+Best action 660
+Sampled action 665 chosen
+        Field Hospitals activated, Marquise recovered 1 warrior(s)
+                Placing 1 Marquise de Cat warriors in clearing 0
+        Sappers removed from hand of Marquise de Cat
+        Sappers added to discard pile
+Choosing decree-resolving action...
+
+Legal actions: [35]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.04
+Top 5 actions: ['35: 1.0', '3010: 0.0', '3011: 0.0', '3012: 0.0', '3013: 0.0']
+Masked ->
+Top 5 actions: ['35: 1.0', '3010: 0.0', '3011: 0.0', '3012: 0.0', '3013: 0.0']
+Best action 35
+Sampled action 35 chosen
+>> Decree: BUILD
+                Roost placed in clearing 10
+        Fulfilled Mouse Build requirement on Decree
+>>> DECREE COMPLETED
+--- Moving on to Evening ---
+        Eyrie Dynasties Points changed by 3
+                New Score: [5, 7]
+        Eyrie Dynasties draws: Smuggler's Trail
+        Eyrie Dynasties draws: Ambush! (Bird)
+--- End of Eyrie Turn ---
+
+        Resetting for Marquise's Turn...
+        Producing wood at sawmills...
+        1 Wood can be placed automatically...
+                Wood token placed in clearing 4
+Finished placing wood.
+--- Moving on to Daylight ---
+        Crafting power: [0, 1, 2]
+Checking for Crafting / use of Birdsong Cards...
+
+Legal actions: [0, 81]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.26
+Top 5 actions: ['81: 0.76', '0: 0.24', '3023: 0.0', '3022: 0.0', '3021: 0.0']
+Masked ->
+Top 5 actions: ['81: 0.76', '0: 0.24', '3023: 0.0', '3022: 0.0', '3021: 0.0']
+Best action 81
+Sampled action 81 chosen
+        Marquise de Cat crafts: Sword
+        Marquise de Cat Points changed by 2
+                New Score: [7, 7]
+        Foxfolk Steel removed from hand of Marquise de Cat
+        Foxfolk Steel added to discard pile
+> Moving onto step 2 of Daylight...
+Checking for next Daylight Step 2 action (3 actions left)...
+
+Legal actions: [0, 14, 15, 24, 29, 31, 33, 34, 53, 55, 57, 58, 127, 413, 704, 705, 706, 754, 755, 756, 779, 780, 781, 979, 1029, 1304, 1879, 1880, 2004, 2005, 2079, 2080, 2604, 2654, 2754, 3179, 3204, 3304, 3579, 3629, 4129, 4130, 4131, 4154, 4155, 4156, 4229, 4230, 4231]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.24
+Top 5 actions: ['29: 0.08', '34: 0.05', '31: 0.05', '33: 0.05', '24: 0.04']
+Masked ->
+Top 5 actions: ['29: 0.08', '34: 0.05', '31: 0.05', '33: 0.05', '24: 0.04']
+Best action 29
+Sampled action 57 chosen
+Building a Recruiter in clearing 8
+        Wood Cost: 1
+                Recruiter placed in clearing 8
+        Marquise de Cat Points changed by 1
+                New Score: [8, 7]
+        Removing 1 wood solely from clearing 4...
+Checking for next Daylight Step 2 action (2 actions left)...
+
+Legal actions: [0, 14, 15, 24, 127, 413, 704, 705, 706, 754, 755, 756, 779, 780, 781, 979, 1029, 1304, 1879, 1880, 2004, 2005, 2079, 2080, 2604, 2654, 2754, 3179, 3204, 3304, 3579, 3629, 4129, 4130, 4131, 4154, 4155, 4156, 4229, 4230, 4231]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.31
+Top 5 actions: ['24: 0.05', '14: 0.04', '3304: 0.03', '3204: 0.03', '781: 0.03']
+Masked ->
+Top 5 actions: ['24: 0.05', '14: 0.04', '3304: 0.03', '3204: 0.03', '781: 0.03']
+Best action 24
+Sampled action 127 chosen
+Attempting to Recruit:
+        Warriors can be recruited automatically...
+                Placing 1 Marquise de Cat warriors in clearing 8
+                Placing 1 Marquise de Cat warriors in clearing 1
+Checking for next Daylight Step 2 action (1 actions left)...
+
+Legal actions: [0, 14, 15, 24, 413, 704, 705, 706, 754, 755, 756, 779, 780, 781, 979, 980, 1029, 1030, 1304, 1879, 1880, 2004, 2005, 2079, 2080, 2604, 2654, 2754, 3179, 3180, 3204, 3205, 3304, 3305, 3579, 3629, 4129, 4130, 4131, 4154, 4155, 4156, 4229, 4230, 4231]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.31
+Top 5 actions: ['24: 0.05', '14: 0.03', '3205: 0.03', '3304: 0.03', '3204: 0.03']
+Masked ->
+Top 5 actions: ['24: 0.05', '14: 0.03', '3205: 0.03', '3304: 0.03', '3204: 0.03']
+Best action 24
+Sampled action 4155 chosen
+                Moving 2 warriors of Marquise de Cat from 11 to 7
+Finding 2nd move of march...
+
+Legal actions: [0, 704, 705, 706, 754, 755, 756, 779, 780, 781, 979, 980, 1029, 1030, 1304, 1879, 1880, 2004, 2005, 2079, 2080, 2604, 2654, 2754, 2929, 2930, 3179, 3180, 3204, 3205, 3304, 3305, 3579, 3629, 4129]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.28
+Top 5 actions: ['3205: 0.04', '3304: 0.04', '3204: 0.04', '781: 0.04', '756: 0.04']
+Masked ->
+Top 5 actions: ['3205: 0.04', '3304: 0.04', '3204: 0.04', '781: 0.04', '756: 0.04']
+Best action 3205
+Sampled action 705 chosen
+                Moving 2 warriors of Marquise de Cat from 0 to 1
+        End of Daylight phase (no more actions)
+--- Moving on to Evening ---
+        Marquise de Cat draws: Ambush! (Mouse)
+--- End of Marquise Turn ---
+
+        Resetting for Eyrie's Turn...
+Choosing what to add to decree...
+
+Legal actions: [4362, 4392, 4404, 4434, 4446, 4476, 4488, 4518]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.01
+Top 5 actions: ['4488: 0.2', '4404: 0.15', '4362: 0.13', '4518: 0.11', '4434: 0.11']
+Masked ->
+Top 5 actions: ['4488: 0.2', '4404: 0.15', '4362: 0.13', '4518: 0.11', '4434: 0.11']
+Best action 4488
+Sampled action 4362 chosen
+        Ambush! (Bird) removed from hand of Eyrie Dynasties
+                Card Ambush! (Bird) added to decree at Recruit
+Choosing whether to add 2nd card to decree...
+
+Legal actions: [0, 4392, 4434, 4476, 4518]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.01
+Top 5 actions: ['4434: 0.23', '4518: 0.23', '4392: 0.23', '0: 0.16', '4476: 0.15']
+Masked ->
+Top 5 actions: ['4434: 0.23', '4518: 0.23', '4392: 0.23', '0: 0.16', '4476: 0.15']
+Best action 4434
+Sampled action 4434 chosen
+        Smuggler's Trail removed from hand of Eyrie Dynasties
+                Card Smuggler's Trail added to decree at Move
+        Tallying required decree...
+--- Moving on to Daylight ---
+        Crafting power: [2, 1, 1]
+> Moving onto step 2 of Daylight...
+Choosing decree-resolving action...
+
+Legal actions: [3, 8, 11, 12]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.01
+Top 5 actions: ['12: 0.3', '8: 0.28', '11: 0.25', '3: 0.17', '0: 0.0']
+Masked ->
+Top 5 actions: ['12: 0.3', '8: 0.28', '11: 0.25', '3: 0.17', '0: 0.0']
+Best action 12
+Sampled action 3 chosen
+>> Decree: RECRUIT
+                Placing 2 Eyrie Dynasties warriors in clearing 2
+        Fulfilled Bird Recruit requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [3, 8, 11, 12]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.06
+Top 5 actions: ['12: 0.3', '8: 0.28', '11: 0.25', '3: 0.17', '0: 0.0']
+Masked ->
+Top 5 actions: ['12: 0.3', '8: 0.28', '11: 0.25', '3: 0.17', '0: 0.0']
+Best action 12
+Sampled action 11 chosen
+>> Decree: RECRUIT
+                Placing 2 Eyrie Dynasties warriors in clearing 10
+        Fulfilled Bird Recruit requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [1029, 1030, 1304, 1305, 1354, 1355, 1454, 1455, 2829, 2830, 2929, 2930, 3054, 3055, 3804, 3805, 3806, 3807, 3808, 3904, 3905, 3906, 3907, 3908, 3954, 3955, 3956, 3957, 3958, 4129, 4154, 4229]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.01
+Top 5 actions: ['3807: 0.06', '2929: 0.05', '3806: 0.05', '3808: 0.04', '2930: 0.04']
+Masked ->
+Top 5 actions: ['3807: 0.06', '2929: 0.05', '3806: 0.05', '3808: 0.04', '2930: 0.04']
+Best action 3807
+Sampled action 2930 chosen
+>> Decree: MOVE
+                Moving 2 warriors of Eyrie Dynasties from 7 to 6
+        Fulfilled Bird Move requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [1029, 1030, 4129, 4154, 4229]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.04
+Top 5 actions: ['1030: 0.25', '4229: 0.24', '4154: 0.19', '1029: 0.16', '4129: 0.16']
+Masked ->
+Top 5 actions: ['1030: 0.25', '4229: 0.24', '4154: 0.19', '1029: 0.16', '4129: 0.16']
+Best action 1030
+Sampled action 4154 chosen
+>> Decree: MOVE
+                Moving 1 warriors of Eyrie Dynasties from 11 to 7
+        Fulfilled Rabbit Move requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [14, 15, 19, 20]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.08
+Top 5 actions: ['14: 0.28', '19: 0.25', '20: 0.24', '15: 0.22', '3025: 0.0']
+Masked ->
+Top 5 actions: ['14: 0.28', '19: 0.25', '20: 0.24', '15: 0.22', '3025: 0.0']
+Best action 14
+Sampled action 19 chosen
+>> Decree: BATTLE
+        Fulfilled Bird Battle requirement on Decree
+        --- BATTLE STARTED: Eyrie Dynasties Attacks Marquise de Cat in clearing 6
+
+Legal actions: [4279, 4283]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.40
+Top 5 actions: ['4279: 0.75', '4283: 0.25', '3022: 0.0', '3021: 0.0', '3020: 0.0']
+Masked ->
+Top 5 actions: ['4279: 0.75', '4283: 0.25', '3022: 0.0', '3021: 0.0', '3020: 0.0']
+Best action 4279
+Sampled action 4283 chosen
+Marquise de Cat chose not to ambush
+--- DICE ROLL: [0, 1]
+--- Dealing hits to defender...
+- Removed 1 Marquise de Cat warrior from clearing 6
+--- Dealing hits to attacker...
+--- BATTLE FINISHED
+
+Legal actions: [0, 640, 660]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.40
+Top 5 actions: ['640: 0.42', '660: 0.3', '0: 0.28', '3023: 0.0', '3022: 0.0']
+Masked ->
+Top 5 actions: ['640: 0.42', '660: 0.3', '0: 0.28', '3023: 0.0', '3022: 0.0']
+Best action 640
+Sampled action 0 chosen
+The Marquise do not use Field Hospitals on the 1 warriors in the Mouse Clearing
+Choosing decree-resolving action...
+
+Legal actions: [31]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.06
+Top 5 actions: ['31: 1.0', '0: 0.0', '3022: 0.0', '3021: 0.0', '3020: 0.0']
+Masked ->
+Top 5 actions: ['31: 1.0', '0: 0.0', '3022: 0.0', '3021: 0.0', '3020: 0.0']
+Best action 31
+Sampled action 31 chosen
+>> Decree: BUILD
+                Roost placed in clearing 6
+        Fulfilled Mouse Build requirement on Decree
+>>> DECREE COMPLETED
+--- Moving on to Evening ---
+        Eyrie Dynasties Points changed by 4
+                New Score: [8, 11]
+        Eyrie Dynasties draws: Root Tea (Fox)
+        Eyrie Dynasties draws: Ambush! (Rabbit)
+--- End of Eyrie Turn ---
+
+        Resetting for Marquise's Turn...
+        Producing wood at sawmills...
+        1 Wood can be placed automatically...
+                Wood token placed in clearing 4
+Finished placing wood.
+--- Moving on to Daylight ---
+        Crafting power: [0, 1, 2]
+> Moving onto step 2 of Daylight...
+Checking for next Daylight Step 2 action (3 actions left)...
+
+Legal actions: [0, 14, 15, 20, 24, 29, 34, 127, 173, 413, 704, 754, 779, 979, 980, 981, 982, 1029, 1030, 1031, 1032, 1304, 1879, 1880, 2004, 2005, 2079, 2080, 3179, 3180, 3204, 3205, 3304, 3305, 3579, 3629]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.45
+Top 5 actions: ['29: 0.1', '34: 0.06', '24: 0.05', '14: 0.04', '982: 0.04']
+Masked ->
+Top 5 actions: ['29: 0.1', '34: 0.06', '24: 0.05', '14: 0.04', '982: 0.04']
+Best action 29
+Sampled action 1030 chosen
+                Moving 2 warriors of Marquise de Cat from 1 to 2
+Finding 2nd move of march...
+
+Legal actions: [0, 704, 754, 779, 979, 980, 1029, 1030, 1304, 1305, 1306, 1879, 1880, 2004, 2005, 2079, 2080, 3179, 3180, 3204, 3205, 3304, 3305, 3579, 3629]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.43
+Top 5 actions: ['3205: 0.06', '3304: 0.06', '3204: 0.05', '3180: 0.05', '1030: 0.05']
+Masked ->
+Top 5 actions: ['3205: 0.06', '3304: 0.06', '3204: 0.05', '3180: 0.05', '1030: 0.05']
+Best action 3205
+Sampled action 1305 chosen
+                Moving 2 warriors of Marquise de Cat from 2 to 1
+Checking for next Daylight Step 2 action (2 actions left)...
+
+Legal actions: [0, 14, 15, 20, 24, 29, 34, 127, 173, 413, 704, 754, 779, 979, 980, 981, 982, 1029, 1030, 1031, 1032, 1304, 1879, 1880, 2004, 2005, 2079, 2080, 3179, 3180, 3204, 3205, 3304, 3305, 3579, 3629]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.47
+Top 5 actions: ['29: 0.1', '34: 0.06', '24: 0.05', '14: 0.04', '982: 0.04']
+Masked ->
+Top 5 actions: ['29: 0.1', '34: 0.06', '24: 0.05', '14: 0.04', '982: 0.04']
+Best action 29
+Sampled action 127 chosen
+Attempting to Recruit:
+        Warriors can be recruited automatically...
+                Placing 1 Marquise de Cat warriors in clearing 8
+                Placing 1 Marquise de Cat warriors in clearing 1
+Checking for next Daylight Step 2 action (1 actions left)...
+
+Legal actions: [0, 14, 15, 20, 24, 29, 34, 173, 413, 704, 754, 779, 979, 980, 981, 982, 983, 1029, 1030, 1031, 1032, 1033, 1304, 1879, 1880, 2004, 2005, 2079, 2080, 3179, 3180, 3181, 3204, 3205, 3206, 3304, 3305, 3306, 3579, 3629]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.49
+Top 5 actions: ['29: 0.09', '34: 0.06', '24: 0.04', '983: 0.03', '14: 0.03']
+Masked ->
+Top 5 actions: ['29: 0.09', '34: 0.06', '24: 0.04', '983: 0.03', '14: 0.03']
+Best action 29
+Sampled action 0 chosen
+- Forfeiting remaining daylight actions...
+--- Moving on to Evening ---
+        Marquise de Cat draws: Tax Collector
+--- End of Marquise Turn ---
+
+        Resetting for Eyrie's Turn...
+Choosing what to add to decree...
+
+Legal actions: [4363, 4388, 4405, 4430, 4447, 4472, 4489, 4514]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.30
+Top 5 actions: ['4405: 0.21', '4514: 0.19', '4447: 0.15', '4430: 0.12', '4489: 0.11']
+Masked ->
+Top 5 actions: ['4405: 0.21', '4514: 0.19', '4447: 0.15', '4430: 0.12', '4489: 0.11']
+Best action 4405
+Sampled action 4514 chosen
+        Root Tea (Fox) removed from hand of Eyrie Dynasties
+                Card Root Tea (Fox) added to decree at Build
+Choosing whether to add 2nd card to decree...
+
+Legal actions: [0, 4363, 4405, 4447, 4489]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.30
+Top 5 actions: ['4405: 0.33', '4447: 0.24', '4489: 0.18', '0: 0.14', '4363: 0.11']
+Masked ->
+Top 5 actions: ['4405: 0.33', '4447: 0.24', '4489: 0.18', '0: 0.14', '4363: 0.11']
+Best action 4405
+Sampled action 4447 chosen
+        Ambush! (Rabbit) removed from hand of Eyrie Dynasties
+                Card Ambush! (Rabbit) added to decree at Battle
+        Tallying required decree...
+--- Moving on to Daylight ---
+        Crafting power: [3, 1, 1]
+> Moving onto step 2 of Daylight...
+Choosing decree-resolving action...
+
+Legal actions: [3, 7, 8, 11, 12]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.30
+Top 5 actions: ['7: 0.24', '12: 0.22', '8: 0.21', '11: 0.19', '3: 0.13']
+Masked ->
+Top 5 actions: ['7: 0.24', '12: 0.22', '8: 0.21', '11: 0.19', '3: 0.13']
+Best action 7
+Sampled action 7 chosen
+>> Decree: RECRUIT
+                Placing 2 Eyrie Dynasties warriors in clearing 6
+        Fulfilled Bird Recruit requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [3, 7, 8, 11, 12]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.27
+Top 5 actions: ['7: 0.24', '12: 0.22', '8: 0.21', '11: 0.19', '3: 0.13']
+Masked ->
+Top 5 actions: ['7: 0.24', '12: 0.22', '8: 0.21', '11: 0.19', '3: 0.13']
+Best action 7
+Sampled action 8 chosen
+>> Decree: RECRUIT
+                Placing 2 Eyrie Dynasties warriors in clearing 7
+        Fulfilled Bird Recruit requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [1029, 1030, 1304, 1305, 1354, 1355, 1454, 1455, 2604, 2605, 2606, 2607, 2654, 2655, 2656, 2657, 2754, 2755, 2756, 2757, 2829, 2830, 2831, 2929, 2930, 2931, 3054, 3055, 3056, 3804, 3805, 3806, 3807, 3808, 3904, 3905, 3906, 3907, 3908, 3954, 3955, 3956, 3957, 3958]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.29
+Top 5 actions: ['3807: 0.04', '2606: 0.03', '2929: 0.03', '3806: 0.03', '2831: 0.03']
+Masked ->
+Top 5 actions: ['3807: 0.04', '2606: 0.03', '2929: 0.03', '3806: 0.03', '2831: 0.03']
+Best action 3807
+Sampled action 2930 chosen
+>> Decree: MOVE
+                Moving 2 warriors of Eyrie Dynasties from 7 to 6
+        Fulfilled Bird Move requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [1029, 1030]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.29
+Top 5 actions: ['1030: 0.6', '1029: 0.4', '0: 0.0', '3012: 0.0', '3013: 0.0']
+Masked ->
+Top 5 actions: ['1030: 0.6', '1029: 0.4', '0: 0.0', '3012: 0.0', '3013: 0.0']
+Best action 1030
+Sampled action 1029 chosen
+>> Decree: MOVE
+                Moving 1 warriors of Eyrie Dynasties from 1 to 2
+        Fulfilled Rabbit Move requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [14, 15, 20]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.30
+Top 5 actions: ['14: 0.38', '20: 0.32', '15: 0.3', '0: 0.0', '3024: 0.0']
+Masked ->
+Top 5 actions: ['14: 0.38', '20: 0.32', '15: 0.3', '0: 0.0', '3024: 0.0']
+Best action 14
+Sampled action 14 chosen
+>> Decree: BATTLE
+        Fulfilled Rabbit Battle requirement on Decree
+        --- BATTLE STARTED: Eyrie Dynasties Attacks Marquise de Cat in clearing 1
+Marquise de Cat chose not to ambush
+--- DICE ROLL: [1, 2]
+--- Dealing hits to defender...
+- Removed 1 Marquise de Cat warrior from clearing 1
+--- Dealing hits to attacker...
+- Removed 1 Eyrie Dynasties warrior from clearing 1
+--- BATTLE FINISHED
+Choosing decree-resolving action...
+
+Legal actions: [15, 20]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.18
+Top 5 actions: ['20: 0.52', '15: 0.48', '0: 0.0', '3023: 0.0', '3022: 0.0']
+Masked ->
+Top 5 actions: ['20: 0.52', '15: 0.48', '0: 0.0', '3023: 0.0', '3022: 0.0']
+Best action 20
+Sampled action 20 chosen
+>> Decree: BATTLE
+        Fulfilled Bird Battle requirement on Decree
+        --- BATTLE STARTED: Eyrie Dynasties Attacks Marquise de Cat in clearing 7
+Marquise de Cat chose not to ambush
+--- DICE ROLL: [3, 2]
+--- Dealing hits to defender...
+- Removed 1 Marquise de Cat warrior from clearing 7
+--- Dealing hits to attacker...
+- Removed 1 Eyrie Dynasties warrior from clearing 7
+-- Roost destroyed in clearing 7
+        Marquise de Cat Points changed by 1
+                New Score: [9, 11]
+--- BATTLE FINISHED
+
+Legal actions: [0, 661, 670]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.23
+Top 5 actions: ['670: 0.55', '661: 0.24', '0: 0.21', '3013: 0.0', '3014: 0.0']
+Masked ->
+Top 5 actions: ['670: 0.55', '661: 0.24', '0: 0.21', '3013: 0.0', '3014: 0.0']
+Best action 670
+Sampled action 661 chosen
+        Field Hospitals activated, Marquise recovered 1 warrior(s)
+                Placing 1 Marquise de Cat warriors in clearing 0
+        Protection Racket removed from hand of Marquise de Cat
+        Protection Racket added to discard pile
+>> TURMOILING
+        Eyrie Dynasties Points changed by -4
+                New Score: [9, 7]
+Choosing new leader after turmoil...
+
+Legal actions: [4358, 4359, 4360, 4361]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.08
+Top 5 actions: ['4361: 0.31', '4360: 0.28', '4358: 0.22', '4359: 0.19', '3018: 0.0']
+Masked ->
+Top 5 actions: ['4361: 0.31', '4360: 0.28', '4358: 0.22', '4359: 0.19', '3018: 0.0']
+Best action 4361
+Sampled action 4358 chosen
+        New Leader Chosen: Builder
+                Card Loyal Vizier added to decree at Recruit
+                Card Loyal Vizier added to decree at Move
+--- Moving on to Evening ---
+        Eyrie Dynasties Points changed by 3
+                New Score: [9, 10]
+        Eyrie Dynasties draws: Brutal Tactics
+        Eyrie Dynasties draws: Command Warren
+--- End of Eyrie Turn ---
+
+        Resetting for Marquise's Turn...
+        Producing wood at sawmills...
+        1 Wood can be placed automatically...
+                Wood token placed in clearing 4
+Finished placing wood.
+--- Moving on to Daylight ---
+        Crafting power: [0, 1, 2]
+> Moving onto step 2 of Daylight...
+Checking for next Daylight Step 2 action (3 actions left)...
+
+Legal actions: [0, 15, 24, 29, 34, 53, 58, 127, 173, 413, 704, 705, 754, 755, 779, 780, 979, 980, 981, 982, 1029, 1030, 1031, 1032, 1304, 1454, 1879, 1880, 2004, 2005, 2079, 2080, 2829, 2929, 3054, 3179, 3180, 3181, 3204, 3205, 3206, 3304, 3305, 3306, 3579, 3629, 4154]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.16
+Top 5 actions: ['29: 0.09', '34: 0.05', '24: 0.04', '53: 0.04', '982: 0.03']
+Masked ->
+Top 5 actions: ['29: 0.09', '34: 0.05', '24: 0.04', '53: 0.04', '982: 0.03']
+Best action 29
+Sampled action 754 chosen
+                Moving 1 warriors of Marquise de Cat from 0 to 3
+Finding 2nd move of march...
+
+Legal actions: [0, 704, 754, 779, 979, 980, 981, 982, 1029, 1030, 1031, 1032, 1304, 1354, 1454, 1579, 1629, 1704, 1879, 1880, 2004, 2005, 2079, 2080, 2829, 2929, 3054, 3179, 3180, 3181, 3204, 3205, 3206, 3304, 3305, 3306, 3579, 3629, 4154]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.17
+Top 5 actions: ['982: 0.04', '3205: 0.04', '3204: 0.03', '3304: 0.03', '3306: 0.03']
+Masked ->
+Top 5 actions: ['982: 0.04', '3205: 0.04', '3204: 0.03', '3304: 0.03', '3306: 0.03']
+Best action 982
+Sampled action 754 chosen
+                Moving 1 warriors of Marquise de Cat from 0 to 3
+Checking for next Daylight Step 2 action (2 actions left)...
+
+Legal actions: [0, 15, 24, 28, 29, 34, 52, 53, 58, 127, 173, 413, 979, 980, 981, 982, 1029, 1030, 1031, 1032, 1304, 1354, 1454, 1579, 1580, 1629, 1630, 1704, 1705, 1879, 1880, 2004, 2005, 2079, 2080, 2829, 2929, 3054, 3179, 3180, 3181, 3204, 3205, 3206, 3304, 3305, 3306, 3579, 3629, 4154]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.17
+Top 5 actions: ['29: 0.08', '28: 0.05', '34: 0.05', '24: 0.04', '53: 0.03']
+Masked ->
+Top 5 actions: ['29: 0.08', '28: 0.05', '34: 0.05', '24: 0.04', '53: 0.03']
+Best action 29
+Sampled action 15 chosen
+        --- BATTLE STARTED: Marquise de Cat Attacks Eyrie Dynasties in clearing 2
+Eyrie Dynasties chose not to ambush
+--- DICE ROLL: [3, 0]
+--- Dealing hits to defender...
+- Removed 1 Eyrie Dynasties warrior from clearing 2
+--- Dealing hits to attacker...
+--- BATTLE FINISHED
+Checking for next Daylight Step 2 action (1 actions left)...
+
+Legal actions: [0, 15, 24, 28, 29, 34, 52, 53, 58, 127, 173, 413, 979, 980, 981, 982, 1029, 1030, 1031, 1032, 1304, 1354, 1454, 1579, 1580, 1629, 1630, 1704, 1705, 1879, 1880, 2004, 2005, 2079, 2080, 2829, 2929, 3054, 3179, 3180, 3181, 3204, 3205, 3206, 3304, 3305, 3306, 3579, 3629, 4154]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.16
+Top 5 actions: ['29: 0.08', '28: 0.05', '34: 0.05', '24: 0.04', '53: 0.03']
+Masked ->
+Top 5 actions: ['29: 0.08', '28: 0.05', '34: 0.05', '24: 0.04', '53: 0.03']
+Best action 29
+Sampled action 3179 chosen
+                Moving 1 warriors of Marquise de Cat from 8 to 4
+Finding 2nd move of march...
+
+Legal actions: [0, 979, 980, 981, 982, 1029, 1030, 1031, 1032, 1304, 1354, 1454, 1579, 1580, 1629, 1630, 1704, 1705, 1879, 1880, 1881, 2004, 2005, 2006, 2079, 2080, 2081, 2829, 2929, 3054, 3179, 3180, 3204, 3205, 3304, 3305, 3579, 3629, 4154]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.16
+Top 5 actions: ['982: 0.04', '3205: 0.04', '3204: 0.04', '3304: 0.04', '981: 0.03']
+Masked ->
+Top 5 actions: ['982: 0.04', '3205: 0.04', '3204: 0.04', '3304: 0.04', '981: 0.03']
+Best action 982
+Sampled action 3204 chosen
+                Moving 1 warriors of Marquise de Cat from 8 to 5
+        End of Daylight phase (no more actions)
+--- Moving on to Evening ---
+        Marquise de Cat draws: Anvil
+--- End of Marquise Turn ---
+
+        Resetting for Eyrie's Turn...
+Choosing what to add to decree...
+
+Legal actions: [4373, 4376, 4415, 4418, 4457, 4460, 4499, 4502]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.04
+Top 5 actions: ['4415: 0.2', '4418: 0.17', '4502: 0.14', '4457: 0.14', '4499: 0.12']
+Masked ->
+Top 5 actions: ['4415: 0.2', '4418: 0.17', '4502: 0.14', '4457: 0.14', '4499: 0.12']
+Best action 4415
+Sampled action 4415 chosen
+        Brutal Tactics removed from hand of Eyrie Dynasties
+                Card Brutal Tactics added to decree at Move
+Choosing whether to add 2nd card to decree...
+
+Legal actions: [0, 4376, 4418, 4460, 4502]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.03
+Top 5 actions: ['4418: 0.31', '4502: 0.25', '0: 0.17', '4460: 0.15', '4376: 0.12']
+Masked ->
+Top 5 actions: ['4418: 0.31', '4502: 0.25', '0: 0.17', '4460: 0.15', '4376: 0.12']
+Best action 4418
+Sampled action 4376 chosen
+        Command Warren removed from hand of Eyrie Dynasties
+                Card Command Warren added to decree at Recruit
+        Tallying required decree...
+--- Moving on to Daylight ---
+        Crafting power: [3, 1, 0]
+> Moving onto step 2 of Daylight...
+Choosing decree-resolving action...
+
+Legal actions: [3, 7, 11, 12]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.08
+Top 5 actions: ['7: 0.3', '12: 0.29', '11: 0.24', '3: 0.17', '0: 0.0']
+Masked ->
+Top 5 actions: ['7: 0.3', '12: 0.29', '11: 0.24', '3: 0.17', '0: 0.0']
+Best action 7
+Sampled action 7 chosen
+>> Decree: RECRUIT
+                Placing 1 Eyrie Dynasties warriors in clearing 6
+        Fulfilled Bird Recruit requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [12]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.11
+Top 5 actions: ['12: 1.0', '0: 0.0', '3022: 0.0', '3021: 0.0', '3020: 0.0']
+Masked ->
+Top 5 actions: ['12: 1.0', '0: 0.0', '3022: 0.0', '3021: 0.0', '3020: 0.0']
+Best action 12
+Sampled action 12 chosen
+>> Decree: RECRUIT
+                Placing 1 Eyrie Dynasties warriors in clearing 11
+        Fulfilled Rabbit Recruit requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [1304, 1305, 1354, 1355, 1454, 1455, 2604, 2605, 2606, 2607, 2608, 2609, 2610, 2654, 2655, 2656, 2657, 2658, 2659, 2660, 2754, 2755, 2756, 2757, 2758, 2759, 2760, 3804, 3805, 3806, 3807, 3808, 3904, 3905, 3906, 3907, 3908, 3954, 3955, 3956, 3957, 3958, 4129, 4154, 4229]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.12
+Top 5 actions: ['3807: 0.04', '2606: 0.04', '3806: 0.03', '2659: 0.03', '2608: 0.03']
+Masked ->
+Top 5 actions: ['3807: 0.04', '2606: 0.04', '3806: 0.03', '2659: 0.03', '2608: 0.03']
+Best action 3807
+Sampled action 3807 chosen
+>> Decree: MOVE
+                Moving 4 warriors of Eyrie Dynasties from 10 to 5
+        Fulfilled Bird Move requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [1304, 1305, 1354, 1355, 1454, 1455, 2254, 2255, 2256, 2257, 2279, 2280, 2281, 2282, 2329, 2330, 2331, 2332, 2379, 2380, 2381, 2382, 2429, 2430, 2431, 2432, 2604, 2605, 2606, 2607, 2608, 2609, 2610, 2654, 2655, 2656, 2657, 2658, 2659, 2660, 2754, 2755, 2756, 2757, 2758, 2759, 2760, 3804, 3904, 3954, 4129, 4154, 4229]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.05
+Top 5 actions: ['2332: 0.03', '2606: 0.03', '2429: 0.03', '2659: 0.03', '2608: 0.03']
+Masked ->
+Top 5 actions: ['2332: 0.03', '2606: 0.03', '2429: 0.03', '2659: 0.03', '2608: 0.03']
+Best action 2332
+Sampled action 2609 chosen
+>> Decree: MOVE
+                Moving 6 warriors of Eyrie Dynasties from 6 to 5
+        Fulfilled Bird Move requirement on Decree
+>>> DECREE COMPLETED
+--- Moving on to Evening ---
+        Eyrie Dynasties Points changed by 3
+                New Score: [9, 13]
+        Eyrie Dynasties draws: Gently Used Knapsack
+        Eyrie Dynasties draws: Sappers
+--- End of Eyrie Turn ---
+
+        Resetting for Marquise's Turn...
+        Producing wood at sawmills...
+        1 Wood can be placed automatically...
+                Wood token placed in clearing 4
+Finished placing wood.
+--- Moving on to Daylight ---
+        Crafting power: [0, 1, 2]
+Checking for Crafting / use of Birdsong Cards...
+
+Legal actions: [0, 65]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.25
+Top 5 actions: ['65: 0.77', '0: 0.23', '3023: 0.0', '3022: 0.0', '3021: 0.0']
+Masked ->
+Top 5 actions: ['65: 0.77', '0: 0.23', '3023: 0.0', '3022: 0.0', '3021: 0.0']
+Best action 65
+Sampled action 65 chosen
+        Marquise de Cat crafts: Hammer
+        Marquise de Cat Points changed by 2
+                New Score: [11, 13]
+        Anvil removed from hand of Marquise de Cat
+        Anvil added to discard pile
+> Moving onto step 2 of Daylight...
+Checking for next Daylight Step 2 action (3 actions left)...
+
+Legal actions: [0, 15, 18, 24, 28, 29, 34, 40, 41, 46, 52, 53, 58, 127, 173, 413, 979, 980, 981, 982, 1029, 1030, 1031, 1032, 1304, 1354, 1454, 1579, 1580, 1629, 1630, 1704, 1705, 1879, 1880, 1881, 2004, 2005, 2006, 2079, 2080, 2081, 2254, 2279, 2379, 2829, 2929, 3054, 3179, 3204, 3304, 3579, 3629, 4154]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.18
+Top 5 actions: ['40: 0.07', '29: 0.07', '46: 0.05', '28: 0.04', '34: 0.04']
+Masked ->
+Top 5 actions: ['40: 0.07', '29: 0.07', '46: 0.05', '28: 0.04', '34: 0.04']
+Best action 40
+Sampled action 52 chosen
+Building a Recruiter in clearing 3
+        Wood Cost: 2
+                Recruiter placed in clearing 3
+        Marquise de Cat Points changed by 2
+                New Score: [13, 13]
+        Removing 2 wood solely from clearing 4...
+Checking for next Daylight Step 2 action (2 actions left)...
+
+Legal actions: [0, 15, 18, 24, 29, 34, 127, 173, 413, 979, 980, 981, 982, 1029, 1030, 1031, 1032, 1304, 1354, 1454, 1579, 1580, 1629, 1630, 1704, 1705, 1879, 1880, 1881, 2004, 2005, 2006, 2079, 2080, 2081, 2254, 2279, 2379, 2829, 2929, 3054, 3179, 3204, 3304, 3579, 3629, 4154]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.24
+Top 5 actions: ['29: 0.09', '34: 0.05', '24: 0.04', '18: 0.04', '982: 0.03']
+Masked ->
+Top 5 actions: ['29: 0.09', '34: 0.05', '24: 0.04', '18: 0.04', '982: 0.03']
+Best action 29
+Sampled action 29 chosen
+Building a Sawmill in clearing 4
+        Wood Cost: 1
+                Sawmill placed in clearing 4
+        Marquise de Cat Points changed by 1
+                New Score: [14, 13]
+        Removing 1 wood solely from clearing 4...
+Checking for next Daylight Step 2 action (1 actions left)...
+
+Legal actions: [0, 15, 18, 24, 127, 173, 413, 979, 980, 981, 982, 1029, 1030, 1031, 1032, 1304, 1354, 1454, 1579, 1580, 1629, 1630, 1704, 1705, 1879, 1880, 1881, 2004, 2005, 2006, 2079, 2080, 2081, 2254, 2279, 2379, 2829, 2929, 3054, 3179, 3204, 3304, 3579, 3629, 4154]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.26
+Top 5 actions: ['24: 0.05', '18: 0.04', '982: 0.03', '3304: 0.03', '3204: 0.03']
+Masked ->
+Top 5 actions: ['24: 0.05', '18: 0.04', '982: 0.03', '3304: 0.03', '3204: 0.03']
+Best action 24
+Sampled action 2254 chosen
+                Moving 1 warriors of Marquise de Cat from 5 to 3
+Finding 2nd move of march...
+
+Legal actions: [0, 979, 980, 981, 982, 1029, 1030, 1031, 1032, 1304, 1354, 1454, 1579, 1580, 1581, 1629, 1630, 1631, 1704, 1705, 1706, 1879, 1880, 1881, 2004, 2005, 2006, 2079, 2080, 2081, 2829, 2929, 3054, 3179, 3204, 3304, 3579, 3629, 4154]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.31
+Top 5 actions: ['982: 0.04', '3304: 0.04', '3204: 0.03', '981: 0.03', '1031: 0.03']
+Masked ->
+Top 5 actions: ['982: 0.04', '3304: 0.04', '3204: 0.03', '981: 0.03', '1031: 0.03']
+Best action 982
+Sampled action 1631 chosen
+                Moving 3 warriors of Marquise de Cat from 3 to 2
+        End of Daylight phase (no more actions)
+--- Moving on to Evening ---
+        Marquise de Cat draws: Crossbow (Bird)
+        Marquise de Cat draws: Cobbler
+Marquise must discard from hand...
+
+Legal actions: [640, 649, 652, 660, 670]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.38
+Top 5 actions: ['670: 0.29', '649: 0.22', '652: 0.19', '640: 0.17', '660: 0.13']
+Masked ->
+Top 5 actions: ['670: 0.29', '649: 0.22', '652: 0.19', '640: 0.17', '660: 0.13']
+Best action 670
+Sampled action 640 chosen
+        Ambush! (Mouse) removed from hand of Marquise de Cat
+        Ambush! (Mouse) added to discard pile
+--- End of Marquise Turn ---
+
+        Resetting for Eyrie's Turn...
+Choosing what to add to decree...
+
+Legal actions: [4383, 4390, 4425, 4432, 4467, 4474, 4509, 4516]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.04
+Top 5 actions: ['4516: 0.19', '4425: 0.18', '4432: 0.12', '4509: 0.12', '4467: 0.12']
+Masked ->
+Top 5 actions: ['4516: 0.19', '4425: 0.18', '4432: 0.12', '4509: 0.12', '4467: 0.12']
+Best action 4516
+Sampled action 4383 chosen
+        Gently Used Knapsack removed from hand of Eyrie Dynasties
+                Card Gently Used Knapsack added to decree at Recruit
+Choosing whether to add 2nd card to decree...
+
+Legal actions: [0, 4390, 4432, 4474, 4516]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.01
+Top 5 actions: ['4516: 0.32', '4432: 0.21', '4474: 0.19', '0: 0.15', '4390: 0.13']
+Masked ->
+Top 5 actions: ['4516: 0.32', '4432: 0.21', '4474: 0.19', '0: 0.15', '4390: 0.13']
+Best action 4516
+Sampled action 4390 chosen
+        Sappers removed from hand of Eyrie Dynasties
+                Card Sappers added to decree at Recruit
+        Tallying required decree...
+--- Moving on to Daylight ---
+        Crafting power: [3, 1, 0]
+> Moving onto step 2 of Daylight...
+Choosing decree-resolving action...
+
+Legal actions: [3, 7, 11, 12]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.01
+Top 5 actions: ['7: 0.3', '12: 0.29', '11: 0.24', '3: 0.17', '0: 0.0']
+Masked ->
+Top 5 actions: ['7: 0.3', '12: 0.29', '11: 0.24', '3: 0.17', '0: 0.0']
+Best action 7
+Sampled action 12 chosen
+>> Decree: RECRUIT
+                Placing 1 Eyrie Dynasties warriors in clearing 11
+        Fulfilled Rabbit Recruit requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [3, 7, 11, 12]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.02
+Top 5 actions: ['7: 0.3', '12: 0.29', '11: 0.24', '3: 0.17', '0: 0.0']
+Masked ->
+Top 5 actions: ['7: 0.3', '12: 0.29', '11: 0.24', '3: 0.17', '0: 0.0']
+Best action 7
+Sampled action 7 chosen
+>> Decree: RECRUIT
+                Placing 1 Eyrie Dynasties warriors in clearing 6
+        Fulfilled Bird Recruit requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [3, 7, 11, 12]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.07
+Top 5 actions: ['7: 0.3', '12: 0.29', '11: 0.24', '3: 0.17', '0: 0.0']
+Masked ->
+Top 5 actions: ['7: 0.3', '12: 0.29', '11: 0.24', '3: 0.17', '0: 0.0']
+Best action 7
+Sampled action 7 chosen
+>> Decree: RECRUIT
+                Placing 1 Eyrie Dynasties warriors in clearing 6
+        Fulfilled Bird Recruit requirement on Decree
+>> TURMOILING
+        Eyrie Dynasties Points changed by -4
+                New Score: [14, 9]
+Choosing new leader after turmoil...
+
+Legal actions: [4359, 4360, 4361]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.03
+Top 5 actions: ['4361: 0.4', '4360: 0.36', '4359: 0.25', '3020: 0.0', '3019: 0.0']
+Masked ->
+Top 5 actions: ['4361: 0.4', '4360: 0.36', '4359: 0.25', '3020: 0.0', '3019: 0.0']
+Best action 4361
+Sampled action 4359 chosen
+        New Leader Chosen: Charismatic
+                Card Loyal Vizier added to decree at Recruit
+                Card Loyal Vizier added to decree at Battle
+--- Moving on to Evening ---
+        Eyrie Dynasties Points changed by 3
+                New Score: [14, 12]
+        Eyrie Dynasties draws: Scouting Party
+        Eyrie Dynasties draws: Travel Gear (Fox)
+--- End of Eyrie Turn ---
+
+        Resetting for Marquise's Turn...
+        Producing wood at sawmills...
+        2 Wood can be placed automatically...
+                Wood token placed in clearing 4
+                Wood token placed in clearing 4
+Finished placing wood.
+--- Moving on to Daylight ---
+        Crafting power: [0, 1, 2]
+Checking for Crafting / use of Birdsong Cards...
+
+Legal actions: [0, 76]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.32
+Top 5 actions: ['76: 0.68', '0: 0.32', '3023: 0.0', '3022: 0.0', '3021: 0.0']
+Masked ->
+Top 5 actions: ['76: 0.68', '0: 0.32', '3023: 0.0', '3022: 0.0', '3021: 0.0']
+Best action 76
+Sampled action 76 chosen
+        Marquise de Cat crafts: Crossbow
+        Marquise de Cat Points changed by 1
+                New Score: [15, 12]
+        Crossbow (Bird) removed from hand of Marquise de Cat
+        Crossbow (Bird) added to discard pile
+> Moving onto step 2 of Daylight...
+Checking for next Daylight Step 2 action (3 actions left)...
+
+Legal actions: [0, 15, 24, 27, 32, 34, 127, 413, 979, 980, 981, 982, 1029, 1030, 1031, 1032, 1304, 1305, 1306, 1307, 1354, 1355, 1356, 1357, 1454, 1455, 1456, 1457, 1879, 1880, 1881, 2004, 2005, 2006, 2079, 2080, 2081, 2829, 2929, 3054, 3179, 3204, 3304, 3579, 3629, 4154]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.31
+Top 5 actions: ['27: 0.06', '34: 0.06', '24: 0.04', '32: 0.04', '982: 0.03']
+Masked ->
+Top 5 actions: ['27: 0.06', '34: 0.06', '24: 0.04', '32: 0.04', '982: 0.03']
+Best action 27
+Sampled action 3204 chosen
+                Moving 1 warriors of Marquise de Cat from 8 to 5
+Finding 2nd move of march...
+
+Legal actions: [0, 979, 980, 981, 982, 1029, 1030, 1031, 1032, 1304, 1305, 1306, 1307, 1354, 1355, 1356, 1357, 1454, 1455, 1456, 1457, 1879, 1880, 1881, 2004, 2005, 2006, 2079, 2080, 2081, 2254, 2279, 2379, 2829, 2929, 3054, 3579, 3629, 4154]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.32
+Top 5 actions: ['982: 0.04', '1307: 0.04', '981: 0.04', '1355: 0.03', '1031: 0.03']
+Masked ->
+Top 5 actions: ['982: 0.04', '1307: 0.04', '981: 0.04', '1355: 0.03', '1031: 0.03']
+Best action 982
+Sampled action 1305 chosen
+                Moving 2 warriors of Marquise de Cat from 2 to 1
+Checking for next Daylight Step 2 action (2 actions left)...
+
+Legal actions: [0, 15, 18, 24, 34, 127, 413, 979, 980, 981, 982, 983, 984, 1029, 1030, 1031, 1032, 1033, 1034, 1304, 1305, 1354, 1355, 1454, 1455, 1879, 1880, 1881, 2004, 2005, 2006, 2079, 2080, 2081, 2254, 2279, 2379, 2829, 2929, 3054, 3579, 3629, 4154]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.26
+Top 5 actions: ['34: 0.06', '24: 0.05', '18: 0.04', '983: 0.03', '982: 0.03']
+Masked ->
+Top 5 actions: ['34: 0.06', '24: 0.05', '18: 0.04', '983: 0.03', '982: 0.03']
+Best action 34
+Sampled action 18 chosen
+        --- BATTLE STARTED: Marquise de Cat Attacks Eyrie Dynasties in clearing 5
+Eyrie Dynasties chose not to ambush
+--- DICE ROLL: [0, 2]
+--- Dealing hits to defender...
+- Removed 1 Eyrie Dynasties warrior from clearing 5
+--- Dealing hits to attacker...
+--- BATTLE FINISHED
+Checking for next Daylight Step 2 action (1 actions left)...
+
+Legal actions: [0, 15, 18, 24, 34, 127, 413, 979, 980, 981, 982, 983, 984, 1029, 1030, 1031, 1032, 1033, 1034, 1304, 1305, 1354, 1355, 1454, 1455, 1879, 1880, 1881, 2004, 2005, 2006, 2079, 2080, 2081, 2254, 2279, 2379, 2829, 2929, 3054, 3579, 3629, 4154]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.22
+Top 5 actions: ['34: 0.06', '24: 0.05', '18: 0.04', '983: 0.03', '982: 0.03']
+Masked ->
+Top 5 actions: ['34: 0.06', '24: 0.05', '18: 0.04', '983: 0.03', '982: 0.03']
+Best action 34
+Sampled action 34 chosen
+Building a Sawmill in clearing 9
+        Wood Cost: 2
+                Sawmill placed in clearing 9
+        Marquise de Cat Points changed by 2
+                New Score: [17, 12]
+        Removing 2 wood solely from clearing 4...
+        End of Daylight phase (no more actions)
+--- Moving on to Evening ---
+        Marquise de Cat draws: Codebreakers
+        Marquise de Cat draws: Ambush! (Fox)
+Marquise must discard from hand...
+
+Legal actions: [639, 649, 650, 660, 670]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.21
+Top 5 actions: ['650: 0.27', '670: 0.26', '649: 0.19', '639: 0.17', '660: 0.11']
+Masked ->
+Top 5 actions: ['650: 0.27', '670: 0.26', '649: 0.19', '639: 0.17', '660: 0.11']
+Best action 650
+Sampled action 639 chosen
+        Ambush! (Fox) removed from hand of Marquise de Cat
+        Ambush! (Fox) added to discard pile
+--- End of Marquise Turn ---
+
+        Resetting for Eyrie's Turn...
+Choosing what to add to decree...
+
+Legal actions: [4391, 4396, 4433, 4438, 4475, 4480, 4517, 4522]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.03
+Top 5 actions: ['4517: 0.21', '4433: 0.2', '4475: 0.18', '4438: 0.1', '4522: 0.09']
+Masked ->
+Top 5 actions: ['4517: 0.21', '4433: 0.2', '4475: 0.18', '4438: 0.1', '4522: 0.09']
+Best action 4517
+Sampled action 4433 chosen
+        Scouting Party removed from hand of Eyrie Dynasties
+                Card Scouting Party added to decree at Move
+Choosing whether to add 2nd card to decree...
+
+Legal actions: [0, 4396, 4438, 4480, 4522]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.05
+Top 5 actions: ['4438: 0.23', '4522: 0.21', '0: 0.2', '4396: 0.18', '4480: 0.17']
+Masked ->
+Top 5 actions: ['4438: 0.23', '4522: 0.21', '0: 0.2', '4396: 0.18', '4480: 0.17']
+Best action 4438
+Sampled action 4522 chosen
+        Travel Gear (Fox) removed from hand of Eyrie Dynasties
+                Card Travel Gear (Fox) added to decree at Build
+        Tallying required decree...
+--- Moving on to Daylight ---
+        Crafting power: [3, 1, 0]
+> Moving onto step 2 of Daylight...
+Choosing decree-resolving action...
+
+Legal actions: [3, 7, 11, 12]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.00
+Top 5 actions: ['7: 0.3', '12: 0.29', '11: 0.24', '3: 0.17', '0: 0.0']
+Masked ->
+Top 5 actions: ['7: 0.3', '12: 0.29', '11: 0.24', '3: 0.17', '0: 0.0']
+Best action 7
+Sampled action 11 chosen
+>> Decree: RECRUIT
+                Placing 2 Eyrie Dynasties warriors in clearing 10
+        Fulfilled Bird Recruit requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [1304, 1305, 1354, 1355, 1454, 1455, 2604, 2605, 2606, 2654, 2655, 2656, 2754, 2755, 2756, 3804, 3805, 3806, 3904, 3905, 3906, 3954, 3955, 3956]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.04
+Top 5 actions: ['2606: 0.07', '3806: 0.06', '1355: 0.05', '2756: 0.05', '2754: 0.05']
+Masked ->
+Top 5 actions: ['2606: 0.07', '3806: 0.06', '1355: 0.05', '2756: 0.05', '2754: 0.05']
+Best action 2606
+Sampled action 3956 chosen
+>> Decree: MOVE
+                Moving 3 warriors of Eyrie Dynasties from 10 to 11
+        Fulfilled Mouse Move requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [15, 18, 24]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.07
+Top 5 actions: ['18: 0.54', '24: 0.26', '15: 0.2', '3023: 0.0', '3022: 0.0']
+Masked ->
+Top 5 actions: ['18: 0.54', '24: 0.26', '15: 0.2', '3023: 0.0', '3022: 0.0']
+Best action 18
+Sampled action 18 chosen
+>> Decree: BATTLE
+        Fulfilled Bird Battle requirement on Decree
+        --- BATTLE STARTED: Eyrie Dynasties Attacks Marquise de Cat in clearing 5
+Marquise de Cat chose not to ambush
+--- DICE ROLL: [3, 3]
+--- Dealing hits to defender...
+- Removed 1 Marquise de Cat warrior from clearing 5
+-- Workshop destroyed in clearing 5
+        Eyrie Dynasties Points changed by 1
+                New Score: [17, 13]
+--- Dealing hits to attacker...
+- Removed 1 Eyrie Dynasties warrior from clearing 5
+--- BATTLE FINISHED
+
+Legal actions: [0, 670]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.25
+Top 5 actions: ['670: 0.72', '0: 0.28', '3011: 0.0', '3012: 0.0', '3013: 0.0']
+Masked ->
+Top 5 actions: ['670: 0.72', '0: 0.28', '3011: 0.0', '3012: 0.0', '3013: 0.0']
+Best action 670
+Sampled action 670 chosen
+        Field Hospitals activated, Marquise recovered 1 warrior(s)
+                Placing 1 Marquise de Cat warriors in clearing 0
+        Tax Collector removed from hand of Marquise de Cat
+        Tax Collector added to discard pile
+Choosing decree-resolving action...
+
+Legal actions: [30]
+
+Current player name: best_model
+
+best_model model choices
+Value -0.00
+Top 5 actions: ['30: 1.0', '0: 0.0', '3022: 0.0', '3021: 0.0', '3020: 0.0']
+Masked ->
+Top 5 actions: ['30: 1.0', '0: 0.0', '3022: 0.0', '3021: 0.0', '3020: 0.0']
+Best action 30
+Sampled action 30 chosen
+>> Decree: BUILD
+                Roost placed in clearing 5
+        Fulfilled Fox Build requirement on Decree
+>>> DECREE COMPLETED
+--- Moving on to Evening ---
+        Eyrie Dynasties Points changed by 4
+                New Score: [17, 17]
+        Eyrie Dynasties draws: Armorers
+        Eyrie Dynasties draws: Arms Trader
+--- End of Eyrie Turn ---
+
+        Resetting for Marquise's Turn...
+        Producing wood at sawmills...
+        3 Wood can be placed automatically...
+                Wood token placed in clearing 9
+                Wood token placed in clearing 4
+                Wood token placed in clearing 4
+Finished placing wood.
+--- Moving on to Daylight ---
+        Crafting power: [0, 1, 1]
+> Moving onto step 2 of Daylight...
+Checking for next Daylight Step 2 action (3 actions left)...
+
+Legal actions: [0, 15, 24, 34, 46, 58, 127, 293, 413, 538, 704, 754, 779, 979, 980, 981, 982, 983, 984, 1029, 1030, 1031, 1032, 1033, 1034, 1304, 1305, 1354, 1355, 1454, 1455, 1879, 1880, 1881, 2004, 2005, 2006, 2079, 2080, 2081, 2829, 2929, 3054, 3579, 3629, 4154]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.39
+Top 5 actions: ['46: 0.07', '34: 0.05', '24: 0.04', '983: 0.03', '982: 0.03']
+Masked ->
+Top 5 actions: ['46: 0.07', '34: 0.05', '24: 0.04', '983: 0.03', '982: 0.03']
+Best action 46
+Sampled action 2829 chosen
+                Moving 1 warriors of Marquise de Cat from 7 to 2
+Finding 2nd move of march...
+
+Legal actions: [0, 704, 754, 779, 979, 980, 981, 982, 983, 984, 1029, 1030, 1031, 1032, 1033, 1034, 1304, 1305, 1306, 1354, 1355, 1356, 1879, 1880, 1881, 2004, 2005, 2006, 2079, 2080, 2081, 3579, 3629]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.40
+Top 5 actions: ['983: 0.05', '982: 0.05', '981: 0.04', '1355: 0.04', '1031: 0.04']
+Masked ->
+Top 5 actions: ['983: 0.05', '982: 0.05', '981: 0.04', '1355: 0.04', '1031: 0.04']
+Best action 983
+Sampled action 3629 chosen
+                Moving 1 warriors of Marquise de Cat from 9 to 10
+Checking for next Daylight Step 2 action (2 actions left)...
+
+Legal actions: [0, 15, 23, 24, 34, 46, 58, 127, 293, 413, 538, 704, 754, 779, 979, 980, 981, 982, 983, 984, 1029, 1030, 1031, 1032, 1033, 1034, 1304, 1305, 1306, 1354, 1355, 1356, 1879, 1880, 1881, 2004, 2005, 2006, 2079, 2080, 2081, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.40
+Top 5 actions: ['46: 0.07', '34: 0.06', '24: 0.04', '23: 0.03', '983: 0.03']
+Masked ->
+Top 5 actions: ['46: 0.07', '34: 0.06', '24: 0.04', '23: 0.03', '983: 0.03']
+Best action 46
+Sampled action 984 chosen
+                Moving 6 warriors of Marquise de Cat from 1 to 0
+Finding 2nd move of march...
+
+Legal actions: [0, 704, 705, 706, 707, 708, 709, 710, 754, 755, 756, 757, 758, 759, 760, 779, 780, 781, 782, 783, 784, 785, 1304, 1305, 1306, 1354, 1355, 1356, 1879, 1880, 1881, 2004, 2005, 2006, 2079, 2080, 2081, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.42
+Top 5 actions: ['760: 0.05', '708: 0.04', '783: 0.04', '759: 0.03', '781: 0.03']
+Masked ->
+Top 5 actions: ['760: 0.05', '708: 0.04', '783: 0.04', '759: 0.03', '781: 0.03']
+Best action 760
+Sampled action 759 chosen
+                Moving 6 warriors of Marquise de Cat from 0 to 3
+Checking for next Daylight Step 2 action (1 actions left)...
+
+Legal actions: [0, 15, 23, 24, 34, 46, 58, 127, 293, 413, 538, 704, 754, 779, 1304, 1305, 1306, 1354, 1355, 1356, 1579, 1580, 1581, 1582, 1583, 1584, 1629, 1630, 1631, 1632, 1633, 1634, 1704, 1705, 1706, 1707, 1708, 1709, 1879, 1880, 1881, 2004, 2005, 2006, 2079, 2080, 2081, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.43
+Top 5 actions: ['46: 0.06', '34: 0.05', '24: 0.04', '1634: 0.03', '23: 0.03']
+Masked ->
+Top 5 actions: ['46: 0.06', '34: 0.05', '24: 0.04', '1634: 0.03', '23: 0.03']
+Best action 46
+Sampled action 1354 chosen
+                Moving 1 warriors of Marquise de Cat from 2 to 3
+Finding 2nd move of march...
+
+Legal actions: [0, 704, 754, 779, 1304, 1305, 1354, 1355, 1579, 1580, 1581, 1582, 1583, 1584, 1585, 1629, 1630, 1631, 1632, 1633, 1634, 1635, 1704, 1705, 1706, 1707, 1708, 1709, 1710, 1879, 1880, 1881, 2004, 2005, 2006, 2079, 2080, 2081, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.42
+Top 5 actions: ['1634: 0.04', '1708: 0.04', '1583: 0.03', '1355: 0.03', '1582: 0.03']
+Masked ->
+Top 5 actions: ['1634: 0.04', '1708: 0.04', '1583: 0.03', '1355: 0.03', '1582: 0.03']
+Best action 1634
+Sampled action 1304 chosen
+                Moving 1 warriors of Marquise de Cat from 2 to 1
+        End of Daylight phase (no more actions)
+--- Moving on to Evening ---
+        Marquise de Cat draws: Favor of the Foxes
+        Marquise de Cat draws: Codebreakers
+Marquise must discard from hand...
+
+Legal actions: [649, 650, 654, 660, 670]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.42
+Top 5 actions: ['650: 0.25', '670: 0.24', '654: 0.23', '649: 0.18', '660: 0.11']
+Masked ->
+Top 5 actions: ['650: 0.25', '670: 0.24', '654: 0.23', '649: 0.18', '660: 0.11']
+Best action 650
+Sampled action 670 chosen
+        Tax Collector removed from hand of Marquise de Cat
+        Tax Collector added to discard pile
+--- End of Marquise Turn ---
+
+        Resetting for Eyrie's Turn...
+Choosing what to add to decree...
+
+Legal actions: [4367, 4368, 4409, 4410, 4451, 4452, 4493, 4494]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.25
+Top 5 actions: ['4493: 0.21', '4494: 0.16', '4409: 0.12', '4451: 0.12', '4410: 0.11']
+Masked ->
+Top 5 actions: ['4493: 0.21', '4494: 0.16', '4409: 0.12', '4451: 0.12', '4410: 0.11']
+Best action 4493
+Sampled action 4494 chosen
+        Arms Trader removed from hand of Eyrie Dynasties
+                Card Arms Trader added to decree at Build
+        Cannot add more to decree
+        Tallying required decree...
+--- Moving on to Daylight ---
+        Crafting power: [3, 1, 1]
+Checking for Crafting / use of Birdsong Cards...
+
+Legal actions: [0, 66]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.24
+Top 5 actions: ['0: 0.56', '66: 0.44', '3023: 0.0', '3022: 0.0', '3021: 0.0']
+Masked ->
+Top 5 actions: ['0: 0.56', '66: 0.44', '3023: 0.0', '3022: 0.0', '3021: 0.0']
+Best action 0
+Sampled action 0 chosen
+- Chose to Skip
+Choosing decree-resolving action...
+
+Legal actions: [3, 6, 7, 11, 12]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.26
+Top 5 actions: ['7: 0.24', '12: 0.23', '6: 0.2', '11: 0.2', '3: 0.14']
+Masked ->
+Top 5 actions: ['7: 0.24', '12: 0.23', '6: 0.2', '11: 0.2', '3: 0.14']
+Best action 7
+Sampled action 7 chosen
+>> Decree: RECRUIT
+                Placing 2 Eyrie Dynasties warriors in clearing 6
+        Fulfilled Bird Recruit requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [1304, 1305, 1354, 1355, 1454, 1455, 2604, 2605, 2606, 2607, 2608, 2654, 2655, 2656, 2657, 2658, 2754, 2755, 2756, 2757, 2758]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.20
+Top 5 actions: ['2606: 0.07', '2608: 0.07', '1355: 0.06', '2658: 0.06', '2756: 0.05']
+Masked ->
+Top 5 actions: ['2606: 0.07', '2608: 0.07', '1355: 0.06', '2658: 0.06', '2756: 0.05']
+Best action 2606
+Sampled action 2604 chosen
+>> Decree: MOVE
+                Moving 1 warriors of Eyrie Dynasties from 6 to 5
+        Fulfilled Mouse Move requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [15, 24]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.22
+Top 5 actions: ['24: 0.57', '15: 0.43', '0: 0.0', '3023: 0.0', '3022: 0.0']
+Masked ->
+Top 5 actions: ['24: 0.57', '15: 0.43', '0: 0.0', '3023: 0.0', '3022: 0.0']
+Best action 24
+Sampled action 24 chosen
+>> Decree: BATTLE
+        Fulfilled Bird Battle requirement on Decree
+        --- BATTLE STARTED: Eyrie Dynasties Attacks Marquise de Cat in clearing 11
+Marquise de Cat chose not to ambush
+--- DICE ROLL: [2, 0]
+--- Dealing hits to defender...
+- Removed 1 Marquise de Cat warrior from clearing 11
+--- Dealing hits to attacker...
+--- BATTLE FINISHED
+
+Legal actions: [0, 649]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.31
+Top 5 actions: ['649: 0.65', '0: 0.35', '3023: 0.0', '3022: 0.0', '3021: 0.0']
+Masked ->
+Top 5 actions: ['649: 0.65', '0: 0.35', '3023: 0.0', '3022: 0.0', '3021: 0.0']
+Best action 649
+Sampled action 649 chosen
+        Field Hospitals activated, Marquise recovered 1 warrior(s)
+                Placing 1 Marquise de Cat warriors in clearing 0
+        Cobbler removed from hand of Marquise de Cat
+        Cobbler added to discard pile
+>> TURMOILING
+        Eyrie Dynasties Points changed by -3
+                New Score: [17, 14]
+Choosing new leader after turmoil...
+
+Legal actions: [4360, 4361]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.24
+Top 5 actions: ['4361: 0.53', '4360: 0.47', '3021: 0.0', '3020: 0.0', '3019: 0.0']
+Masked ->
+Top 5 actions: ['4361: 0.53', '4360: 0.47', '3021: 0.0', '3020: 0.0', '3019: 0.0']
+Best action 4361
+Sampled action 4360 chosen
+        New Leader Chosen: Commander
+                Card Loyal Vizier added to decree at Move
+                Card Loyal Vizier added to decree at Battle
+--- Moving on to Evening ---
+        Eyrie Dynasties Points changed by 4
+                New Score: [17, 18]
+        Eyrie Dynasties draws: Ambush! (Bird)
+        Eyrie Dynasties draws: Command Warren
+--- End of Eyrie Turn ---
+
+        Resetting for Marquise's Turn...
+        Producing wood at sawmills...
+        3 Wood can be placed automatically...
+                Wood token placed in clearing 9
+                Wood token placed in clearing 4
+                Wood token placed in clearing 4
+Finished placing wood.
+--- Moving on to Daylight ---
+        Crafting power: [0, 1, 1]
+> Moving onto step 2 of Daylight...
+Checking for next Daylight Step 2 action (3 actions left)...
+
+Legal actions: [0, 15, 23, 34, 46, 58, 127, 293, 346, 413, 704, 705, 754, 755, 779, 780, 979, 1029, 1304, 1354, 1579, 1580, 1581, 1582, 1583, 1584, 1585, 1629, 1630, 1631, 1632, 1633, 1634, 1635, 1704, 1705, 1706, 1707, 1708, 1709, 1710, 1879, 1880, 1881, 2004, 2005, 2006, 2079, 2080, 2081, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.36
+Top 5 actions: ['46: 0.06', '34: 0.05', '23: 0.03', '1634: 0.03', '1708: 0.03']
+Masked ->
+Top 5 actions: ['46: 0.06', '34: 0.05', '23: 0.03', '1634: 0.03', '1708: 0.03']
+Best action 46
+Sampled action 1633 chosen
+                Moving 5 warriors of Marquise de Cat from 3 to 2
+Finding 2nd move of march...
+
+Legal actions: [0, 704, 705, 754, 755, 779, 780, 979, 1029, 1304, 1305, 1306, 1307, 1308, 1309, 1354, 1355, 1356, 1357, 1358, 1359, 1454, 1455, 1456, 1457, 1458, 1459, 1579, 1580, 1629, 1630, 1704, 1705, 1879, 1880, 1881, 2004, 2005, 2006, 2079, 2080, 2081, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.36
+Top 5 actions: ['1358: 0.04', '1307: 0.03', '1355: 0.03', '1458: 0.03', '1456: 0.03']
+Masked ->
+Top 5 actions: ['1358: 0.04', '1307: 0.03', '1355: 0.03', '1458: 0.03', '1456: 0.03']
+Best action 1358
+Sampled action 1579 chosen
+                Moving 1 warriors of Marquise de Cat from 3 to 0
+Checking for next Daylight Step 2 action (2 actions left)...
+
+Legal actions: [0, 15, 23, 27, 34, 39, 46, 51, 58, 127, 293, 346, 413, 704, 705, 706, 754, 755, 756, 779, 780, 781, 979, 1029, 1304, 1305, 1306, 1307, 1308, 1309, 1354, 1355, 1356, 1357, 1358, 1359, 1454, 1455, 1456, 1457, 1458, 1459, 1579, 1629, 1704, 1879, 1880, 1881, 2004, 2005, 2006, 2079, 2080, 2081, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.36
+Top 5 actions: ['39: 0.06', '46: 0.05', '27: 0.04', '34: 0.04', '23: 0.02']
+Masked ->
+Top 5 actions: ['39: 0.06', '46: 0.05', '27: 0.04', '34: 0.04', '23: 0.02']
+Best action 39
+Sampled action 1704 chosen
+                Moving 1 warriors of Marquise de Cat from 3 to 5
+Finding 2nd move of march...
+
+Legal actions: [0, 704, 705, 706, 754, 755, 756, 779, 780, 781, 979, 1029, 1304, 1305, 1306, 1307, 1308, 1309, 1354, 1355, 1356, 1357, 1358, 1359, 1454, 1455, 1456, 1457, 1458, 1459, 1879, 1880, 1881, 2004, 2005, 2006, 2079, 2080, 2081, 2254, 2279, 2379, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.36
+Top 5 actions: ['1358: 0.04', '1307: 0.03', '781: 0.03', '1355: 0.03', '756: 0.03']
+Masked ->
+Top 5 actions: ['1358: 0.04', '1307: 0.03', '781: 0.03', '1355: 0.03', '756: 0.03']
+Best action 1358
+Sampled action 1879 chosen
+                Moving 1 warriors of Marquise de Cat from 4 to 0
+Checking for next Daylight Step 2 action (1 actions left)...
+
+Legal actions: [0, 15, 18, 23, 27, 34, 39, 46, 51, 58, 127, 293, 346, 413, 704, 705, 706, 707, 754, 755, 756, 757, 779, 780, 781, 782, 979, 1029, 1304, 1305, 1306, 1307, 1308, 1309, 1354, 1355, 1356, 1357, 1358, 1359, 1454, 1455, 1456, 1457, 1458, 1459, 1879, 1880, 2004, 2005, 2079, 2080, 2254, 2279, 2379, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.36
+Top 5 actions: ['39: 0.06', '46: 0.05', '27: 0.04', '34: 0.04', '18: 0.03']
+Masked ->
+Top 5 actions: ['39: 0.06', '46: 0.05', '27: 0.04', '34: 0.04', '18: 0.03']
+Best action 39
+Sampled action 51 chosen
+Building a Recruiter in clearing 2
+        Wood Cost: 3
+                Recruiter placed in clearing 2
+        Marquise de Cat Points changed by 3
+                New Score: [20, 18]
+                Wood cannot be automatically taken
+                Need to spend 3 from: [0, 0, 0, 0, 4, 0, 0, 0, 0, 2, 0, 0]
+Choosing where to take wood from...
+
+Legal actions: [5, 10]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.31
+Top 5 actions: ['10: 0.54', '5: 0.46', '0: 0.0', '3023: 0.0', '3022: 0.0']
+Masked ->
+Top 5 actions: ['10: 0.54', '5: 0.46', '0: 0.0', '3023: 0.0', '3022: 0.0']
+Best action 10
+Sampled action 10 chosen
+        Chose wood from clearing 9
+                Remaining wood cost: 2
+                New available_wood_spots: [0, 0, 0, 0, 4, 0, 0, 0, 0, 1, 0, 0]
+                can_spend: [False, False, False, False, True, False, False, False, False, True, False, False]
+Choosing where to take wood from...
+
+Legal actions: [5, 10]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.30
+Top 5 actions: ['10: 0.54', '5: 0.46', '0: 0.0', '3023: 0.0', '3022: 0.0']
+Masked ->
+Top 5 actions: ['10: 0.54', '5: 0.46', '0: 0.0', '3023: 0.0', '3022: 0.0']
+Best action 10
+Sampled action 10 chosen
+        Chose wood from clearing 9
+                Remaining wood cost: 1
+                New available_wood_spots: [0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0]
+                can_spend: [False, False, False, False, True, False, False, False, False, False, False, False]
+        We can take the rest from clearing 4
+        End of Daylight phase (no more actions)
+--- Moving on to Evening ---
+        Marquise de Cat draws: Stand and Deliver!
+        Marquise de Cat draws: Investments
+Marquise must discard from hand...
+
+Legal actions: [650, 654, 659, 660, 668]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.34
+Top 5 actions: ['650: 0.26', '654: 0.25', '668: 0.2', '659: 0.17', '660: 0.11']
+Masked ->
+Top 5 actions: ['650: 0.26', '654: 0.25', '668: 0.2', '659: 0.17', '660: 0.11']
+Best action 650
+Sampled action 654 chosen
+        Favor of the Foxes removed from hand of Marquise de Cat
+        Favor of the Foxes added to discard pile
+--- End of Marquise Turn ---
+
+        Resetting for Eyrie's Turn...
+Choosing what to add to decree...
+
+Legal actions: [4362, 4367, 4376, 4404, 4409, 4418, 4446, 4451, 4460, 4488, 4493, 4502]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.32
+Top 5 actions: ['4493: 0.14', '4488: 0.13', '4404: 0.1', '4418: 0.09', '4362: 0.08']
+Masked ->
+Top 5 actions: ['4493: 0.14', '4488: 0.13', '4404: 0.1', '4418: 0.09', '4362: 0.08']
+Best action 4493
+Sampled action 4362 chosen
+        Ambush! (Bird) removed from hand of Eyrie Dynasties
+                Card Ambush! (Bird) added to decree at Recruit
+Choosing whether to add 2nd card to decree...
+
+Legal actions: [0, 4376, 4418, 4460, 4502]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.29
+Top 5 actions: ['4418: 0.3', '4502: 0.25', '0: 0.17', '4460: 0.15', '4376: 0.13']
+Masked ->
+Top 5 actions: ['4418: 0.3', '4502: 0.25', '0: 0.17', '4460: 0.15', '4376: 0.13']
+Best action 4418
+Sampled action 4460 chosen
+        Command Warren removed from hand of Eyrie Dynasties
+                Card Command Warren added to decree at Battle
+        Tallying required decree...
+--- Moving on to Daylight ---
+        Crafting power: [3, 1, 1]
+Checking for Crafting / use of Birdsong Cards...
+
+Legal actions: [0, 66]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.18
+Top 5 actions: ['0: 0.56', '66: 0.44', '3023: 0.0', '3022: 0.0', '3021: 0.0']
+Masked ->
+Top 5 actions: ['0: 0.56', '66: 0.44', '3023: 0.0', '3022: 0.0', '3021: 0.0']
+Best action 0
+Sampled action 66 chosen
+        Eyrie Dynasties crafts: Armorers
+> Moving onto step 2 of Daylight...
+>> TURMOILING
+        Eyrie Dynasties Points changed by -3
+                New Score: [20, 15]
+Choosing new leader after turmoil...
+
+Legal actions: [4361]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.21
+Top 5 actions: ['4361: 1.0', '3022: 0.0', '3021: 0.0', '3020: 0.0', '3019: 0.0']
+Masked ->
+Top 5 actions: ['4361: 1.0', '3022: 0.0', '3021: 0.0', '3020: 0.0', '3019: 0.0']
+Best action 4361
+Sampled action 4361 chosen
+        New Leader Chosen: Despot
+                Card Loyal Vizier added to decree at Move
+                Card Loyal Vizier added to decree at Build
+--- Moving on to Evening ---
+        Eyrie Dynasties Points changed by 4
+                New Score: [20, 19]
+        Eyrie Dynasties draws: Favor of the Mice
+        Eyrie Dynasties draws: Tax Collector
+--- End of Eyrie Turn ---
+
+        Resetting for Marquise's Turn...
+        Producing wood at sawmills...
+        3 Wood can be placed automatically...
+                Wood token placed in clearing 9
+                Wood token placed in clearing 4
+                Wood token placed in clearing 4
+Finished placing wood.
+--- Moving on to Daylight ---
+        Crafting power: [0, 1, 1]
+> Moving onto step 2 of Daylight...
+Checking for next Daylight Step 2 action (3 actions left)...
+
+Legal actions: [0, 15, 18, 23, 34, 46, 58, 127, 293, 401, 413, 514, 704, 705, 706, 707, 754, 755, 756, 757, 779, 780, 781, 782, 979, 1029, 1304, 1305, 1306, 1307, 1308, 1309, 1354, 1355, 1356, 1357, 1358, 1359, 1454, 1455, 1456, 1457, 1458, 1459, 1879, 1880, 2004, 2005, 2079, 2080, 2254, 2279, 2379, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.21
+Top 5 actions: ['46: 0.06', '34: 0.05', '18: 0.03', '23: 0.03', '1358: 0.02']
+Masked ->
+Top 5 actions: ['46: 0.06', '34: 0.05', '18: 0.03', '23: 0.03', '1358: 0.02']
+Best action 46
+Sampled action 1358 chosen
+                Moving 5 warriors of Marquise de Cat from 2 to 3
+Finding 2nd move of march...
+
+Legal actions: [0, 704, 705, 706, 707, 754, 755, 756, 757, 779, 780, 781, 782, 979, 1029, 1304, 1354, 1579, 1580, 1581, 1582, 1583, 1629, 1630, 1631, 1632, 1633, 1704, 1705, 1706, 1707, 1708, 1879, 1880, 2004, 2005, 2079, 2080, 2254, 2279, 2379, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.21
+Top 5 actions: ['1708: 0.04', '1583: 0.03', '781: 0.03', '782: 0.03', '756: 0.03']
+Masked ->
+Top 5 actions: ['1708: 0.04', '1583: 0.03', '781: 0.03', '782: 0.03', '756: 0.03']
+Best action 1708
+Sampled action 1354 chosen
+                Moving 1 warriors of Marquise de Cat from 2 to 3
+Checking for next Daylight Step 2 action (2 actions left)...
+
+Legal actions: [0, 18, 23, 34, 46, 58, 127, 293, 401, 413, 514, 704, 705, 706, 707, 754, 755, 756, 757, 779, 780, 781, 782, 979, 1029, 1579, 1580, 1581, 1582, 1583, 1584, 1629, 1630, 1631, 1632, 1633, 1634, 1704, 1705, 1706, 1707, 1708, 1709, 1879, 1880, 2004, 2005, 2079, 2080, 2254, 2279, 2379, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.26
+Top 5 actions: ['46: 0.06', '34: 0.05', '18: 0.03', '23: 0.03', '1634: 0.03']
+Masked ->
+Top 5 actions: ['46: 0.06', '34: 0.05', '18: 0.03', '23: 0.03', '1634: 0.03']
+Best action 46
+Sampled action 1632 chosen
+                Moving 4 warriors of Marquise de Cat from 3 to 2
+Finding 2nd move of march...
+
+Legal actions: [0, 704, 705, 706, 707, 754, 755, 756, 757, 779, 780, 781, 782, 979, 1029, 1304, 1305, 1306, 1307, 1354, 1355, 1356, 1357, 1454, 1455, 1456, 1457, 1579, 1580, 1629, 1630, 1704, 1705, 1879, 1880, 2004, 2005, 2079, 2080, 2254, 2279, 2379, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.21
+Top 5 actions: ['1307: 0.03', '781: 0.03', '1355: 0.03', '782: 0.03', '756: 0.03']
+Masked ->
+Top 5 actions: ['1307: 0.03', '781: 0.03', '1355: 0.03', '782: 0.03', '756: 0.03']
+Best action 1307
+Sampled action 1456 chosen
+                Moving 3 warriors of Marquise de Cat from 2 to 7
+Checking for next Daylight Step 2 action (1 actions left)...
+
+Legal actions: [0, 15, 18, 23, 34, 46, 58, 127, 293, 401, 413, 514, 704, 705, 706, 707, 754, 755, 756, 757, 779, 780, 781, 782, 979, 1029, 1304, 1354, 1454, 1579, 1580, 1629, 1630, 1704, 1705, 1879, 1880, 2004, 2005, 2079, 2080, 2254, 2279, 2379, 2829, 2830, 2831, 2929, 2930, 2931, 3054, 3055, 3056, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.20
+Top 5 actions: ['46: 0.06', '34: 0.05', '18: 0.03', '23: 0.03', '58: 0.02']
+Masked ->
+Top 5 actions: ['46: 0.06', '34: 0.05', '18: 0.03', '23: 0.03', '58: 0.02']
+Best action 46
+Sampled action 1304 chosen
+                Moving 1 warriors of Marquise de Cat from 2 to 1
+Finding 2nd move of march...
+
+Legal actions: [0, 704, 705, 706, 707, 754, 755, 756, 757, 779, 780, 781, 782, 979, 980, 1029, 1030, 1579, 1580, 1629, 1630, 1704, 1705, 1879, 1880, 2004, 2005, 2079, 2080, 2254, 2279, 2379, 2829, 2830, 2831, 2929, 2930, 2931, 3054, 3055, 3056, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.23
+Top 5 actions: ['2831: 0.03', '781: 0.03', '782: 0.03', '756: 0.03', '2931: 0.03']
+Masked ->
+Top 5 actions: ['2831: 0.03', '781: 0.03', '782: 0.03', '756: 0.03', '2931: 0.03']
+Best action 2831
+Sampled action 1029 chosen
+                Moving 1 warriors of Marquise de Cat from 1 to 2
+        End of Daylight phase (no more actions)
+--- Moving on to Evening ---
+        Marquise de Cat draws: Crossbow (Mouse)
+        Marquise de Cat draws: Cobbler
+Marquise must discard from hand...
+
+Legal actions: [649, 650, 653, 659, 660, 668]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.28
+Top 5 actions: ['650: 0.24', '668: 0.19', '649: 0.18', '659: 0.15', '653: 0.13']
+Masked ->
+Top 5 actions: ['650: 0.24', '668: 0.19', '649: 0.18', '659: 0.15', '653: 0.13']
+Best action 650
+Sampled action 668 chosen
+        Stand and Deliver! removed from hand of Marquise de Cat
+        Stand and Deliver! added to discard pile
+Marquise must discard from hand...
+
+Legal actions: [649, 650, 653, 659, 660]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.31
+Top 5 actions: ['650: 0.3', '649: 0.22', '659: 0.19', '653: 0.16', '660: 0.13']
+Masked ->
+Top 5 actions: ['650: 0.3', '649: 0.22', '659: 0.19', '653: 0.16', '660: 0.13']
+Best action 650
+Sampled action 653 chosen
+        Crossbow (Mouse) removed from hand of Marquise de Cat
+        Crossbow (Mouse) added to discard pile
+--- End of Marquise Turn ---
+
+        Resetting for Eyrie's Turn...
+Choosing what to add to decree...
+
+Legal actions: [4380, 4395, 4422, 4437, 4464, 4479, 4506, 4521]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.20
+Top 5 actions: ['4437: 0.2', '4521: 0.18', '4464: 0.16', '4395: 0.12', '4506: 0.12']
+Masked ->
+Top 5 actions: ['4437: 0.2', '4521: 0.18', '4464: 0.16', '4395: 0.12', '4506: 0.12']
+Best action 4437
+Sampled action 4521 chosen
+        Tax Collector removed from hand of Eyrie Dynasties
+                Card Tax Collector added to decree at Build
+Choosing whether to add 2nd card to decree...
+
+Legal actions: [0, 4380, 4422, 4464, 4506]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.18
+Top 5 actions: ['4464: 0.32', '4506: 0.24', '4422: 0.16', '0: 0.15', '4380: 0.13']
+Masked ->
+Top 5 actions: ['4464: 0.32', '4506: 0.24', '4422: 0.16', '0: 0.15', '4380: 0.13']
+Best action 4464
+Sampled action 4506 chosen
+        Favor of the Mice removed from hand of Eyrie Dynasties
+                Card Favor of the Mice added to decree at Build
+        Tallying required decree...
+--- Moving on to Daylight ---
+        Crafting power: [3, 1, 1]
+> Moving onto step 2 of Daylight...
+Choosing decree-resolving action...
+
+Legal actions: [1304, 1305, 1354, 1355, 1454, 1455, 2254, 2255, 2256, 2257, 2258, 2259, 2260, 2261, 2262, 2279, 2280, 2281, 2282, 2283, 2284, 2285, 2286, 2287, 2329, 2330, 2331, 2332, 2333, 2334, 2335, 2336, 2337, 2379, 2380, 2381, 2382, 2383, 2384, 2385, 2386, 2387, 2429, 2430, 2431, 2432, 2433, 2434, 2435, 2436, 2437, 2604, 2605, 2606, 2607, 2654, 2655, 2656, 2657, 2754, 2755, 2756, 2757, 4129, 4130, 4131, 4132, 4133, 4154, 4155, 4156, 4157, 4158, 4229, 4230, 4231, 4232, 4233]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.18
+Top 5 actions: ['4233: 0.03', '2332: 0.02', '2386: 0.02', '2606: 0.02', '2287: 0.02']
+Masked ->
+Top 5 actions: ['4233: 0.03', '2332: 0.02', '2386: 0.02', '2606: 0.02', '2287: 0.02']
+Best action 4233
+Sampled action 2283 chosen
+>> Decree: MOVE
+                Moving 5 warriors of Eyrie Dynasties from 5 to 4
+        Fulfilled Bird Move requirement on Decree
+>> TURMOILING
+        Eyrie Dynasties Points changed by -2
+                New Score: [20, 17]
+Choosing new leader after turmoil...
+
+Legal actions: [4358, 4359, 4360, 4361]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.15
+Top 5 actions: ['4361: 0.3', '4360: 0.27', '4358: 0.22', '4359: 0.2', '3018: 0.0']
+Masked ->
+Top 5 actions: ['4361: 0.3', '4360: 0.27', '4358: 0.22', '4359: 0.2', '3018: 0.0']
+Best action 4361
+Sampled action 4359 chosen
+        New Leader Chosen: Charismatic
+                Card Loyal Vizier added to decree at Recruit
+                Card Loyal Vizier added to decree at Battle
+--- Moving on to Evening ---
+        Eyrie Dynasties Points changed by 4
+                New Score: [20, 21]
+        Eyrie Dynasties draws: Favor of the Rabbits
+        Eyrie Dynasties draws: Better Burrow Bank
+--- End of Eyrie Turn ---
+
+        Resetting for Marquise's Turn...
+        Producing wood at sawmills...
+        Wood cannot be placed automatically...
+> Choice exists in placing wood
+
+Legal actions: [5, 10]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.27
+Top 5 actions: ['10: 0.54', '5: 0.46', '0: 0.0', '3023: 0.0', '3022: 0.0']
+Masked ->
+Top 5 actions: ['10: 0.54', '5: 0.46', '0: 0.0', '3023: 0.0', '3022: 0.0']
+Best action 10
+Sampled action 5 chosen
+        Chose to place wood in clearing 4
+                Wood token placed in clearing 4
+
+Legal actions: [5, 10]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.34
+Top 5 actions: ['10: 0.54', '5: 0.46', '0: 0.0', '3023: 0.0', '3022: 0.0']
+Masked ->
+Top 5 actions: ['10: 0.54', '5: 0.46', '0: 0.0', '3023: 0.0', '3022: 0.0']
+Best action 10
+Sampled action 5 chosen
+        Chose to place wood in clearing 4
+                Wood token placed in clearing 4
+--- Moving on to Daylight ---
+        Crafting power: [0, 1, 1]
+> Moving onto step 2 of Daylight...
+Checking for next Daylight Step 2 action (3 actions left)...
+
+Legal actions: [0, 15, 17, 18, 23, 127, 704, 705, 706, 707, 754, 755, 756, 757, 779, 780, 781, 782, 979, 1029, 1304, 1354, 1454, 1579, 1580, 1629, 1630, 1704, 1705, 1879, 1880, 2079, 2080, 2254, 2379, 2829, 2830, 2831, 2929, 2930, 2931, 3054, 3055, 3056, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.32
+Top 5 actions: ['18: 0.04', '17: 0.04', '23: 0.03', '781: 0.03', '2831: 0.03']
+Masked ->
+Top 5 actions: ['18: 0.04', '17: 0.04', '23: 0.03', '781: 0.03', '2831: 0.03']
+Best action 18
+Sampled action 1704 chosen
+                Moving 1 warriors of Marquise de Cat from 3 to 5
+Finding 2nd move of march...
+
+Legal actions: [0, 704, 705, 706, 707, 754, 755, 756, 757, 779, 780, 781, 782, 979, 1029, 1304, 1354, 1454, 1579, 1629, 1704, 1879, 1880, 2079, 2080, 2254, 2255, 2379, 2380, 2829, 2830, 2831, 2929, 2930, 2931, 3054, 3055, 3056, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.35
+Top 5 actions: ['781: 0.03', '2831: 0.03', '782: 0.03', '756: 0.03', '2931: 0.03']
+Masked ->
+Top 5 actions: ['781: 0.03', '2831: 0.03', '782: 0.03', '756: 0.03', '2931: 0.03']
+Best action 781
+Sampled action 3056 chosen
+                Moving 3 warriors of Marquise de Cat from 7 to 11
+Checking for next Daylight Step 2 action (2 actions left)...
+
+Legal actions: [0, 15, 17, 18, 23, 24, 127, 704, 705, 706, 707, 754, 755, 756, 757, 779, 780, 781, 782, 979, 1029, 1304, 1354, 1579, 1629, 1704, 1879, 1880, 2079, 2080, 2254, 2255, 2379, 2380, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.38
+Top 5 actions: ['24: 0.05', '18: 0.05', '17: 0.04', '23: 0.04', '781: 0.04']
+Masked ->
+Top 5 actions: ['24: 0.05', '18: 0.05', '17: 0.04', '23: 0.04', '781: 0.04']
+Best action 24
+Sampled action 757 chosen
+                Moving 4 warriors of Marquise de Cat from 0 to 3
+Finding 2nd move of march...
+
+Legal actions: [0, 979, 1029, 1304, 1354, 1579, 1580, 1581, 1582, 1583, 1629, 1630, 1631, 1632, 1633, 1704, 1705, 1706, 1707, 1708, 1879, 1880, 2079, 2080, 2254, 2255, 2379, 2380, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.39
+Top 5 actions: ['1708: 0.05', '1583: 0.05', '1582: 0.04', '1707: 0.04', '1704: 0.04']
+Masked ->
+Top 5 actions: ['1708: 0.05', '1583: 0.05', '1582: 0.04', '1707: 0.04', '1704: 0.04']
+Best action 1708
+Sampled action 1631 chosen
+                Moving 3 warriors of Marquise de Cat from 3 to 2
+Checking for next Daylight Step 2 action (1 actions left)...
+
+Legal actions: [0, 15, 17, 18, 23, 24, 127, 979, 1029, 1304, 1305, 1306, 1307, 1354, 1355, 1356, 1357, 1454, 1455, 1456, 1457, 1579, 1580, 1629, 1630, 1704, 1705, 1879, 1880, 2079, 2080, 2254, 2255, 2379, 2380, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.40
+Top 5 actions: ['24: 0.05', '18: 0.05', '17: 0.04', '23: 0.04', '1307: 0.04']
+Masked ->
+Top 5 actions: ['24: 0.05', '18: 0.05', '17: 0.04', '23: 0.04', '1307: 0.04']
+Best action 24
+Sampled action 15 chosen
+        --- BATTLE STARTED: Marquise de Cat Attacks Eyrie Dynasties in clearing 2
+Eyrie Dynasties chose not to ambush
+--- DICE ROLL: [3, 3]
+
+Legal actions: [4284, 4285]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.26
+Top 5 actions: ['4284: 0.57', '4285: 0.43', '0: 0.0', '3022: 0.0', '3021: 0.0']
+Masked ->
+Top 5 actions: ['4284: 0.57', '4285: 0.43', '0: 0.0', '3022: 0.0', '3021: 0.0']
+Best action 4284
+Sampled action 4285 chosen
+Eyrie Dynasties activates Armorers (ignores rolled hits)
+        Armorers removed from persistent of Eyrie Dynasties
+        Armorers added to discard pile
+--- Dealing hits to defender...
+--- Dealing hits to attacker...
+- Removed 1 Marquise de Cat warrior from clearing 2
+- Removed 1 Marquise de Cat warrior from clearing 2
+--- BATTLE FINISHED
+
+Legal actions: [0, 650, 659, 660]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.39
+Top 5 actions: ['650: 0.41', '659: 0.26', '660: 0.18', '0: 0.16', '3022: 0.0']
+Masked ->
+Top 5 actions: ['650: 0.41', '659: 0.26', '660: 0.18', '0: 0.16', '3022: 0.0']
+Best action 650
+Sampled action 660 chosen
+        Field Hospitals activated, Marquise recovered 2 warrior(s)
+                Placing 2 Marquise de Cat warriors in clearing 0
+        Mouse-in-a-Sack removed from hand of Marquise de Cat
+        Mouse-in-a-Sack added to discard pile
+        End of Daylight phase (no more actions)
+--- Moving on to Evening ---
+        Marquise de Cat draws: Better Burrow Bank
+        Marquise de Cat draws: Travel Gear (Mouse)
+Marquise must discard from hand...
+
+Legal actions: [646, 649, 650, 659, 672]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.38
+Top 5 actions: ['650: 0.3', '649: 0.21', '659: 0.19', '646: 0.19', '672: 0.12']
+Masked ->
+Top 5 actions: ['650: 0.3', '649: 0.21', '659: 0.19', '646: 0.19', '672: 0.12']
+Best action 650
+Sampled action 650 chosen
+        Codebreakers removed from hand of Marquise de Cat
+        Codebreakers added to discard pile
+--- End of Marquise Turn ---
+
+        Resetting for Eyrie's Turn...
+Choosing what to add to decree...
+
+Legal actions: [4371, 4381, 4413, 4423, 4455, 4465, 4497, 4507]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.32
+Top 5 actions: ['4413: 0.17', '4381: 0.15', '4423: 0.14', '4465: 0.13', '4507: 0.12']
+Masked ->
+Top 5 actions: ['4413: 0.17', '4381: 0.15', '4423: 0.14', '4465: 0.13', '4507: 0.12']
+Best action 4413
+Sampled action 4381 chosen
+        Favor of the Rabbits removed from hand of Eyrie Dynasties
+                Card Favor of the Rabbits added to decree at Recruit
+Choosing whether to add 2nd card to decree...
+
+Legal actions: [0, 4371, 4413, 4455, 4497]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.32
+Top 5 actions: ['4413: 0.32', '4497: 0.22', '4455: 0.17', '0: 0.14', '4371: 0.14']
+Masked ->
+Top 5 actions: ['4413: 0.32', '4497: 0.22', '4455: 0.17', '0: 0.14', '4371: 0.14']
+Best action 4413
+Sampled action 4497 chosen
+        Better Burrow Bank removed from hand of Eyrie Dynasties
+                Card Better Burrow Bank added to decree at Build
+        Tallying required decree...
+--- Moving on to Daylight ---
+        Crafting power: [3, 1, 1]
+> Moving onto step 2 of Daylight...
+>> TURMOILING
+        Eyrie Dynasties Points changed by -2
+                New Score: [20, 19]
+Choosing new leader after turmoil...
+
+Legal actions: [4358, 4360, 4361]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.26
+Top 5 actions: ['4361: 0.38', '4360: 0.34', '4358: 0.28', '0: 0.0', '3020: 0.0']
+Masked ->
+Top 5 actions: ['4361: 0.38', '4360: 0.34', '4358: 0.28', '0: 0.0', '3020: 0.0']
+Best action 4361
+Sampled action 4360 chosen
+        New Leader Chosen: Commander
+                Card Loyal Vizier added to decree at Move
+                Card Loyal Vizier added to decree at Battle
+--- Moving on to Evening ---
+        Eyrie Dynasties Points changed by 4
+                New Score: [20, 23]
+        Eyrie Dynasties draws: Root Tea (Mouse)
+        Eyrie Dynasties draws: Tax Collector
+--- End of Eyrie Turn ---
+
+        Resetting for Marquise's Turn...
+        Producing wood at sawmills...
+        No wood to be placed / No sawmills to generate wood at
+Finished placing wood.
+--- Moving on to Daylight ---
+        Crafting power: [0, 1, 1]
+Checking for Crafting / use of Birdsong Cards...
+
+Legal actions: [0, 96]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.33
+Top 5 actions: ['96: 0.63', '0: 0.37', '3011: 0.0', '3012: 0.0', '3013: 0.0']
+Masked ->
+Top 5 actions: ['96: 0.63', '0: 0.37', '3011: 0.0', '3012: 0.0', '3013: 0.0']
+Best action 96
+Sampled action 96 chosen
+        Marquise de Cat crafts: Boot
+        Marquise de Cat Points changed by 1
+                New Score: [21, 23]
+        Travel Gear (Mouse) removed from hand of Marquise de Cat
+        Travel Gear (Mouse) added to discard pile
+> Moving onto step 2 of Daylight...
+Checking for next Daylight Step 2 action (3 actions left)...
+
+Legal actions: [0, 15, 17, 18, 23, 24, 127, 704, 705, 754, 755, 779, 780, 979, 1029, 1304, 1305, 1354, 1355, 1579, 1580, 1629, 1630, 1704, 1705, 1879, 1880, 2079, 2080, 2254, 2255, 2379, 2380, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.39
+Top 5 actions: ['24: 0.06', '18: 0.05', '17: 0.05', '23: 0.04', '1355: 0.04']
+Masked ->
+Top 5 actions: ['24: 0.06', '18: 0.05', '17: 0.05', '23: 0.04', '1355: 0.04']
+Best action 24
+Sampled action 17 chosen
+        --- BATTLE STARTED: Marquise de Cat Attacks Eyrie Dynasties in clearing 4
+Eyrie Dynasties chose not to ambush
+--- DICE ROLL: [3, 0]
+--- Dealing hits to defender...
+- Removed 1 Eyrie Dynasties warrior from clearing 4
+- Removed 1 Eyrie Dynasties warrior from clearing 4
+--- Dealing hits to attacker...
+--- BATTLE FINISHED
+Checking for next Daylight Step 2 action (2 actions left)...
+
+Legal actions: [0, 15, 17, 18, 23, 24, 34, 46, 58, 127, 704, 705, 754, 755, 779, 780, 979, 1029, 1304, 1305, 1354, 1355, 1579, 1580, 1629, 1630, 1704, 1705, 1879, 1880, 2004, 2005, 2079, 2080, 2254, 2255, 2279, 2280, 2379, 2380, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.43
+Top 5 actions: ['46: 0.07', '34: 0.06', '24: 0.04', '18: 0.04', '17: 0.04']
+Masked ->
+Top 5 actions: ['46: 0.07', '34: 0.06', '24: 0.04', '18: 0.04', '17: 0.04']
+Best action 46
+Sampled action 1705 chosen
+                Moving 2 warriors of Marquise de Cat from 3 to 5
+Finding 2nd move of march...
+
+Legal actions: [0, 704, 705, 754, 755, 779, 780, 979, 1029, 1304, 1305, 1354, 1355, 1879, 1880, 2004, 2005, 2079, 2080, 2254, 2255, 2256, 2257, 2279, 2280, 2281, 2282, 2379, 2380, 2381, 2382, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.43
+Top 5 actions: ['1355: 0.04', '2382: 0.04', '2281: 0.04', '779: 0.04', '2280: 0.04']
+Masked ->
+Top 5 actions: ['1355: 0.04', '2382: 0.04', '2281: 0.04', '779: 0.04', '2280: 0.04']
+Best action 1355
+Sampled action 755 chosen
+                Moving 2 warriors of Marquise de Cat from 0 to 3
+Checking for next Daylight Step 2 action (1 actions left)...
+
+Legal actions: [0, 15, 17, 18, 23, 24, 34, 46, 58, 127, 979, 1029, 1304, 1305, 1354, 1355, 1579, 1580, 1629, 1630, 1704, 1705, 1879, 1880, 2004, 2005, 2079, 2080, 2254, 2255, 2256, 2257, 2279, 2280, 2281, 2282, 2379, 2380, 2381, 2382, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.42
+Top 5 actions: ['46: 0.07', '34: 0.06', '24: 0.04', '18: 0.04', '17: 0.04']
+Masked ->
+Top 5 actions: ['46: 0.07', '34: 0.06', '24: 0.04', '18: 0.04', '17: 0.04']
+Best action 46
+Sampled action 1304 chosen
+                Moving 1 warriors of Marquise de Cat from 2 to 1
+Finding 2nd move of march...
+
+Legal actions: [0, 979, 980, 1029, 1030, 1304, 1354, 1579, 1580, 1629, 1630, 1704, 1705, 1879, 1880, 2004, 2005, 2079, 2080, 2254, 2255, 2256, 2257, 2279, 2280, 2281, 2282, 2379, 2380, 2381, 2382, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.44
+Top 5 actions: ['1704: 0.04', '2281: 0.04', '2382: 0.04', '1030: 0.04', '2280: 0.04']
+Masked ->
+Top 5 actions: ['1704: 0.04', '2281: 0.04', '2382: 0.04', '1030: 0.04', '2280: 0.04']
+Best action 1704
+Sampled action 2257 chosen
+                Moving 4 warriors of Marquise de Cat from 5 to 3
+        End of Daylight phase (no more actions)
+--- Moving on to Evening ---
+        Marquise de Cat draws: Favor of the Mice
+        Marquise de Cat draws: Scouting Party
+Marquise must discard from hand...
+
+Legal actions: [646, 649, 650, 655, 659, 666]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.52
+Top 5 actions: ['650: 0.25', '649: 0.18', '659: 0.16', '646: 0.16', '666: 0.13']
+Masked ->
+Top 5 actions: ['650: 0.25', '649: 0.18', '659: 0.16', '646: 0.16', '666: 0.13']
+Best action 650
+Sampled action 659 chosen
+        Investments removed from hand of Marquise de Cat
+        Investments added to discard pile
+--- End of Marquise Turn ---
+
+        Resetting for Eyrie's Turn...
+Choosing what to add to decree...
+
+Legal actions: [4389, 4395, 4431, 4437, 4473, 4479, 4515, 4521]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.43
+Top 5 actions: ['4437: 0.19', '4521: 0.17', '4431: 0.17', '4395: 0.12', '4515: 0.1']
+Masked ->
+Top 5 actions: ['4437: 0.19', '4521: 0.17', '4431: 0.17', '4395: 0.12', '4515: 0.1']
+Best action 4437
+Sampled action 4431 chosen
+        Root Tea (Mouse) removed from hand of Eyrie Dynasties
+                Card Root Tea (Mouse) added to decree at Move
+Choosing whether to add 2nd card to decree...
+
+Legal actions: [0, 4395, 4437, 4479, 4521]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.42
+Top 5 actions: ['4437: 0.3', '4521: 0.27', '4395: 0.19', '0: 0.12', '4479: 0.11']
+Masked ->
+Top 5 actions: ['4437: 0.3', '4521: 0.27', '4395: 0.19', '0: 0.12', '4479: 0.11']
+Best action 4437
+Sampled action 4437 chosen
+        Tax Collector removed from hand of Eyrie Dynasties
+                Card Tax Collector added to decree at Move
+        Tallying required decree...
+--- Moving on to Daylight ---
+        Crafting power: [3, 1, 1]
+> Moving onto step 2 of Daylight...
+Choosing decree-resolving action...
+
+Legal actions: [1304, 1305, 1354, 1355, 1454, 1455, 2004, 2005, 2006, 2254, 2255, 2256, 2257, 2279, 2280, 2281, 2282, 2329, 2330, 2331, 2332, 2379, 2380, 2381, 2382, 2429, 2430, 2431, 2432, 2604, 2605, 2606, 2607, 2654, 2655, 2656, 2657, 2754, 2755, 2756, 2757, 4129, 4130, 4131, 4132, 4133, 4154, 4155, 4156, 4157, 4158, 4229, 4230, 4231, 4232, 4233]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.40
+Top 5 actions: ['4233: 0.04', '2332: 0.03', '2606: 0.03', '4230: 0.03', '2429: 0.02']
+Masked ->
+Top 5 actions: ['4233: 0.04', '2332: 0.03', '2606: 0.03', '4230: 0.03', '2429: 0.02']
+Best action 4233
+Sampled action 2381 chosen
+>> Decree: MOVE
+                Moving 3 warriors of Eyrie Dynasties from 5 to 8
+        Fulfilled Fox Move requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [1304, 1305, 1354, 1355, 1454, 1455, 2004, 2005, 2006, 2079, 2080, 2081, 2254, 2279, 2329, 2379, 2429, 2604, 2605, 2606, 2607, 2654, 2655, 2656, 2657, 2754, 2755, 2756, 2757, 3179, 3180, 3181, 3204, 3205, 3206, 3304, 3305, 3306, 4129, 4130, 4131, 4132, 4133, 4154, 4155, 4156, 4157, 4158, 4229, 4230, 4231, 4232, 4233]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.44
+Top 5 actions: ['4233: 0.04', '2606: 0.03', '4230: 0.03', '4231: 0.03', '2429: 0.03']
+Masked ->
+Top 5 actions: ['4233: 0.04', '2606: 0.03', '4230: 0.03', '4231: 0.03', '2429: 0.03']
+Best action 4233
+Sampled action 2757 chosen
+>> Decree: MOVE
+                Moving 4 warriors of Eyrie Dynasties from 6 to 11
+        Fulfilled Mouse Move requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [1304, 1305, 1354, 1355, 1454, 1455, 2004, 2005, 2006, 2079, 2080, 2081, 2254, 2279, 2329, 2379, 2429, 3179, 3180, 3181, 3204, 3205, 3206, 3304, 3305, 3306, 4129, 4130, 4131, 4132, 4133, 4134, 4135, 4136, 4137, 4154, 4155, 4156, 4157, 4158, 4159, 4160, 4161, 4162, 4229, 4230, 4231, 4232, 4233, 4234, 4235, 4236, 4237]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.44
+Top 5 actions: ['4233: 0.04', '4234: 0.03', '4236: 0.03', '4134: 0.03', '4231: 0.02']
+Masked ->
+Top 5 actions: ['4233: 0.04', '4234: 0.03', '4236: 0.03', '4134: 0.03', '4231: 0.02']
+Best action 4233
+Sampled action 4236 chosen
+>> Decree: MOVE
+                Moving 8 warriors of Eyrie Dynasties from 11 to 10
+        Fulfilled Bird Move requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [15, 17, 21, 23, 24]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.45
+Top 5 actions: ['17: 0.27', '23: 0.25', '24: 0.2', '15: 0.15', '21: 0.14']
+Masked ->
+Top 5 actions: ['17: 0.27', '23: 0.25', '24: 0.2', '15: 0.15', '21: 0.14']
+Best action 17
+Sampled action 21 chosen
+>> Decree: BATTLE
+        Fulfilled Bird Battle requirement on Decree
+        --- BATTLE STARTED: Eyrie Dynasties Attacks Marquise de Cat in clearing 8
+Marquise de Cat chose not to ambush
+--- DICE ROLL: [3, 0]
+Marquise de Cat is defenseless (+1 hit taken)
+Eyrie Dynasties is led by the Commander (+1 hit dealt)
+--- Dealing hits to defender...
+-- Recruiter destroyed in clearing 8
+        Eyrie Dynasties Points changed by 1
+                New Score: [21, 24]
+--- Dealing hits to attacker...
+--- BATTLE FINISHED
+>>> DECREE COMPLETED
+--- Moving on to Evening ---
+        Eyrie Dynasties Points changed by 4
+                New Score: [21, 28]
+        Eyrie Dynasties draws: Sappers
+        Eyrie Dynasties draws: Brutal Tactics
+--- End of Eyrie Turn ---
+
+        Resetting for Marquise's Turn...
+        Producing wood at sawmills...
+        No wood to be placed / No sawmills to generate wood at
+Finished placing wood.
+--- Moving on to Daylight ---
+        Crafting power: [0, 1, 1]
+> Moving onto step 2 of Daylight...
+Checking for next Daylight Step 2 action (3 actions left)...
+
+Legal actions: [0, 15, 17, 23, 24, 127, 979, 980, 1029, 1030, 1304, 1354, 1579, 1580, 1581, 1582, 1583, 1584, 1629, 1630, 1631, 1632, 1633, 1634, 1704, 1705, 1706, 1707, 1708, 1709, 1879, 1880, 2004, 2005, 2079, 2080, 3904, 3954, 4129, 4130, 4131, 4154, 4155, 4156, 4229, 4230, 4231]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.52
+Top 5 actions: ['24: 0.04', '17: 0.03', '1634: 0.03', '23: 0.03', '1708: 0.03']
+Masked ->
+Top 5 actions: ['24: 0.04', '17: 0.03', '1634: 0.03', '23: 0.03', '1708: 0.03']
+Best action 24
+Sampled action 4131 chosen
+                Moving 3 warriors of Marquise de Cat from 11 to 6
+Finding 2nd move of march...
+
+Legal actions: [0, 979, 980, 1029, 1030, 1304, 1354, 1579, 1580, 1581, 1582, 1583, 1584, 1629, 1630, 1631, 1632, 1633, 1634, 1704, 1705, 1706, 1707, 1708, 1709, 1879, 1880, 2004, 2005, 2079, 2080, 2604, 2605, 2606, 2654, 2655, 2656, 2754, 2755, 2756, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.52
+Top 5 actions: ['1634: 0.04', '1708: 0.04', '2606: 0.03', '2605: 0.03', '1583: 0.03']
+Masked ->
+Top 5 actions: ['1634: 0.04', '1708: 0.04', '2606: 0.03', '2605: 0.03', '1583: 0.03']
+Best action 1634
+Sampled action 2606 chosen
+                Moving 3 warriors of Marquise de Cat from 6 to 5
+Checking for next Daylight Step 2 action (2 actions left)...
+
+Legal actions: [0, 15, 17, 18, 23, 127, 979, 980, 1029, 1030, 1304, 1354, 1579, 1580, 1581, 1582, 1583, 1584, 1629, 1630, 1631, 1632, 1633, 1634, 1704, 1705, 1706, 1707, 1708, 1709, 1879, 1880, 2004, 2005, 2079, 2080, 2254, 2255, 2256, 2279, 2280, 2281, 2329, 2330, 2331, 2379, 2380, 2381, 2429, 2430, 2431, 3804, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.51
+Top 5 actions: ['18: 0.03', '17: 0.03', '1634: 0.03', '23: 0.03', '1708: 0.03']
+Masked ->
+Top 5 actions: ['18: 0.03', '17: 0.03', '1634: 0.03', '23: 0.03', '1708: 0.03']
+Best action 18
+Sampled action 18 chosen
+        --- BATTLE STARTED: Marquise de Cat Attacks Eyrie Dynasties in clearing 5
+Eyrie Dynasties chose not to ambush
+--- DICE ROLL: [3, 1]
+--- Dealing hits to defender...
+- Removed 1 Eyrie Dynasties warrior from clearing 5
+-- Roost destroyed in clearing 5
+        Marquise de Cat Points changed by 1
+                New Score: [22, 28]
+--- Dealing hits to attacker...
+- Removed 1 Marquise de Cat warrior from clearing 5
+--- BATTLE FINISHED
+Checking for next Daylight Step 2 action (1 actions left)...
+
+Legal actions: [0, 15, 17, 23, 30, 42, 54, 127, 979, 980, 1029, 1030, 1304, 1354, 1579, 1580, 1581, 1582, 1583, 1584, 1629, 1630, 1631, 1632, 1633, 1634, 1704, 1705, 1706, 1707, 1708, 1709, 1879, 1880, 2004, 2005, 2079, 2080, 2254, 2255, 2279, 2280, 2329, 2330, 2379, 2380, 2429, 2430, 3804, 3904]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.32
+Top 5 actions: ['30: 0.06', '42: 0.05', '54: 0.03', '17: 0.03', '23: 0.03']
+Masked ->
+Top 5 actions: ['30: 0.06', '42: 0.05', '54: 0.03', '17: 0.03', '23: 0.03']
+Best action 30
+Sampled action 3804 chosen
+                Moving 1 warriors of Marquise de Cat from 10 to 5
+Finding 2nd move of march...
+
+Legal actions: [0, 979, 980, 1029, 1030, 1304, 1354, 1579, 1580, 1581, 1582, 1583, 1584, 1629, 1630, 1631, 1632, 1633, 1634, 1704, 1705, 1706, 1707, 1708, 1709, 1879, 1880, 2004, 2005, 2079, 2080, 2254, 2255, 2256, 2279, 2280, 2281, 2329, 2330, 2331, 2379, 2380, 2381, 2429, 2430, 2431]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.34
+Top 5 actions: ['1634: 0.03', '1708: 0.03', '2330: 0.03', '1583: 0.03', '1582: 0.03']
+Masked ->
+Top 5 actions: ['1634: 0.03', '1708: 0.03', '2330: 0.03', '1583: 0.03', '1582: 0.03']
+Best action 1634
+Sampled action 2381 chosen
+                Moving 3 warriors of Marquise de Cat from 5 to 8
+        End of Daylight phase (no more actions)
+--- Moving on to Evening ---
+        Marquise de Cat draws: Ambush! (Bird)
+        Marquise de Cat draws: Scouting Party
+Marquise must discard from hand...
+
+Legal actions: [637, 646, 649, 650, 655, 666]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.38
+Top 5 actions: ['650: 0.26', '649: 0.19', '646: 0.16', '666: 0.14', '637: 0.13']
+Masked ->
+Top 5 actions: ['650: 0.26', '649: 0.19', '646: 0.16', '666: 0.14', '637: 0.13']
+Best action 650
+Sampled action 637 chosen
+        Ambush! (Bird) removed from hand of Marquise de Cat
+        Ambush! (Bird) added to discard pile
+Marquise must discard from hand...
+
+Legal actions: [646, 649, 650, 655, 666]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.39
+Top 5 actions: ['650: 0.3', '649: 0.22', '646: 0.19', '666: 0.16', '655: 0.14']
+Masked ->
+Top 5 actions: ['650: 0.3', '649: 0.22', '646: 0.19', '666: 0.16', '655: 0.14']
+Best action 650
+Sampled action 650 chosen
+        Codebreakers removed from hand of Marquise de Cat
+        Codebreakers added to discard pile
+--- End of Marquise Turn ---
+
+        Resetting for Eyrie's Turn...
+Choosing what to add to decree...
+
+Legal actions: [4373, 4390, 4415, 4432, 4457, 4474, 4499, 4516]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.26
+Top 5 actions: ['4415: 0.19', '4516: 0.18', '4457: 0.14', '4432: 0.13', '4499: 0.12']
+Masked ->
+Top 5 actions: ['4415: 0.19', '4516: 0.18', '4457: 0.14', '4432: 0.13', '4499: 0.12']
+Best action 4415
+Sampled action 4373 chosen
+        Brutal Tactics removed from hand of Eyrie Dynasties
+                Card Brutal Tactics added to decree at Recruit
+        Cannot add more to decree
+        Tallying required decree...
+--- Moving on to Daylight ---
+        Crafting power: [3, 1, 0]
+Checking for Crafting / use of Birdsong Cards...
+
+Legal actions: [0, 89]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.20
+Top 5 actions: ['89: 0.62', '0: 0.38', '3011: 0.0', '3012: 0.0', '3013: 0.0']
+Masked ->
+Top 5 actions: ['89: 0.62', '0: 0.38', '3011: 0.0', '3012: 0.0', '3013: 0.0']
+Best action 89
+Sampled action 89 chosen
+        Eyrie Dynasties crafts: Sappers
+> Moving onto step 2 of Daylight...
+Choosing decree-resolving action...
+
+Legal actions: [3, 7, 11, 12]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.28
+Top 5 actions: ['7: 0.3', '12: 0.28', '11: 0.24', '3: 0.17', '0: 0.0']
+Masked ->
+Top 5 actions: ['7: 0.3', '12: 0.28', '11: 0.24', '3: 0.17', '0: 0.0']
+Best action 7
+Sampled action 12 chosen
+>> Decree: RECRUIT
+                Placing 1 Eyrie Dynasties warriors in clearing 11
+        Fulfilled Bird Recruit requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [1304, 1305, 1354, 1355, 1454, 1455, 2079, 2080, 2081, 3179, 3180, 3181, 3204, 3205, 3206, 3304, 3305, 3306, 3804, 3805, 3806, 3807, 3808, 3809, 3810, 3811, 3904, 3905, 3906, 3907, 3908, 3909, 3910, 3911, 3954, 3955, 3956, 3957, 3958, 3959, 3960, 3961, 4129, 4130, 4154, 4155, 4229, 4230]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.29
+Top 5 actions: ['3811: 0.04', '3807: 0.03', '3810: 0.03', '3910: 0.03', '3960: 0.03']
+Masked ->
+Top 5 actions: ['3811: 0.04', '3807: 0.03', '3810: 0.03', '3910: 0.03', '3960: 0.03']
+Best action 3811
+Sampled action 3909 chosen
+>> Decree: MOVE
+                Moving 6 warriors of Eyrie Dynasties from 10 to 9
+        Fulfilled Mouse Move requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [1304, 1305, 1354, 1355, 1454, 1455, 2079, 2080, 2081, 3179, 3180, 3181, 3204, 3205, 3206, 3304, 3305, 3306, 3579, 3580, 3581, 3582, 3583, 3584, 3629, 3630, 3631, 3632, 3633, 3634, 3804, 3805, 3904, 3905, 3954, 3955, 4129, 4130, 4154, 4155, 4229, 4230]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.26
+Top 5 actions: ['4230: 0.03', '3633: 0.03', '3584: 0.03', '3181: 0.03', '4130: 0.03']
+Masked ->
+Top 5 actions: ['4230: 0.03', '3633: 0.03', '3584: 0.03', '3181: 0.03', '4130: 0.03']
+Best action 4230
+Sampled action 1454 chosen
+>> Decree: MOVE
+                Moving 1 warriors of Eyrie Dynasties from 2 to 7
+        Fulfilled Bird Move requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [2829, 2929, 3054, 3579, 3580, 3581, 3582, 3583, 3584, 3629, 3630, 3631, 3632, 3633, 3634]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.32
+Top 5 actions: ['2929: 0.09', '3633: 0.09', '3584: 0.09', '3632: 0.07', '3630: 0.07']
+Masked ->
+Top 5 actions: ['2929: 0.09', '3633: 0.09', '3584: 0.09', '3632: 0.07', '3630: 0.07']
+Best action 2929
+Sampled action 3584 chosen
+>> Decree: MOVE
+                Moving 6 warriors of Eyrie Dynasties from 9 to 8
+        Fulfilled Fox Move requirement on Decree
+Choosing decree-resolving action...
+
+Legal actions: [15, 17, 21]
+
+Current player name: best_model
+
+best_model model choices
+Value 0.34
+Top 5 actions: ['17: 0.48', '15: 0.26', '21: 0.26', '0: 0.0', '3024: 0.0']
+Masked ->
+Top 5 actions: ['17: 0.48', '15: 0.26', '21: 0.26', '0: 0.0', '3024: 0.0']
+Best action 17
+Sampled action 17 chosen
+>> Decree: BATTLE
+        Fulfilled Bird Battle requirement on Decree
+        --- BATTLE STARTED: Eyrie Dynasties Attacks Marquise de Cat in clearing 4
+Marquise de Cat chose not to ambush
+--- DICE ROLL: [1, 0]
+Eyrie Dynasties is led by the Commander (+1 hit dealt)
+--- Dealing hits to defender...
+- Removed 1 Marquise de Cat warrior from clearing 4
+- Removed 1 Marquise de Cat warrior from clearing 4
+--- Dealing hits to attacker...
+--- BATTLE FINISHED
+
+Legal actions: [0, 655, 666]
+
+Current player name: _model_00009_0_0.3_1041920_
+
+_model_00009_0_0.3_1041920_ model choices
+Value -0.46
+Top 5 actions: ['666: 0.37', '655: 0.34', '0: 0.29', '3012: 0.0', '3013: 0.0']
+Masked ->
+Top 5 actions: ['666: 0.37', '655: 0.34', '0: 0.29', '3012: 0.0', '3013: 0.0']
+Best action 666
+Sampled action 655 chosen
+        Field Hospitals activated, Marquise recovered 2 warrior(s)
+                Placing 2 Marquise de Cat warriors in clearing 0
+        Favor of the Mice removed from hand of Marquise de Cat
+        Favor of the Mice added to discard pile
+>>> DECREE COMPLETED
+--- Moving on to Evening ---
+        Eyrie Dynasties Points changed by 3
+                New Score: [22, 31]
+        Eyrie Dynasties draws: Crossbow (Mouse)
+        Eyrie Dynasties draws: Smuggler's Trail
+Played 1 games: {'_model_00009_0_0.3_1041920__rkerw': -1, 'best_model_rjzqg': 1}

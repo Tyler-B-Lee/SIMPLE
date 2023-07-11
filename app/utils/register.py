@@ -23,6 +23,12 @@ def get_environment(env_name):
         elif env_name in ('quarto'):
             from quarto.envs.quarto import QuartoEnv
             return QuartoEnv
+        elif env_name in ('root2pCatsVsEyrie'):
+            from root2pCatsVsEyrie.envs.root2pCatsVsEyrie import rootEnv
+            return rootEnv
+        elif env_name in ('root2pCVEWinter'):
+            from root2pCVEWinter.envs.root2pCVEWinter import rootEnv
+            return rootEnv
         elif env_name in ('sushigo'):
             from sushigo.envs.sushigo import SushiGoEnv
             return SushiGoEnv
@@ -83,6 +89,12 @@ def get_network_arch(env_name):
         return CustomPolicy
     elif env_name in ('quarto'):
         from models.quarto.models import CustomPolicy
+        return CustomPolicy
+    elif env_name in ('root2pCatsVsEyrie'):
+        from models.root2pCatsVsEyrie.models import CustomPolicy
+        return CustomPolicy
+    elif env_name in ('root2pCVEWinter'):
+        from models.root2pCVEWinter.models import CustomPolicy
         return CustomPolicy
     elif env_name in ('sushigo'):
         from models.sushigo.models import CustomPolicy
