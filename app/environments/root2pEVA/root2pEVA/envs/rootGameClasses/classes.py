@@ -224,7 +224,7 @@ class Clearing:
     
     def get_obs_array(self):
         "Returns an array describing the current state of this clearing."
-        ret = np.zeros(25)
+        # ret = np.zeros(25)
         # if self.get_num_warriors(PIND_MARQUISE) > 0:
         #     ret[self.get_num_warriors(PIND_MARQUISE) - 1] = 1
         # foo = np.zeros(9)
@@ -242,6 +242,21 @@ class Clearing:
         # if self.get_num_buildings(PIND_MARQUISE,BIND_RECRUITER) > 0:
         #     foo[self.get_num_buildings(PIND_MARQUISE,BIND_RECRUITER) + 3] = 1
         # ret = np.append(ret,foo)
+
+        ret = np.zeros(11)
+        if self.get_num_warriors(PIND_ALLIANCE) > 0:
+            ret[self.get_num_warriors(PIND_ALLIANCE) - 1] = 1
+        if self.get_num_tokens(PIND_ALLIANCE,TIND_SYMPATHY) > 0:
+            ret[10] = 1
+
+        foo = np.zeros(3)
+        if self.get_num_buildings(PIND_ALLIANCE,BIND_MOUSE_BASE) > 0:
+            foo[BIND_MOUSE_BASE] = 1
+        elif self.get_num_buildings(PIND_ALLIANCE,BIND_RABBIT_BASE) > 0:
+            foo[BIND_RABBIT_BASE] = 1
+        elif self.get_num_buildings(PIND_ALLIANCE,BIND_FOX_BASE) > 0:
+            foo[BIND_FOX_BASE] = 1
+        ret = np.append(ret,foo)
 
         foo = np.zeros(21)
         if self.get_num_warriors(PIND_EYRIE) > 0:
@@ -420,7 +435,7 @@ class Board:
     def reset(self):
         "Resets the map to the cleared starting state."
         self.clearings = copy.deepcopy(self.board_comp)
-        self.randomize_suits()
+        # self.randomize_suits()
         
     def get_total_building_counts(self,faction_index:int,building_index:int = -1):
         """
@@ -647,9 +662,9 @@ class Board:
         # logger.debug(f"GWB Answer: {ans}")
         return ans
     
-    def get_num_sympathetic(self):
-        "Returns the number of sympathetic clearings currently on the board."
-        return sum([c.is_sympathetic() for c in self.clearings])
+    def get_num_sympathetic(self,suit:int):
+        "Returns the number of sympathetic clearings currently on the board with the given suit."
+        return sum([bool(c.suit == suit and c.is_sympathetic()) for c in self.clearings])
     
 
 class Card:
@@ -1052,7 +1067,7 @@ class Eyrie(Player):
         return cards_to_discard, num_bird_cards
 
 class Alliance(Player):
-    sympathy_costs = [1,1,1,2,2,2,3,3,3,3]
+    sympathy_costs = [1,1,1,2,2,2,3,3,3,3,50]
     point_track = [0,1,1,1,2,2,3,4,4,4]
 
     def __init__(self, id: int,) -> None:
@@ -1073,17 +1088,25 @@ class Alliance(Player):
         if self.warrior_storage > 0:
             ret[self.warrior_storage - 1] = 1
         
-        foo = np.zeros((3,1))
+        foo = np.zeros(3)
         for i,a in self.buildings.items():
             if a > 0:
-                foo[i][a - 1] = 1
+                foo[i]= 1
         ret = np.append(ret,foo)
         
-        foo = np.zeros(9)
-        if self.tokens[TIND_WOOD] > 0:
-            foo[self.get_num_tokens_in_store(TIND_WOOD) - 1] = 1
-        if self.tokens[TIND_KEEP] > 0:
-            foo[8] = 1
+        foo = np.zeros(10)
+        if self.tokens[TIND_SYMPATHY] > 0:
+            foo[self.get_num_tokens_in_store(TIND_SYMPATHY) - 1] = 1
+        ret = np.append(ret,foo)
+
+        foo = np.zeros(50)
+        if len(self.supporters) > 0:
+            foo[len(self.supporters) - 1] = 1
+        ret = np.append(ret,foo)
+
+        foo = np.zeros(10)
+        if self.num_officers > 0:
+            foo[self.num_officers - 1] = 1
         ret = np.append(ret,foo)
 
         foo = np.zeros(10)
@@ -1111,6 +1134,7 @@ class Alliance(Player):
         Given a Card, adds it to the supporters stack and
         updates the supporter suit counts immediately.
         """
+        logger.debug(f"\t\t{card_to_add.name} added to supporter pile")
         self.supporters.append(card_to_add)
         suit = card_to_add.suit
         if suit == SUIT_BIRD:
@@ -1336,7 +1360,7 @@ MAP_WINTER = [
     Clearing(11, SUIT_RABBIT,  2,                 0,         0,                   {6,7,10})
 ]
 
-CHOSEN_MAP = MAP_WINTER
+CHOSEN_MAP = MAP_AUTUMN
 
 CLEARING_SUITS = {
     SUIT_FOX: [c.id for c in CHOSEN_MAP if c.suit == SUIT_FOX],

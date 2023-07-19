@@ -48,7 +48,11 @@ class RootGame:
         self.victory_points = [0,0]
         self.phase = self.PHASE_SETUP_EYRIE
         self.phase_steps = 0
+
         self.field_hospitals = []
+        self.outrage_offender = None
+        self.outrage_suits = []
+
         self.persistent_used_this_turn = set()
         # self.available_dominances = set()
         self.remaining_craft_power = [0]
@@ -109,8 +113,6 @@ class RootGame:
         self.required_supporter_suit = None
         self.evening_actions_left = 0
         self.alliance_action_clearing = None
-        self.outrage_offender = None
-        self.outrage_suits = []
         self.persistent_used_this_turn = set()
         self.remaining_craft_power = [0]
         self.alliance_seen_hands[PIND_EYRIE].insert(0,np.full((38,3),-1))
@@ -128,8 +130,43 @@ class RootGame:
         self.points_scored_this_action = 0
         self.acting_player = self.to_play()
         self.outside_turn_this_action = PIND_EYRIE if self.phase in {self.PHASE_SETUP_EYRIE,self.PHASE_BIRDSONG_EYRIE,self.PHASE_DAYLIGHT_EYRIE,self.PHASE_EVENING_EYRIE} else PIND_ALLIANCE
+        aplayer = self.players[PIND_ALLIANCE]
+        # first, check for outrage payment
+        if self.outrage_offender is not None:
+            self.outrage_suits.pop()
+            c_to_pay = self.get_card(self.outrage_offender,action-AID_DISCARD_CARD,"hand")
+            self.add_to_supporters_check(aplayer,c_to_pay)
+            offender = self.players[self.outrage_offender]
+            while len(self.outrage_suits) > 0:
+                logger.debug(f"Outrage Triggered! {ID_TO_PLAYER[self.outrage_offender]} must pay the Alliance 1 {ID_TO_SUIT[self.outrage_suits[-1]]} Card")
+                suit = self.outrage_suits[-1]
+                if offender.has_suit_in_hand(suit):
+                    actions_to_return = [c.id+AID_DISCARD_CARD for c in offender.hand if (c.suit in {suit,SUIT_BIRD})]
+                    break
+                else:
+                    # cannot pay, so offender shows their hand and
+                    # alliance draws 1 card to add to supporters
+                    self.outrage_no_suit_helper(offender)
+                    self.outrage_suits.pop()
+            if not bool(actions_to_return):
+                # we are finished paying for outrage
+                self.outrage_offender = None
+                self.current_player = self.saved_outrage_player
+                actions_to_return = self.saved_outrage_actions
+
+        # check for alliance cutting down supporters after base destroyed
+        elif (sum([aplayer.get_num_buildings_on_track(bid) for bid in range(3)]) == 3 and
+                len(aplayer.supporters) > 5):
+            self.discard_from_supporters(aplayer,action - AID_DISCARD_CARD)
+            if len(aplayer.supporters) > 5:
+                actions_to_return = list({c.id+AID_DISCARD_CARD for c in aplayer.supporters})
+            else:
+                # we are done discarding
+                self.current_player = self.saved_outrage_player
+                actions_to_return = self.saved_outrage_actions
+
         # check if we are resolving field hospitals
-        if len(self.field_hospitals) > 0:
+        elif len(self.field_hospitals) > 0:
             # the action is say if the marquise are discarding a card or not
             foo = self.field_hospitals.pop()
             if action == AID_GENERIC_SKIP:
@@ -193,7 +230,38 @@ class RootGame:
             self.legal_actions_to_get = actions_to_return
         else:
             self.legal_actions_to_get = self.advance_game()
-        
+
+        if self.outrage_offender is not None:
+            # outrage has been triggered and must be dealt with first
+            # check if the offender has a card to pay with
+            logger.debug(f"Outrage Triggered! {ID_TO_PLAYER[self.outrage_offender]} must pay the Alliance 1 {ID_TO_SUIT[self.outrage_suits[-1]]} Card")
+            offender = self.players[self.outrage_offender]
+            while len(self.outrage_suits) > 0:
+                suit = self.outrage_suits[-1]
+                if offender.has_suit_in_hand(suit):
+                    self.saved_outrage_actions = self.legal_actions_to_get
+                    self.saved_outrage_player = self.current_player
+                    self.current_player = self.outrage_offender
+                    self.legal_actions_to_get = [c.id+AID_DISCARD_CARD for c in offender.hand if (c.suit in {suit,SUIT_BIRD})]
+                    break
+                else:
+                    # cannot pay, so offender shows their hand and
+                    # alliance draws 1 card to add to supporters
+                    self.outrage_no_suit_helper(offender)
+                    self.outrage_suits.pop()
+            if len(self.outrage_suits) == 0:
+                self.outrage_offender = None
+
+        if (sum([aplayer.get_num_buildings_on_track(bid) for bid in range(3)]) == 3 and
+                len(aplayer.supporters) > 5 and
+                self.outrage_offender is None):
+            # The alliance must discard down to 5 supporters
+            logger.debug(f"Alliance have no more bases, so they must discard down to 5 supporters!")
+            self.saved_outrage_actions = self.legal_actions_to_get
+            self.saved_outrage_player = self.current_player
+            self.current_player = PIND_ALLIANCE
+            self.legal_actions_to_get = list({c.id+AID_DISCARD_CARD for c in aplayer.supporters})
+
         # for c in self.board.clearings:
         #     print(c.get_obs_array())
 
@@ -203,6 +271,46 @@ class RootGame:
         reward = self.get_winner_points() if done else 0
 
         return self.get_observation(), reward, done
+
+    def outrage_no_suit_helper(self,offender:Player):
+        logger.debug("\tOffender has no cards to give, so they show their hand to the Alliance...")
+        target_hand = np.zeros((38,3))
+        for c in offender.hand:
+            cid = c.id
+            if target_hand[cid][0] == 1:
+                target_hand[cid][0] = 0
+                target_hand[cid][1] = 1
+            elif target_hand[cid][1] == 1:
+                target_hand[cid][1] = 0
+                target_hand[cid][2] = 1
+            else:
+                target_hand[cid][0] = 1
+        self.alliance_seen_hands[self.outrage_offender][0] = target_hand
+        # alliance draws 1 card for supporters
+        c_drawn = self.deck.draw(1)[0]
+        if self.deck.size() == 0:
+            self.deck.add(self.discard_pile) # includes shuffling
+            self.discard_pile = []
+            self.discard_array = np.zeros((38,3))
+        logger.debug(f"\tAlliance draws: {c_drawn.name} (added to supporters)")
+        aplayer = self.players[PIND_ALLIANCE]
+        self.add_to_supporters_check(aplayer,c_drawn)
+    
+    def add_to_supporters_check(self,aplayer:Alliance,c_to_add:Card):
+        """
+        Adds the given card to the Alliance player's supporters, but
+        will discard it instead if the alliance have all of their bases
+        unbuilt and already have 5 supporters.
+        """
+        if (sum([aplayer.get_num_buildings_on_track(bid) for bid in range(3)]) == 3 and
+                len(aplayer.supporters) >= 5):
+            # Limit of 5 supporters with no bases built
+            logger.debug(f"\t\t-> Cannot add more than five supporters with no bases built.")
+            self.add_to_discard(c_to_add)
+        else:
+            # add to the supporter pile
+            aplayer.add_to_supporters(c_to_add)
+
 
     def get_observation(self):
         ret = np.zeros((12,3))
@@ -230,12 +338,12 @@ class RootGame:
         foo[self.phase_steps + 8] = 1
         ret = np.append(ret,foo)
 
-        ret = np.append(ret,np.full(5,self.index_to_id(self.outside_turn_this_action)))
-        ret = np.append(ret,np.full(5,self.current_player))
-        ret = np.append(ret,np.full(3,self.first_player))
+        ret = np.append(ret,np.full(1,self.index_to_id(self.outside_turn_this_action)))
+        ret = np.append(ret,np.full(1,self.current_player))
+        ret = np.append(ret,np.full(1,self.first_player))
 
-        ret = np.append(ret,self.players[0].get_obs_array())
         ret = np.append(ret,self.players[1].get_obs_array())
+        ret = np.append(ret,self.players[0].get_obs_array())
 
         curr_player = self.players[self.to_play()]
         foo = np.zeros((38,3))
@@ -261,23 +369,28 @@ class RootGame:
                         raise Exception(f'foo is {foo}, i: {i}, a: {a}, power: {self.remaining_craft_power}')
         ret = np.append(ret,foo)
         
-        foo = np.zeros((4,25))
-        for i,a in enumerate(self.field_hospitals):
-            foo[i][a[0] - 1] = 1
+        # foo = np.zeros((4,25))
+        # for i,a in enumerate(self.field_hospitals):
+        #     foo[i][a[0] - 1] = 1
+        # ret = np.append(ret,foo)
+        foo = np.zeros((4,3))
+        for i,a in enumerate(self.outrage_suits):
+            foo[i][a] = 1
         ret = np.append(ret,foo)
         
         foo = np.zeros(11)
         foo.put(list(CID_TO_PERS_INDEX[i] for i in self.persistent_used_this_turn), 1)
         ret = np.append(ret,foo)
 
-        if self.to_play() == PIND_MARQUISE:
-            foo = np.zeros(14)
-            if self.marquise_actions > 0:
-                foo[self.marquise_actions - 1] = 1
-            if self.remaining_wood_cost > 0:
-                foo[self.remaining_wood_cost - 1 + 10] = 1
-            foo = np.append(foo,np.full(242,-1))
-        else:
+        # if self.to_play() == PIND_MARQUISE:
+        #     foo = np.zeros(14)
+        #     if self.marquise_actions > 0:
+        #         foo[self.marquise_actions - 1] = 1
+        #     if self.remaining_wood_cost > 0:
+        #         foo[self.remaining_wood_cost - 1 + 10] = 1
+        #     foo = np.append(foo,np.full(242,-1))
+        # else:
+        if self.to_play() == PIND_EYRIE:
             foo = np.zeros(2)
             if self.eyrie_cards_added > 0:
                 foo[0] = 1
@@ -289,16 +402,31 @@ class RootGame:
                     if a > 0:
                         bar[dec_i][i][a - 1] = 1
             foo = np.append(foo,bar)
-            foo = np.append(np.full(14,-1),foo)
+            # foo = np.append(np.full(14,-1),foo)
+            foo = np.append(foo,np.full(104,-1),-1)
+        else:
+            foo = np.zeros(14)
+            if self.evening_actions_left > 0:
+                foo[self.evening_actions_left - 1] = 1
+            if self.remaining_supporter_cost > 0:
+                foo[self.remaining_supporter_cost - 1 + 10] = 1
+            bar = np.zeros((3,30))
+            for i in range(3):
+                bar[i][curr_player.supporter_suit_counts[i]] = 1
+            foo = np.append(foo,bar)
+            foo = np.append(np.full(242,-1),foo)
         ret = np.append(ret,foo)
         
         ret = np.append(ret,self.battle.get_obs_array())
         ret = np.append(ret,self.board.get_obs_array())
 
-        if self.to_play() == PIND_MARQUISE:
-            seen = self.marquise_seen_hands[PIND_EYRIE]
-        elif self.to_play() == PIND_EYRIE:
-            seen = self.eyrie_seen_hands[PIND_MARQUISE]
+        # if self.to_play() == PIND_MARQUISE:
+        #     seen = self.marquise_seen_hands[PIND_EYRIE]
+        # elif self.to_play() == PIND_EYRIE:
+        if self.to_play() == PIND_EYRIE:
+            seen = self.eyrie_seen_hands[PIND_ALLIANCE]
+        else:
+            seen = self.alliance_seen_hands[PIND_EYRIE]
         
         for hand in seen:
             ret = np.append(ret,hand)
@@ -382,6 +510,7 @@ class RootGame:
             if c.id == card_id:
                 logger.debug(f"\t{c.name} removed from Supporters of Woodland Alliance")
                 c_to_discard = aplayer.supporters.pop(i)
+                break
         self.add_to_discard(c_to_discard)
         aplayer.spend_supporter_helper(c_to_discard.suit)
 
@@ -397,12 +526,16 @@ class RootGame:
 
     def craft_card(self,player_index:int,card_id:int):
         "Makes the player craft the given card, assuming the action is legal."
+        card_to_craft = None
         p = self.players[player_index]
         for i,c in enumerate(p.hand):
             if c.id == card_id:
                 card_to_craft = c
                 hand_i = i
                 break
+        
+        if card_to_craft is None:
+            print(f"ERROR: Could not find card id {card_id} in Player {player_index}'s hand: {p.hand}")
 
         item_id = card_to_craft.crafting_item
         if item_id != ITEM_NONE:
@@ -437,9 +570,16 @@ class RootGame:
                     while len(clearing.buildings[faction_i]) > 0:
                         foo = clearing.buildings[faction_i].pop()
                         player.change_num_buildings(foo,1)
+                        logger.debug(f"\t\tBuilding of {ID_TO_PLAYER[faction_i]} removed from clearing {cid}")
+                        if faction_i == PIND_ALLIANCE:
+                            self.base_removal_helper(player,clearing.suit)
                     while len(clearing.tokens[faction_i]) > 0:
                         foo = clearing.tokens[faction_i].pop()
                         player.change_num_tokens(foo,1)
+                        logger.debug(f"\t\Token of {ID_TO_PLAYER[faction_i]} removed from clearing {cid}")
+                        if faction_i == PIND_ALLIANCE:
+                            self.outrage_offender = player_index
+                            self.outrage_suits.append(clearing.suit)
 
             self.change_score(player_index,points_scored)
             if bool(fh_list):
@@ -488,9 +628,11 @@ class RootGame:
             # if the Eyrie with Despot are removing cardboard, score them an extra point if they haven't
             # received an extra point thus far for doing so
             if (not self.battle.att_cardboard_removed) and is_attacker:
+                logger.debug("> Bonus point scored from Despot!")
                 points += 1
                 self.battle.att_cardboard_removed = True
             elif (not self.battle.def_cardboard_removed) and (not is_attacker):
+                logger.debug("> Bonus point scored from Despot!")
                 points += 1
                 self.battle.def_cardboard_removed = True
         self.change_score(faction_index,points)
@@ -559,7 +701,7 @@ class RootGame:
             elif faction_index == PIND_ALLIANCE:
                 # find how many choices the Alliance have of removing tokens/buildings
                 building_choices = sum((target_clearing.get_num_buildings(faction_index,bid) > 0) for bid in range(3))
-                token_choices = 1 if (target_clearing.get_num_tokens(faction_index,tid) > 0) else 0
+                token_choices = 1 if (target_clearing.get_num_tokens(faction_index,TIND_SYMPATHY) > 0) else 0
                 # if they have a choice at all, then leave with 'amount' > 0 to indicate this
                 if (building_choices + token_choices) > 1:
                     break
@@ -576,10 +718,11 @@ class RootGame:
                 # if it is a token, remove one of them
                 elif token_choices == 1:
                     logger.debug(f"-- Sympathy destroyed in clearing {clearing_index}")
-                    target_clearing.remove_token(faction_index,tid)
-                    target_faction.change_num_tokens(tid,1)
+                    target_clearing.remove_token(faction_index,TIND_SYMPATHY)
+                    target_faction.change_num_tokens(TIND_SYMPATHY,1)
                     self.outrage_offender = self.battle.attacker_id if (self.battle.defender_id == PIND_ALLIANCE) else self.battle.defender_id
                     self.outrage_suits.append(target_clearing.suit)
+                    logger.debug(f"AUTO - offender:{self.outrage_offender}, suits:{self.outrage_suits}")
                     cardboard_removed += 1
                     amount -= 1
                 # if no other item is present, the remaining hits are lost
@@ -630,7 +773,7 @@ class RootGame:
                     self.outrage_suits.append(clearing.suit)
                 else:
                     clearing.remove_building(PIND_ALLIANCE,action - AID_ORDER_BASE_MOUSE)
-                    self.base_removal_helper(action - AID_ORDER_BASE_MOUSE)
+                    self.base_removal_helper(defender,clearing.suit)
                     item = ID_TO_ABUILD[action - AID_ORDER_BASE_MOUSE]
             logger.debug(f"{ID_TO_PLAYER[self.battle.defender_id]} chose to destroy {item}")
             self.score_battle_points(self.battle.attacker_id,True,1)
@@ -644,8 +787,12 @@ class RootGame:
             if self.battle.att_hits_to_deal > 0:
                 # defender still has a choice of what to remove
                 self.current_player = self.index_to_id(self.battle.defender_id)
-                building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
-                token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
+                if self.battle.defender_id == PIND_MARQUISE:
+                    building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
+                    token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
+                elif self.battle.defender_id == PIND_ALLIANCE:
+                    building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
+                    token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
                 return building_choices + token_choices
             
             # all hits needed have been dealt to defender
@@ -660,8 +807,12 @@ class RootGame:
             if self.battle.def_hits_to_deal > 0:
                 # attacker has a choice on what to remove
                 self.battle.stage = Battle.STAGE_ATT_ORDER
-                building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
-                token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
+                if self.battle.attacker_id == PIND_MARQUISE:
+                    building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
+                    token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
+                elif self.battle.attacker_id == PIND_ALLIANCE:
+                    building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
+                    token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
                 return building_choices + token_choices
             else:
                 # the battle is over
@@ -689,7 +840,7 @@ class RootGame:
                     self.outrage_suits.append(clearing.suit)
                 else:
                     clearing.remove_building(PIND_ALLIANCE,action - AID_ORDER_BASE_MOUSE)
-                    self.base_removal_helper(action - AID_ORDER_BASE_MOUSE)
+                    self.base_removal_helper(attacker,clearing.suit)
                     item = ID_TO_ABUILD[action - AID_ORDER_BASE_MOUSE]
             logger.debug(f"{ID_TO_PLAYER[self.battle.attacker_id]} chose to destroy {item}")
             self.score_battle_points(self.battle.defender_id,False,1)
@@ -704,8 +855,12 @@ class RootGame:
             if self.battle.def_hits_to_deal > 0:
                 # attacker still has a choice of what to remove
                 self.battle.stage = Battle.STAGE_ATT_ORDER
-                building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
-                token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
+                if self.battle.attacker_id == PIND_MARQUISE:
+                    building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
+                    token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
+                elif self.battle.attacker_id == PIND_ALLIANCE:
+                    building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
+                    token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
                 return building_choices + token_choices
             
             # All hits have been dealt, so we are in one of two possible situations:
@@ -761,8 +916,12 @@ class RootGame:
                     if self.battle.def_hits_to_deal > 0:
                         self.current_player = self.index_to_id(self.battle.attacker_id)
                         self.battle.stage = Battle.STAGE_ATT_ORDER
-                        building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
-                        token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
+                        if self.battle.attacker_id == PIND_MARQUISE:
+                            building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
+                            token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
+                        elif self.battle.attacker_id == PIND_ALLIANCE:
+                            building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
+                            token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
                         return building_choices + token_choices
                     # if the hits are all dealt, we check if a battle can still occur
                     elif clearing.get_num_warriors(self.battle.attacker_id) > 0:
@@ -792,8 +951,12 @@ class RootGame:
                 if self.battle.def_hits_to_deal > 0:
                     self.current_player = self.index_to_id(self.battle.attacker_id)
                     self.battle.stage = Battle.STAGE_ATT_ORDER
-                    building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
-                    token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
+                    if self.battle.attacker_id == PIND_MARQUISE:
+                        building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
+                        token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
+                    elif self.battle.attacker_id == PIND_ALLIANCE:
+                        building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
+                        token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
                     return building_choices + token_choices
                 # if the hits are all dealt, we check if a battle can still occur
                 elif clearing.get_num_warriors(self.battle.attacker_id) > 0:
@@ -869,8 +1032,12 @@ class RootGame:
                 # defender has a choice of what to remove
                 self.current_player = self.index_to_id(self.battle.defender_id)
                 self.battle.stage = Battle.STAGE_DEF_ORDER
-                building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
-                token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
+                if self.battle.defender_id == PIND_MARQUISE:
+                    building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
+                    token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
+                elif self.battle.defender_id == PIND_ALLIANCE:
+                    building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
+                    token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
                 return building_choices + token_choices
             # lastly, attacker takes hits
             logger.debug("--- Dealing hits to attacker...")
@@ -884,8 +1051,12 @@ class RootGame:
                 # attacker has a choice of what to remove
                 self.current_player = self.index_to_id(self.battle.attacker_id)
                 self.battle.stage = Battle.STAGE_ATT_ORDER
-                building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
-                token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
+                if self.battle.attacker_id == PIND_MARQUISE:
+                    building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
+                    token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
+                elif self.battle.attacker_id == PIND_ALLIANCE:
+                    building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
+                    token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
                 return building_choices + token_choices
             # battle is over
             logger.debug(f"--- BATTLE FINISHED")
@@ -925,8 +1096,12 @@ class RootGame:
                 # defender has a choice of what to remove
                 self.current_player = self.index_to_id(self.battle.defender_id)
                 self.battle.stage = Battle.STAGE_DEF_ORDER
-                building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
-                token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
+                if self.battle.defender_id == PIND_MARQUISE:
+                    building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
+                    token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
+                elif self.battle.defender_id == PIND_ALLIANCE:
+                    building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
+                    token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
                 return building_choices + token_choices
             # lastly, attacker takes hits
             logger.debug("--- Dealing hits to attacker...")
@@ -940,8 +1115,12 @@ class RootGame:
                 # attacker has a choice of what to remove
                 self.current_player = self.index_to_id(self.battle.attacker_id)
                 self.battle.stage = Battle.STAGE_ATT_ORDER
-                building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
-                token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
+                if self.battle.attacker_id == PIND_MARQUISE:
+                    building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
+                    token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
+                elif self.battle.attacker_id == PIND_ALLIANCE:
+                    building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
+                    token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
                 return building_choices + token_choices
             # battle is over
             logger.debug(f"--- BATTLE FINISHED")
@@ -974,8 +1153,12 @@ class RootGame:
                 # defender has a choice of what to remove
                 self.current_player = self.index_to_id(self.battle.defender_id)
                 self.battle.stage = Battle.STAGE_DEF_ORDER
-                building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
-                token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
+                if self.battle.defender_id == PIND_MARQUISE:
+                    building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
+                    token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
+                elif self.battle.defender_id == PIND_ALLIANCE:
+                    building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
+                    token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
                 return building_choices + token_choices
             # lastly, attacker takes hits
             logger.debug("--- Dealing hits to attacker...")
@@ -989,8 +1172,12 @@ class RootGame:
                 # attacker has a choice of what to remove
                 self.current_player = self.index_to_id(self.battle.attacker_id)
                 self.battle.stage = Battle.STAGE_ATT_ORDER
-                building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
-                token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
+                if self.battle.attacker_id == PIND_MARQUISE:
+                    building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
+                    token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
+                elif self.battle.attacker_id == PIND_ALLIANCE:
+                    building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
+                    token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
                 return building_choices + token_choices
             # battle is over
             logger.debug(f"--- BATTLE FINISHED")
@@ -1289,7 +1476,7 @@ class RootGame:
                 for i in range(3):
                     if remaining[i] > 0:
                         valid_suits.add(i)
-            possible_battle_clearings = [i for i,x in enumerate(self.board.get_possible_battles(PIND_EYRIE,PIND_MARQUISE)) if x]
+            possible_battle_clearings = [i for i,x in enumerate(self.board.get_possible_battles(PIND_EYRIE,PIND_ALLIANCE)) if x]
             for i in possible_battle_clearings:
                 if self.board.clearings[i].suit in valid_suits:
                     ans.append(i + AID_BATTLE)
@@ -1305,7 +1492,8 @@ class RootGame:
                         valid_suits.add(i)
             for i in range(12):
                 c = self.board.clearings[i]
-                if (c.suit in valid_suits) and (c.is_ruler(PIND_EYRIE)) and (c.get_num_buildings(PIND_EYRIE,BIND_ROOST) == 0) and (c.get_num_empty_slots() > 0) and (c.get_num_tokens(PIND_MARQUISE,TIND_KEEP) == 0):
+                # if (c.suit in valid_suits) and (c.is_ruler(PIND_EYRIE)) and (c.get_num_buildings(PIND_EYRIE,BIND_ROOST) == 0) and (c.get_num_empty_slots() > 0) and (c.get_num_tokens(PIND_MARQUISE,TIND_KEEP) == 0):
+                if (c.suit in valid_suits) and (c.is_ruler(PIND_EYRIE)) and (c.get_num_buildings(PIND_EYRIE,BIND_ROOST) == 0) and (c.get_num_empty_slots() > 0):
                     ans.append(i + AID_BUILD1)
         return ans
     
@@ -1332,6 +1520,9 @@ class RootGame:
             return []
         # finding all clearings the alliance could spread sympathy to
         sympathetic_clearings = {c.id for c in self.board.clearings if c.is_sympathetic()}
+        if len(sympathetic_clearings) == 0:
+            # TODO Add check for preventing placement in keep clearing
+            return [i+AID_SPREAD_SYMPATHY for i in range(12)]
         clearings_to_check = set()
         for i in sympathetic_clearings:
             adj_cids = self.board.clearings[i].adjacent_clearing_ids
@@ -1347,6 +1538,8 @@ class RootGame:
     
     def get_train_actions(self,aplayer:Alliance):
         "Get a list of all of the AIDs for training new officers for the Alliance."
+        if aplayer.warrior_storage == 0:
+            return []
         valid_suits = set()
         for bid in range(3):
             if aplayer.get_num_buildings_on_track(bid) == 0:
@@ -1397,7 +1590,7 @@ class RootGame:
         aplayer.change_num_buildings(csuit,-1)
         self.board.place_building(PIND_ALLIANCE,csuit,clearing_index)
         # place recruits
-        n_recruits = min(self.board.get_num_sympathetic(),aplayer.warrior_storage)
+        n_recruits = min(self.board.get_num_sympathetic(csuit),aplayer.warrior_storage)
         aplayer.change_num_warriors(-n_recruits)
         self.board.place_warriors(PIND_ALLIANCE,n_recruits,clearing_index)
         # add 1 officer
@@ -1428,40 +1621,63 @@ class RootGame:
         to the next required choice, skipping over steps / stages where
         there is no choice (as much as possible).
         """
-        if self.phase == self.PHASE_SETUP_MARQUISE:
+        # if self.phase == self.PHASE_SETUP_MARQUISE:
+        #     if self.phase_steps == 0:
+        #         logger.debug(f"\t\t--- GAME START --- Start Player: {ID_TO_PLAYER[0 if (self.first_player == 1) else 1]}")
+        #         return [i+AID_CHOOSE_CLEARING for i,x in enumerate(self.board.clearings) if (x.opposite_corner_id >= 0)]
+        #     if self.phase_steps == 1:
+        #         i = self.players[PIND_MARQUISE].keep_clearing_id
+        #         starting_clearing = self.board.clearings[i]
+        #         self.starting_build_spots = list(starting_clearing.adjacent_clearing_ids) + [i]
+        #         return [x + AID_BUILD1 for x in self.starting_build_spots]
+        #     if self.phase_steps == 2:
+        #         return [x + AID_BUILD2 for x in self.starting_build_spots if (self.board.clearings[x].get_num_empty_slots() > 0)]
+        #     if self.phase_steps == 3:
+        #         return [x + AID_BUILD3 for x in self.starting_build_spots if (self.board.clearings[x].get_num_empty_slots() > 0)]
+        #     if self.phase_steps == 4:
+        #         self.phase = self.PHASE_SETUP_EYRIE
+        #         self.phase_steps = 0
+        #         self.current_player = -1
+        #         return [x for x in range(AID_CHOOSE_LEADER,AID_CHOOSE_LEADER + 4)]
+        # if self.phase == self.PHASE_SETUP_EYRIE and self.phase_steps == 1:
+        #     # START GAME - Random Starting Player?
+        #     logger.debug(f"--- STARTING TURN 1 ---")
+        #     self.phase_steps = 0
+        #     if self.first_player == 1: # Marquise start
+        #         self.phase = self.PHASE_BIRDSONG_MARQUISE
+        #         self.current_player = 1
+        #     else: # Eyrie start
+        #         self.phase = self.PHASE_BIRDSONG_EYRIE
+        #         self.current_player = -1
+
+        # current_player_index = self.to_play()
+        # if current_player_index == PIND_MARQUISE:
+        #     return self.advance_marquise(self.players[current_player_index])
+        # elif current_player_index == PIND_EYRIE:
+        #     return self.advance_eyrie(self.players[current_player_index])
+        if self.phase == self.PHASE_SETUP_EYRIE:
             if self.phase_steps == 0:
                 logger.debug(f"\t\t--- GAME START --- Start Player: {ID_TO_PLAYER[0 if (self.first_player == 1) else 1]}")
                 return [i+AID_CHOOSE_CLEARING for i,x in enumerate(self.board.clearings) if (x.opposite_corner_id >= 0)]
             if self.phase_steps == 1:
-                i = self.players[PIND_MARQUISE].keep_clearing_id
-                starting_clearing = self.board.clearings[i]
-                self.starting_build_spots = list(starting_clearing.adjacent_clearing_ids) + [i]
-                return [x + AID_BUILD1 for x in self.starting_build_spots]
-            if self.phase_steps == 2:
-                return [x + AID_BUILD2 for x in self.starting_build_spots if (self.board.clearings[x].get_num_empty_slots() > 0)]
-            if self.phase_steps == 3:
-                return [x + AID_BUILD3 for x in self.starting_build_spots if (self.board.clearings[x].get_num_empty_slots() > 0)]
-            if self.phase_steps == 4:
-                self.phase = self.PHASE_SETUP_EYRIE
-                self.phase_steps = 0
-                self.current_player = -1
                 return [x for x in range(AID_CHOOSE_LEADER,AID_CHOOSE_LEADER + 4)]
-        if self.phase == self.PHASE_SETUP_EYRIE and self.phase_steps == 1:
+            if self.phase_steps == 2:
+                self.alliance_setup(self.players[PIND_ALLIANCE])
             # START GAME - Random Starting Player?
             logger.debug(f"--- STARTING TURN 1 ---")
             self.phase_steps = 0
-            if self.first_player == 1: # Marquise start
-                self.phase = self.PHASE_BIRDSONG_MARQUISE
-                self.current_player = 1
-            else: # Eyrie start
+            if self.first_player == 1: # Eyrie start
                 self.phase = self.PHASE_BIRDSONG_EYRIE
+                self.current_player = 1
+            else: # Alliance start
+                self.phase = self.PHASE_BIRDSONG_ALLIANCE
                 self.current_player = -1
 
         current_player_index = self.to_play()
-        if current_player_index == PIND_MARQUISE:
-            return self.advance_marquise(self.players[current_player_index])
-        elif current_player_index == PIND_EYRIE:
+        if current_player_index == PIND_EYRIE:
             return self.advance_eyrie(self.players[current_player_index])
+        elif current_player_index == PIND_ALLIANCE:
+            return self.advance_alliance(self.players[current_player_index])
     
     def advance_marquise(self,current_player:Marquise):
         "Advances the game assuming we are in the middle of the Marquise's turn."
@@ -1603,6 +1819,9 @@ class RootGame:
                 self.phase_steps = 1
             # Evening Phase
             if self.phase_steps == 1:
+                if self.outrage_offender is not None:
+                    # prevent drawing cards before paying outrage
+                    return [AID_GENERIC_SKIP]
                 self.draw_cards(PIND_MARQUISE,current_player.get_num_cards_to_draw())
                 self.phase_steps = 2
             if self.phase_steps == 2 and len(current_player.hand) > 5:
@@ -1691,7 +1910,7 @@ class RootGame:
             if self.phase_steps == 0:
                 # can they use Command Warren?
                 if CID_COMMAND_WARREN in {c.id for c in current_player.persistent_cards}:
-                    foo = self.board.get_possible_battles(PIND_EYRIE,PIND_MARQUISE)
+                    foo = self.board.get_possible_battles(PIND_EYRIE,PIND_ALLIANCE)
                     if bool(foo):
                         logger.debug(f"Checking for use of Command Warren...")
                         return [AID_GENERIC_SKIP] + [i+AID_CARD_COMMAND_WARREN for i,x in enumerate(foo) if x]
@@ -1782,6 +2001,9 @@ class RootGame:
                 self.phase_steps = 1
             # Evening Phase
             if self.phase_steps == 1:
+                if self.outrage_offender is not None:
+                    # prevent drawing cards before paying outrage
+                    return [AID_GENERIC_SKIP]
                 self.change_score(PIND_EYRIE,current_player.get_points_to_score())
                 self.draw_cards(PIND_EYRIE,current_player.get_num_cards_to_draw())
                 self.phase_steps = 2
@@ -1822,14 +2044,14 @@ class RootGame:
                             ans.append(AID_CARD_STAND_DELIVER)
                         if CID_ROYAL_CLAIM in unused_pers:
                             ans.append(AID_CARD_ROYAL_CLAIM)
-                        logger.debug("Choosing whether or not to revolt...")
+                        logger.debug("- Choosing whether or not to revolt...")
                         return [AID_GENERIC_SKIP] + ans
                 if self.phase_steps == 2: # choosing what to spend for revolt
                     if self.remaining_supporter_cost != 0:
                         ans = {(c.id + AID_SPEND_SUPPORTER) for c in current_player.supporters if (c.suit in {SUIT_BIRD,self.required_supporter_suit})}
                         if bool(ans):
                             logger.debug(f"\tChoosing supporter to spend...")
-                            return ans
+                            return list(ans)
                     self.phase_steps = 1
             while self.phase_steps < 5:
                 if self.phase_steps == 3: # spreading sympathy
@@ -1843,14 +2065,14 @@ class RootGame:
                             ans.append(AID_CARD_STAND_DELIVER)
                         if CID_ROYAL_CLAIM in unused_pers:
                             ans.append(AID_CARD_ROYAL_CLAIM)
-                        logger.debug(f"Checking for spreading sympathy...")
+                        logger.debug(f"- Checking for spreading sympathy...")
                         return [AID_GENERIC_SKIP] + ans
                 if self.phase_steps == 4: # choosing what to spend for spreading sympathy
                     if self.remaining_supporter_cost != 0:
                         ans = {(c.id + AID_SPEND_SUPPORTER) for c in current_player.supporters if (c.suit in {SUIT_BIRD,self.required_supporter_suit})}
                         if bool(ans):
                             logger.debug(f"\tChoosing supporter to spend ({self.remaining_supporter_cost} needed)")
-                            return ans
+                            return list(ans)
                     self.phase_steps = 3
             if self.phase_steps == 5:
                 unused_pers = {c.id for c in current_player.persistent_cards} - self.persistent_used_this_turn
@@ -1949,6 +2171,9 @@ class RootGame:
                     logger.debug("No military operations left to use...")
                     self.phase_steps = 2
             if self.phase_steps == 2:
+                if self.outrage_offender is not None:
+                    # prevent drawing cards before someone pays outrage
+                    return [AID_GENERIC_SKIP]
                 self.draw_cards(PIND_ALLIANCE,current_player.get_num_cards_to_draw())
                 self.phase_steps = 3
             if self.phase_steps == 3 and len(current_player.hand) > 5:
@@ -1984,14 +2209,22 @@ class RootGame:
             self.marquise_daylight(action,current_player)
         elif self.phase == self.PHASE_DAYLIGHT_EYRIE:
             self.eyrie_daylight(action,current_player)
+        elif self.phase == self.PHASE_DAYLIGHT_ALLIANCE:
+            self.alliance_daylight(action,current_player)
+
         elif self.phase == self.PHASE_BIRDSONG_MARQUISE:
             self.marquise_birdsong(action,current_player)
         elif self.phase == self.PHASE_BIRDSONG_EYRIE:
             self.eyrie_birdsong(action,current_player)
+        elif self.phase == self.PHASE_BIRDSONG_ALLIANCE:
+            self.alliance_birdsong(action,current_player)
+
         elif self.phase == self.PHASE_EVENING_MARQUISE:
             self.marquise_evening(action)
         elif self.phase == self.PHASE_EVENING_EYRIE:
             self.eyrie_evening(action)
+        elif self.phase == self.PHASE_EVENING_ALLIANCE:
+            self.alliance_evening(action,current_player)
         ### INITIAL SETUP
         elif self.phase == self.PHASE_SETUP_MARQUISE:
             self.marquise_setup(action,current_player)
@@ -2230,14 +2463,14 @@ class RootGame:
     def eyrie_setup(self,action:int,current_player:Eyrie):
         "Performs the corresponding Eyrie setup action."
         s = self.phase_steps
-        if s == 0: # choosing which leader to setup
+        if s == 0: # choosing which corner to setup in
             # initial setup
-            keep_id = self.players[PIND_MARQUISE].keep_clearing_id
-            setup_id = self.board.clearings[keep_id].opposite_corner_id
+            setup_id = action - AID_CHOOSE_CLEARING
             current_player.place_roost()
             current_player.change_num_warriors(-6)
             self.board.place_building(PIND_EYRIE,BIND_ROOST,setup_id)
             self.board.place_warriors(PIND_EYRIE,6,setup_id)
+        elif s == 1:
             # action is the leader that was chosen
             current_player.choose_new_leader(action - AID_CHOOSE_LEADER)
         self.phase_steps += 1
@@ -2245,7 +2478,7 @@ class RootGame:
     def eyrie_birdsong(self,action:int,current_player:Eyrie):
         "Performs the action during the Eyrie's birdsong / changes the turn stage."
         if action == AID_CARD_BBB:
-            self.activate_better_burrow(PIND_EYRIE,PIND_MARQUISE)
+            self.activate_better_burrow(PIND_EYRIE,PIND_ALLIANCE)
             self.persistent_used_this_turn.add(CID_BBB)
             self.phase_steps = 1
         elif action == AID_GENERIC_SKIP: # don't use BBB OR Don't add second card to decree
@@ -2286,7 +2519,7 @@ class RootGame:
                 self.phase_steps = 3
 
         elif action == AID_CARD_STAND_DELIVER:
-            self.activate_stand_and_deliver(PIND_EYRIE,PIND_MARQUISE)
+            self.activate_stand_and_deliver(PIND_EYRIE,PIND_ALLIANCE)
             self.persistent_used_this_turn.add(CID_STAND_AND_DELIVER)
         elif action == AID_CARD_ROYAL_CLAIM:
             self.activate_royal_claim(PIND_EYRIE)
@@ -2315,7 +2548,7 @@ class RootGame:
 
         elif action >= AID_BATTLE and action <= AID_BATTLE + 11:
             logger.debug(">> Decree: BATTLE")
-            self.battle = Battle(PIND_EYRIE,PIND_MARQUISE,action - AID_BATTLE)
+            self.battle = Battle(PIND_EYRIE,PIND_ALLIANCE,action - AID_BATTLE)
             self.reduce_decree_count(DECREE_BATTLE, self.board.clearings[action - AID_BATTLE].suit)
         elif action >= AID_MOVE and action <= AID_MOVE + 3599:
             logger.debug(">> Decree: MOVE")
@@ -2358,7 +2591,7 @@ class RootGame:
 
         elif action == AID_CARD_CODEBREAKERS:
             self.persistent_used_this_turn.add(CID_CODEBREAKERS)
-            self.activate_codebreakers(PIND_EYRIE,PIND_MARQUISE)
+            self.activate_codebreakers(PIND_EYRIE,PIND_ALLIANCE)
         elif action >= AID_CARD_TAX_COLLECTOR and action <= AID_CARD_TAX_COLLECTOR + 11: # activate tax collector
             self.persistent_used_this_turn.add(CID_TAX_COLLECTOR)
             self.activate_tax_collector(PIND_EYRIE,action - AID_CARD_TAX_COLLECTOR)
@@ -2366,7 +2599,7 @@ class RootGame:
             logger.debug("Command Warren Activated:")
             self.phase_steps = 1
             self.persistent_used_this_turn.add(CID_COMMAND_WARREN)
-            self.battle = Battle(PIND_EYRIE,PIND_MARQUISE,action - AID_CARD_COMMAND_WARREN)
+            self.battle = Battle(PIND_EYRIE,PIND_ALLIANCE,action - AID_CARD_COMMAND_WARREN)
         elif action >= AID_CRAFT_ROYAL_CLAIM and action <= AID_CRAFT_ROYAL_CLAIM + 14: # craft Royal Claim
             self.craft_royal_claim(PIND_EYRIE,action)
     
@@ -2393,7 +2626,7 @@ class RootGame:
 
 
     def alliance_setup(self,current_player:Alliance):
-        "Performs the corresponding Alliance setup action."
+        "Performs the setup for the Alliance (draws 3 supporters)."
         for i in range(3):
             c_drawn = self.deck.draw(1)[0]
             current_player.add_to_supporters(c_drawn)
@@ -2439,8 +2672,6 @@ class RootGame:
             if self.remaining_supporter_cost > 0:
                 return
             # cost spent
-            self.alliance_action_clearing = None
-            self.required_supporter_suit = None
             if self.phase_steps == 2:
                 # activate revolt
                 self.revolt_helper(current_player,self.alliance_action_clearing)
@@ -2449,6 +2680,8 @@ class RootGame:
                 self.board.place_token(PIND_ALLIANCE,TIND_SYMPATHY,self.alliance_action_clearing)
                 pts = current_player.spread_sympathy_helper()
                 self.change_score(PIND_ALLIANCE,pts)
+            self.alliance_action_clearing = None
+            self.required_supporter_suit = None
 
         elif action == AID_CARD_STAND_DELIVER:
             self.activate_stand_and_deliver(PIND_ALLIANCE,PIND_EYRIE)
@@ -2466,17 +2699,9 @@ class RootGame:
             self.phase_steps += 1
 
         elif action >= AID_MOBILIZE and action <= AID_MOBILIZE + 41:
-            logger.debug(f"\t> Mobilize: {c_to_add.name} added to supporters")
             c_to_add = self.get_card(PIND_ALLIANCE,action - AID_MOBILIZE,"hand")
-            if (sum([current_player.get_num_buildings_on_track(bid) for bid in range(3)]) == 3 and
-                    len(current_player.supporters) >= 5):
-                # Limit of 5 supporters with no bases built
-                logger.debug(f"\t\t-> Cannot add more than five supporters with no bases built.")
-                self.add_to_discard(c_to_add)
-            else:
-                # add to the supporter pile
-                current_player.add_to_supporters(c_to_add)
-            current_player.add_to_supporters(c_to_add)
+            logger.debug(f"\t> Mobilize: {c_to_add.name} added to supporters")
+            self.add_to_supporters_check(current_player,c_to_add)
         elif action >= AID_TRAIN and action <= AID_TRAIN + 41:
             self.discard_from_hand(PIND_ALLIANCE,action - AID_TRAIN)
             current_player.num_officers += 1
@@ -2524,11 +2749,14 @@ class RootGame:
             self.evening_actions_left -= 1
             cid = action - AID_ORGANIZE
             self.board.place_warriors(PIND_ALLIANCE,-1,cid)
+            current_player.change_num_warriors(1)
             self.board.place_token(PIND_ALLIANCE,TIND_SYMPATHY,cid)
             pts = current_player.spread_sympathy_helper()
             self.change_score(PIND_ALLIANCE,pts)
         elif action == AID_GENERIC_SKIP: # choose not to use cobbler / any more military operations
             logger.debug("- Chose to Skip")
+            if self.phase_steps == 2:
+                return
             self.phase_steps += 1
         elif action >= AID_DISCARD_CARD and action <= AID_DISCARD_CARD + 41: # Discard excess card
             self.discard_from_hand(PIND_ALLIANCE, action - AID_DISCARD_CARD)
@@ -2553,61 +2781,62 @@ if __name__ == "__main__":
     np.set_printoptions(threshold=np.inf)
     env.reset()
     # while action_count < 15:
-    while not done:
-        legal_actions = env.legal_actions()
-        logger.debug(f"> Action {action_count} - Player: {ID_TO_PLAYER[env.to_play()]}")
-        logger.info(f"Legal Actions: {legal_actions}")
-        # print(f"Player: {ID_TO_PLAYER[env.to_play()]}")
-        # print(f"> Action {action_count} - Legal Actions: {legal_actions}")
+    # while not done:
+    #     legal_actions = env.legal_actions()
+    #     logger.debug(f"> Action {action_count} - Player: {ID_TO_PLAYER[env.to_play()]}")
+    #     logger.info(f"Legal Actions: {legal_actions}")
+    #     # print(f"Player: {ID_TO_PLAYER[env.to_play()]}")
+    #     # print(f"> Action {action_count} - Legal Actions: {legal_actions}")
 
-        # action = -1
-        # while action not in legal_actions:
-        #     action = int(input("Choose a valid action: "))
-        action = random.choice(legal_actions)
-        # print(f"\tAction Chosen: {action}")
-        logger.info(f"\t> Action Chosen: {action}")
-        obs,reward,done = env.step(action)
-        # if env.battle.stage != Battle.STAGE_DONE:
-        #     for i,sq in enumerate(obs):
-        #         logger.debug(f"- Observation Square {i}:\n{sq}\n")
-        # print(f"-> Earned {reward} points from this action")
-        # if done:
-        #     env.render()
-        logger.debug(f"-> Earned {reward} points from this action")
+    #     # action = -1
+    #     # while action not in legal_actions:
+    #     #     action = int(input("Choose a valid action: "))
+    #     action = random.choice(legal_actions)
+    #     # print(f"\tAction Chosen: {action}")
+    #     logger.info(f"\t> Action Chosen: {action}")
+    #     obs,reward,done = env.step(action)
+    #     # if env.battle.stage != Battle.STAGE_DONE:
+    #     #     for i,sq in enumerate(obs):
+    #     #         logger.debug(f"- Observation Square {i}:\n{sq}\n")
+    #     # print(f"-> Earned {reward} points from this action")
+    #     # if done:
+    #     #     env.render()
+    #     logger.debug(f"-> Earned {reward} points from this action")
 
-        action_count += 1
-    # obs = env.get_observation().reshape((40,8,8))
+    #     action_count += 1
+    # obs = env.get_observation()
+    # logger.debug(f"Length: {len(obs)}\n{obs}")
     # for i,sq in enumerate(obs):
     #     logger.debug(f"- Observation Square {i}:\n{sq}\n")
 
     # logger.setLevel(logging.WARNING)
-    # glens = []
-    # for _ in range(25):
-    #     done = False
-    #     action_count = 0
-    #     while not done:
-    #         legal_actions = env.legal_actions()
-    #         logger.info(f"Player: {ID_TO_PLAYER[env.to_play()]}")
-    #         logger.info(f"> Action {action_count} - Legal Actions: {legal_actions}")
-    #         # print(f"Player: {ID_TO_PLAYER[env.to_play()]}")
-    #         # print(f"> Action {action_count} - Legal Actions: {legal_actions}")
+    glens = []
+    for _ in range(25):
+        done = False
+        action_count = 0
+        while not done:
+            legal_actions = env.legal_actions()
+            logger.info(f"Player: {ID_TO_PLAYER[env.to_play()]}")
+            logger.info(f"> Action {action_count} - Legal Actions: {legal_actions}")
+            # print(f"Player: {ID_TO_PLAYER[env.to_play()]}")
+            # print(f"> Action {action_count} - Legal Actions: {legal_actions}")
 
-    #         # action = -1
-    #         # while action not in legal_actions:
-    #         #     action = int(input("Choose a valid action: "))
-    #         action = random.choice(legal_actions)
-    #         # print(f"\tAction Chosen: {action}")
-    #         logger.info(f"\t> Action Chosen: {action}")
-    #         reward,done = env.step(action)
-    #         # print(f"-> Earned {reward} points from this action")
-    #         # if done:
-    #         #     env.render()
-    #         action_count += 1
-    #     glens.append(action_count)
-    #     print(env.victory_points)
-    #     env.reset()
+            # action = -1
+            # while action not in legal_actions:
+            #     action = int(input("Choose a valid action: "))
+            action = random.choice(legal_actions)
+            # print(f"\tAction Chosen: {action}")
+            logger.info(f"\t> Action Chosen: {action}")
+            obs,reward,done = env.step(action)
+            # print(f"-> Earned {reward} points from this action")
+            # if done:
+            #     env.render()
+            action_count += 1
+        glens.append(action_count)
+        print(env.victory_points)
+        env.reset()
 
-    # print(f"\nGames: {glens}")
-    # print(f"\nLongest Length: {max(glens)}")
-    # print(f"Shortest Length: {min(glens)}")
-    # print(f"Average Length: {sum(glens)/25}")
+    print(f"\nGames: {glens}")
+    print(f"\nLongest Length: {max(glens)}")
+    print(f"Shortest Length: {min(glens)}")
+    print(f"Average Length: {sum(glens)/25}")
