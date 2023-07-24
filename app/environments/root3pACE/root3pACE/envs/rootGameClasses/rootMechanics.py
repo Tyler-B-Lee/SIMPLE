@@ -1,7 +1,7 @@
 import random
 import numpy as np
-from .classes import *
-# from classes import *
+# from .classes import *
+from classes import *
 
 # python -m tensorboard.main --logdir="C:\Users\tyler\Desktop\Desktop Work\SIMPLE\app\logs"
 
@@ -28,7 +28,7 @@ class RootGame:
         # self.reset_for_eyrie()
 
     def to_play(self):
-        return 0 if self.current_player == 1 else 1
+        return self.current_player
     
     def index_to_id(self,x):
         "Converts 0 to 1, 1 to -1"
@@ -43,9 +43,9 @@ class RootGame:
         self.alliance_interrupt_player = None
         self.points_scored_this_action = 0
         self.current_player = 0
-        self.players = [Eyrie(0), Alliance(1)]
-        self.victory_points = [0,0]
-        self.phase = self.PHASE_SETUP_EYRIE
+        self.players = [Marquise(0), Eyrie(1), Alliance(2)]
+        self.victory_points = [0,0,0]
+        self.phase = self.PHASE_SETUP_MARQUISE
         self.phase_steps = 0
 
         self.field_hospitals = []
@@ -70,12 +70,23 @@ class RootGame:
             ITEM_CROSSBOW: 1,
             ITEM_HAMMER: 1
         }
-        self.first_player = random.choice([0,1])
-        self.draw_cards(PIND_ALLIANCE,3)
+        self.turn_order = [0,1,2]
+        random.shuffle(self.turn_order)
+        self.draw_cards(PIND_MARQUISE,3)
         self.draw_cards(PIND_EYRIE,3)
-        # self.marquise_seen_hands = {PIND_EYRIE:[np.full((38,3),-1) for _ in range(3)]}
-        self.eyrie_seen_hands = {PIND_ALLIANCE:[np.full((38,3),-1) for _ in range(3)]}
-        self.alliance_seen_hands = {PIND_EYRIE:[np.full((38,3),-1) for _ in range(3)]}
+        self.draw_cards(PIND_ALLIANCE,3)
+        self.marquise_seen_hands = {
+            PIND_EYRIE: [np.full((38,3),-1) for _ in range(3)],
+            PIND_ALLIANCE: [np.full((38,3),-1) for _ in range(3)]
+        }
+        self.eyrie_seen_hands = {
+            PIND_MARQUISE: [np.full((38,3),-1) for _ in range(3)],
+            PIND_ALLIANCE: [np.full((38,3),-1) for _ in range(3)]
+        }
+        self.alliance_seen_hands = {
+            PIND_EYRIE: [np.full((38,3),-1) for _ in range(3)],
+            PIND_MARQUISE: [np.full((38,3),-1) for _ in range(3)]
+        }
 
     def reset_for_marquise(self):
         # print(self.board)
@@ -91,7 +102,9 @@ class RootGame:
         self.persistent_used_this_turn = set()
         self.remaining_craft_power = [0]
         self.marquise_seen_hands[PIND_EYRIE].insert(0,np.full((38,3),-1))
+        self.marquise_seen_hands[PIND_ALLIANCE].insert(0,np.full((38,3),-1))
         self.marquise_seen_hands[PIND_EYRIE].pop()
+        self.marquise_seen_hands[PIND_ALLIANCE].pop()
     def reset_for_eyrie(self):
         # print(self.board)
         self.eyrie_cards_added = 0
@@ -105,7 +118,9 @@ class RootGame:
         self.persistent_used_this_turn = set()
         self.remaining_craft_power = [0]
         self.eyrie_seen_hands[PIND_ALLIANCE].insert(0,np.full((38,3),-1))
+        self.eyrie_seen_hands[PIND_MARQUISE].insert(0,np.full((38,3),-1))
         self.eyrie_seen_hands[PIND_ALLIANCE].pop()
+        self.eyrie_seen_hands[PIND_MARQUISE].pop()
     def reset_for_alliance(self):
         # print(self.board)
         self.remaining_supporter_cost = 0
@@ -115,11 +130,13 @@ class RootGame:
         self.persistent_used_this_turn = set()
         self.remaining_craft_power = [0]
         self.alliance_seen_hands[PIND_EYRIE].insert(0,np.full((38,3),-1))
+        self.alliance_seen_hands[PIND_MARQUISE].insert(0,np.full((38,3),-1))
         self.alliance_seen_hands[PIND_EYRIE].pop()
+        self.alliance_seen_hands[PIND_MARQUISE].pop()
 
     def reset(self):
         self.reset_general_items()
-        # self.reset_for_marquise()
+        self.reset_for_marquise()
         self.reset_for_eyrie()
         self.reset_for_alliance()
         return self.get_observation()
@@ -128,7 +145,13 @@ class RootGame:
         actions_to_return = []
         self.points_scored_this_action = 0
         self.acting_player = self.current_player
-        self.outside_turn_this_action = PIND_EYRIE if self.phase in {self.PHASE_SETUP_EYRIE,self.PHASE_BIRDSONG_EYRIE,self.PHASE_DAYLIGHT_EYRIE,self.PHASE_EVENING_EYRIE} else PIND_ALLIANCE
+        if self.phase in {self.PHASE_SETUP_EYRIE,self.PHASE_BIRDSONG_EYRIE,self.PHASE_DAYLIGHT_EYRIE,self.PHASE_EVENING_EYRIE}:
+            self.outside_turn_this_action = PIND_EYRIE
+        elif self.phase in {self.PHASE_SETUP_MARQUISE,self.PHASE_BIRDSONG_MARQUISE,self.PHASE_DAYLIGHT_MARQUISE,self.PHASE_EVENING_MARQUISE}:
+            self.outside_turn_this_action = PIND_MARQUISE
+        else:
+            self.outside_turn_this_action = PIND_ALLIANCE
+            
         aplayer = self.players[PIND_ALLIANCE]
         # first, check for outrage payment
         if self.outrage_offender is not None:

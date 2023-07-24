@@ -29,6 +29,9 @@ def get_environment(env_name):
         elif env_name in ('root2pCVEWinter'):
             from root2pCVEWinter.envs.root2pCVEWinter import rootEnv
             return rootEnv
+        elif env_name in ('root2pEVA'):
+            from root2pEVA.envs.root2pEVA import rootEnv
+            return rootEnv
         elif env_name in ('sushigo'):
             from sushigo.envs.sushigo import SushiGoEnv
             return SushiGoEnv
@@ -95,6 +98,9 @@ def get_network_arch(env_name):
         return CustomPolicy
     elif env_name in ('root2pCVEWinter'):
         from models.root2pCVEWinter.models import CustomPolicy
+        return CustomPolicy
+    elif env_name in ('root2pEVA'):
+        from models.root2pEVA.models import CustomPolicy
         return CustomPolicy
     elif env_name in ('sushigo'):
         from models.sushigo.models import CustomPolicy
