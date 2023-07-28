@@ -1,9 +1,9 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='root2pEVA',
+    name='root3pACE',
     version='0.1.0',
-    description='ROOT: Eyrie vs Alliance Gym Environment (Default Autumn)',
+    description='ROOT: Marquise vs Eyrie vs Alliance Gym Environment (Default Autumn)',
     packages=find_packages(),
     install_requires=[
         'gym>=0.9.4,<=0.15.7',

@@ -1,15 +1,15 @@
 import copy
 import random
 from typing import Tuple,List
-import logging
-# from stable_baselines import logger
+# import logging
+from stable_baselines import logger
 import numpy as np
 
 Recipe = Tuple[int,int,int,int]
 
-logging.basicConfig(filename='file.log',format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",filemode='w')
-logger = logging.getLogger("classes")
-logger.setLevel(logging.DEBUG)
+# logging.basicConfig(filename='file.log',format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",filemode='w')
+# logger = logging.getLogger("classes")
+# logger.setLevel(logging.DEBUG)
 
 ### Named Constants
 SUIT_MOUSE = 0
@@ -124,13 +124,12 @@ AID_EFFECTS_ARM_BT = AID_EFFECTS_SAPPERS + 1
 AID_EFFECTS_ARMSAP = AID_EFFECTS_ARM_BT + 1
 
 AID_CARD_BBB = AID_EFFECTS_ARMSAP + 1
-AID_CARD_ROYAL_CLAIM = AID_CARD_BBB + 1
+AID_CARD_ROYAL_CLAIM = AID_CARD_BBB + 3
 AID_CARD_STAND_DELIVER = AID_CARD_ROYAL_CLAIM + 1
-AID_CARD_CODEBREAKERS = AID_CARD_STAND_DELIVER + 1
-AID_CARD_TAX_COLLECTOR = AID_CARD_CODEBREAKERS + 1
-AID_CARD_COMMAND_WARREN = AID_CARD_TAX_COLLECTOR + 12
+AID_CARD_CODEBREAKERS = AID_CARD_STAND_DELIVER + 3
+AID_CARD_TAX_COLLECTOR = AID_CARD_CODEBREAKERS + 3
 
-AID_ACTIVATE_MOUSE_DOM = AID_CARD_COMMAND_WARREN + 12
+AID_ACTIVATE_MOUSE_DOM = AID_CARD_TAX_COLLECTOR + 12
 AID_ACTIVATE_RABBIT_DOM = AID_ACTIVATE_MOUSE_DOM + 1
 AID_ACTIVATE_FOX_DOM = AID_ACTIVATE_RABBIT_DOM + 1
 AID_ACTIVATE_BIRD_DOM = AID_ACTIVATE_FOX_DOM + 1
@@ -234,30 +233,38 @@ class Clearing:
     
     def get_obs_array(self):
         "Returns an array describing the current state of this clearing."
-        # ret = np.zeros(25)
-        # if self.get_num_warriors(PIND_MARQUISE) > 0:
-        #     ret[self.get_num_warriors(PIND_MARQUISE) - 1] = 1
-        # foo = np.zeros(9)
-        # if self.get_num_tokens(PIND_MARQUISE,TIND_WOOD) > 0:
-        #     foo[self.get_num_tokens(PIND_MARQUISE,TIND_WOOD) - 1] = 1
-        # if self.get_num_tokens(PIND_MARQUISE,TIND_KEEP) > 0:
-        #     foo[8] = 1
-        # ret = np.append(ret,foo)
+        ret = np.zeros(25)
+        if self.get_num_warriors(PIND_MARQUISE) > 0:
+            ret[self.get_num_warriors(PIND_MARQUISE) - 1] = 1
+        foo = np.zeros(9)
+        if self.get_num_tokens(PIND_MARQUISE,TIND_WOOD) > 0:
+            foo[self.get_num_tokens(PIND_MARQUISE,TIND_WOOD) - 1] = 1
+        if self.get_num_tokens(PIND_MARQUISE,TIND_KEEP) > 0:
+            foo[8] = 1
+        ret = np.append(ret,foo)
 
-        # foo = np.zeros(6)
-        # if self.get_num_buildings(PIND_MARQUISE,BIND_SAWMILL) > 0:
-        #     foo[self.get_num_buildings(PIND_MARQUISE,BIND_SAWMILL) - 1] = 1
-        # if self.get_num_buildings(PIND_MARQUISE,BIND_WORKSHOP) > 0:
-        #     foo[self.get_num_buildings(PIND_MARQUISE,BIND_WORKSHOP) + 1] = 1
-        # if self.get_num_buildings(PIND_MARQUISE,BIND_RECRUITER) > 0:
-        #     foo[self.get_num_buildings(PIND_MARQUISE,BIND_RECRUITER) + 3] = 1
-        # ret = np.append(ret,foo)
+        foo = np.zeros(6)
+        if self.get_num_buildings(PIND_MARQUISE,BIND_SAWMILL) > 0:
+            foo[self.get_num_buildings(PIND_MARQUISE,BIND_SAWMILL) - 1] = 1
+        if self.get_num_buildings(PIND_MARQUISE,BIND_WORKSHOP) > 0:
+            foo[self.get_num_buildings(PIND_MARQUISE,BIND_WORKSHOP) + 1] = 1
+        if self.get_num_buildings(PIND_MARQUISE,BIND_RECRUITER) > 0:
+            foo[self.get_num_buildings(PIND_MARQUISE,BIND_RECRUITER) + 3] = 1
+        ret = np.append(ret,foo)
 
-        ret = np.zeros(11)
+        foo = np.zeros(21)
+        if self.get_num_warriors(PIND_EYRIE) > 0:
+            foo[self.get_num_warriors(PIND_EYRIE) - 1] = 1
+        if self.get_num_buildings(PIND_EYRIE,BIND_ROOST) > 0:
+            foo[20] = 1
+        ret = np.append(ret,foo)
+
+        foo = np.zeros(11)
         if self.get_num_warriors(PIND_ALLIANCE) > 0:
-            ret[self.get_num_warriors(PIND_ALLIANCE) - 1] = 1
+            foo[self.get_num_warriors(PIND_ALLIANCE) - 1] = 1
         if self.get_num_tokens(PIND_ALLIANCE,TIND_SYMPATHY) > 0:
-            ret[10] = 1
+            foo[10] = 1
+        ret = np.append(ret,foo)
 
         foo = np.zeros(3)
         if self.get_num_buildings(PIND_ALLIANCE,BIND_MOUSE_BASE) > 0:
@@ -266,13 +273,6 @@ class Clearing:
             foo[BIND_RABBIT_BASE] = 1
         elif self.get_num_buildings(PIND_ALLIANCE,BIND_FOX_BASE) > 0:
             foo[BIND_FOX_BASE] = 1
-        ret = np.append(ret,foo)
-
-        foo = np.zeros(21)
-        if self.get_num_warriors(PIND_EYRIE) > 0:
-            foo[self.get_num_warriors(PIND_EYRIE) - 1] = 1
-        if self.get_num_buildings(PIND_EYRIE,BIND_ROOST) > 0:
-            foo[20] = 1
         return np.append(ret,foo)
     
     def get_num_empty_slots(self) -> int:
@@ -298,14 +298,24 @@ class Clearing:
         Returns the player index of the player that rules the current clearing.
         If nobody returns the current clearing, returns -1.
         """
-        # num_marquise = self.get_ruling_power(PIND_MARQUISE)
+        num_marquise = self.get_ruling_power(PIND_MARQUISE)
         num_eyrie = self.get_ruling_power(PIND_EYRIE)
         num_alliance = self.get_ruling_power(PIND_ALLIANCE)
 
-        if (num_alliance == 0) and (num_eyrie == 0):
+        if (num_alliance == 0) and (num_eyrie == 0) and (num_marquise == 0):
             return -1
+        # a faction has some piece in it (max rule power > 0)
+        max_power = max(num_marquise,num_eyrie,num_alliance)
         # the Eyrie rule tied clearings they have a piece in with "Lords of the Forest"
-        return PIND_EYRIE if (num_eyrie >= num_alliance) else PIND_ALLIANCE
+        if num_eyrie == max_power:
+            return PIND_EYRIE
+        # The Eyrie have < max rule power, so it's either the alliance or marquise
+        if num_marquise > num_alliance:
+            return PIND_MARQUISE
+        if num_alliance > num_marquise:
+            return PIND_ALLIANCE
+        # there is a tie between marquise/alliance, so nobody rules
+        return -1
     
     def is_ruler(self,faction_index:int) -> bool:
         "Returns True if the given faction IS the ruler of this clearing, False otherwise."
@@ -377,8 +387,7 @@ class Clearing:
         Returns True if the faction can place a piece in this clearing. This is mainly affected
         by the Marquise's Keep, which blocks other Factions from placing pieces in its clearing.
         """
-        # return (faction_index == PIND_MARQUISE) or (TIND_KEEP not in self.tokens[PIND_MARQUISE])
-        return True
+        return (TIND_KEEP not in self.tokens[PIND_MARQUISE]) or (faction_index == PIND_MARQUISE)
     
     def is_adjacent_to(self,other_index:int):
         "Returns True only if this clearing is connected to the clearing with the other index given."
@@ -397,8 +406,8 @@ class Clearing:
         ans = marqwar = 0
         for faction_i in {j for j in range(N_PLAYERS) if j != safe_faction_index}:
             ans += self.get_num_buildings(faction_i) + self.get_num_tokens(faction_i)
-            # if faction_i == PIND_MARQUISE:
-            #     marqwar = self.get_num_warriors(faction_i)
+            if faction_i == PIND_MARQUISE:
+                marqwar = self.get_num_warriors(faction_i)
                 
         return ans,marqwar
     
@@ -1211,14 +1220,14 @@ class Battle:
         return ret
     
     def get_obs_array(self):
-        ret = np.zeros(9)
+        ret = np.zeros(11)
         if self.stage is not None:
             ret[self.stage] = 1
         if self.stage == self.STAGE_DONE:
-            return np.append(ret,np.zeros(55))
-        foo = np.zeros(5)
-        foo[0:3] = 1 if (self.attacker_id == 0) else -1
-        foo[3:5] = 1 if (self.defender_id == 0) else -1
+            return np.append(ret,np.zeros(56))
+        foo = np.zeros(6)
+        foo[self.attacker_id] = 1
+        foo[self.defender_id + 3] = 1
         ret = np.append(ret,foo)
 
         foo = np.zeros(12)

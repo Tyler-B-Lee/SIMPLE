@@ -5,22 +5,22 @@ import config
 
 from stable_baselines import logger
 from .rootGameClasses.classes import *
-from .rootGameClasses.root2PCE import *
+from .rootGameClasses.rootMechanics import *
 
-# docker-compose exec app mpirun -np 2 python3 train.py -e root2pEVA -ef 25600 -ne 30 -tpa 2560 -ob 2560 -t 0.3
+# docker-compose exec app mpirun -np 2 python3 train.py -e root3pACE -ef 25600 -ne 30 -tpa 2560 -ob 2560 -t 0.3
 
 class rootEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self, verbose = False, manual = False):
         super(rootEnv, self).__init__()
-        self.name = 'root2pEVA'
-        self.n_players = 2
+        self.name = 'root3pACE'
+        self.n_players = 3
         self.manual = manual
 
-        self.action_space = gym.spaces.Discrete(4708)
+        self.action_space = gym.spaces.Discrete(4732)
         self.observation_space = gym.spaces.Box(-1, 1, (
-            2285 # fixed crafting power
+            3475
             + self.action_space.n  # legal_actions
             , )
         )  
@@ -48,15 +48,8 @@ class rootEnv(gym.Env):
         return ret
 
     def step(self, action):
-        reward = [0,0]
-        chooser = self.env.to_play()
-        observation, pts, self.done = self.env.step(action)
+        observation, reward, self.done = self.env.step(action)
         self.current_player_num = self.env.to_play()
-
-        reward[chooser] = pts
-        if self.done:
-            i = 0 if (chooser == 1) else 1
-            reward[i] = -pts
 
         return np.append(observation,self.legal_actions), reward, self.done, {}
 
