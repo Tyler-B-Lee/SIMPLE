@@ -16,6 +16,7 @@ class ShobuEnv(gym.Env):
         self.name = 'shobu'
         self.n_players = 2
         self.manual = manual
+        self.max_moves = 100
 
         # all possible moves for a piece (direction, distance)
         # 0 = up, towards the opponent's side, continues clockwise through 7
@@ -32,16 +33,15 @@ class ShobuEnv(gym.Env):
             (-1,1) # 7
         ]
 
-        self.action_space = gym.spaces.Discrete( # size = 144
-            # passive: number of pieces on home boards times number of distinct moves each piece can make
-            8 * 16
-            # aggressive: choosing which stone to move given what passive direction was just chosen
-            + 16
+        self.action_space = gym.spaces.Discrete( # size = 256
+            # number of pieces * number of squares on each piece's own board to move to
+            16 * 16
         )
-        self.observation_space = gym.spaces.Box(0, 1, ( # size = 336 + 144 = 480, so about 3.122 x 10^144 distinct inputs!
+        self.observation_space = gym.spaces.Box(0, 1, ( # size = 322 + 256 = 578
             16 * 16 # location of each of the player's pieces within their own boards
             + 4 * 16 # location of enemy pieces can be simplified when looking at each board
-            + 16 # if choosing an aggressive move, tell which move ID was just picked for their passive
+            + 2 # passive or aggressive move?
+            # + 16 # if choosing an aggressive move, tell which move ID was just picked for their passive
             + self.action_space.n  # legal_actions
             , )
         )  
@@ -83,11 +83,14 @@ class ShobuEnv(gym.Env):
                     board_id = piece.id // 4
                     foo[board_id][space_id] = 1
         ret = np.append(ret.flatten(), foo.flatten())
-
-        foo = np.zeros((16,))
-        if not self.passive_move_next:
-            foo[self.move_num_chosen] = 1
-        ret = np.append(ret, foo)
+        if self.passive_move_next:
+            ret = np.append(ret, [1,0])
+        else:
+            ret = np.append(ret, [0,1])
+        # foo = np.zeros((16,))
+        # if not self.passive_move_next:
+        #     foo[self.move_num_chosen] = 1
+        # ret = np.append(ret, foo)
         ret = np.append(ret, self.legal_actions)
 
         return ret
@@ -98,7 +101,7 @@ class ShobuEnv(gym.Env):
             return True
         return False
 
-    def is_valid_aggressive(self, pc: Piece, move: tuple) -> bool:
+    def is_valid_aggressive(self, pc: Piece, move: tuple):
         """Returns True if the given piece 'pc' can make the given move from its current position as
         a legal AGGRESSIVE move and False otherwise. Rotates moves for the white player.
         Moves are a tuple: ( direction ID (0 to 7), distance (1 or 2) )"""
@@ -110,36 +113,36 @@ class ShobuEnv(gym.Env):
         # Current location -> Space A -> Space B -> Space C
         A_row, A_col = pc.row - direction[1], pc.col + direction[0]
         if self.is_off_board(A_row, A_col):
-            return False
+            return False, (A_row, A_col)
         if dist == 1:
             A = board[A_row][A_col]
             if not A:
-                return True
+                return True, (A_row, A_col)
             if (A.color == self.current_player.color):
-                return False
+                return False, (A_row, A_col)
             B_row, B_col = A_row - direction[1], A_col + direction[0]
             if self.is_off_board(B_row, B_col):
-                return True
-            return (not board[B_row][B_col])
+                return True, (A_row, A_col)
+            return (not board[B_row][B_col]), (A_row, A_col)
 
         # dist == 2 here
         B_row, B_col = A_row - direction[1], A_col + direction[0]
         if self.is_off_board(B_row, B_col):
-            return False
+            return False, (B_row, B_col)
         A,B = board[A_row][A_col], board[B_row][B_col]
         if (not A) and (not B):
-            return True # both A and B have no stones, so no pushing happens
+            return True, (B_row, B_col) # both A and B have no stones, so no pushing happens
         # there is a stone on A or B (or both)
         C_row, C_col = B_row - direction[1], B_col + direction[0]
         if A:
             if (A.color == self.current_player.color):
-                return False
+                return False, (B_row, B_col)
             # enemy stone on A: legal only if B is empty and C is either off board or empty
-            return ((not B) and (self.is_off_board(C_row,C_col) or (not board[C_row][C_col])))
+            return ((not B) and (self.is_off_board(C_row,C_col) or (not board[C_row][C_col]))), (B_row, B_col)
         else: # must be a stone on B and not on A
             if (B.color == self.current_player.color):
-                return False
-            return (self.is_off_board(C_row,C_col) or (not board[C_row][C_col]))
+                return False, (B_row, B_col)
+            return (self.is_off_board(C_row,C_col) or (not board[C_row][C_col])), (B_row, B_col)
 
 
     def find_legal_passive_directions(self):
@@ -159,17 +162,19 @@ class ShobuEnv(gym.Env):
             if pc:
                 moves_to_check = self.moves - self.left_side_aggressive_moves
                 for move in moves_to_check:
-                    if self.is_valid_aggressive(pc, move):
+                    valid, _ = self.is_valid_aggressive(pc, move)
+                    if valid:
                         self.left_side_aggressive_moves.add(move)
         # next, for the right side
         for pc in right_pieces:
             if pc:
                 moves_to_check = self.moves - self.right_side_aggressive_moves
                 for move in moves_to_check:
-                    if self.is_valid_aggressive(pc, move):
+                    valid, _ = self.is_valid_aggressive(pc, move)
+                    if valid:
                         self.right_side_aggressive_moves.add(move)
 
-    def is_valid_passive(self, pc: Piece, move: tuple) -> bool:
+    def is_valid_passive(self, pc: Piece, move: tuple):
         """Returns True if the given piece 'pc' can make the given move from its current position as
         a legal PASSIVE move and False otherwise. Rotates moves for the white player. Assumes an aggressive
         mirroring move can be made. Moves are a tuple: ( direction ID (0 to 7), distance (1 or 2) )"""
@@ -181,34 +186,44 @@ class ShobuEnv(gym.Env):
         # Current location -> Space A -> Space B -> Space C
         A_row, A_col = pc.row - direction[1], pc.col + direction[0]
         if self.is_off_board(A_row, A_col):
-            return False
+            return False, (A_row, A_col)
         if dist == 1:
-            return (not board[A_row][A_col])
+            return (not board[A_row][A_col]), (A_row, A_col)
+
         # dist == 2 here
         B_row, B_col = A_row - direction[1], A_col + direction[0]
         if self.is_off_board(B_row, B_col):
-            return False
+            return False, (B_row, B_col)
         A,B = board[A_row][A_col], board[B_row][B_col]
-        return ( (not A) and (not B) )
+        return ( (not A) and (not B) ), (B_row, B_col)
 
     @property
     def legal_actions(self):
         p = self.current_player
-        pmoves = np.zeros((8,16))
-        amoves = np.zeros((16,))
-        if self.passive_move_next: # do we need to calculate ahead for the player to pick a passive move
+        moves = np.zeros((16,16))
+        if self.passive_move_next: # do we need to calculate ahead for the player to pick a passive move?
             home_board_IDs = (0,1) if (p.color == 'b') else (3,2)
             self.find_legal_passive_directions()
             for piece in (p.active_pieces[ home_board_IDs[0] ]): # passives on LEFT side of home board possible
                 if piece:
                     for move in self.right_side_aggressive_moves:
-                        if self.is_valid_passive(piece, move):
-                            pmoves[piece.id][ move[0] * 2 + move[1] - 1 ] = 1
+                        # we must find the ID of the square the piece would move to, if possible
+                        valid, target_coords = self.is_valid_passive(piece, move)
+                        if valid:
+                            spaceID = target_coords[0] * 4 + target_coords[1]
+                            if (p.color == 'w'):
+                                spaceID = 15 - spaceID
+                            moves[piece.id][ spaceID ] = 1
+
             for piece in (p.active_pieces[ home_board_IDs[1] ]): # passives on RIGHT side of home board possible
                 if piece:
                     for move in self.left_side_aggressive_moves:
-                        if self.is_valid_passive(piece, move):
-                            pmoves[piece.id][ move[0] * 2 + move[1] - 1 ] = 1
+                        valid, target_coords = self.is_valid_passive(piece, move)
+                        if valid:
+                            spaceID = target_coords[0] * 4 + target_coords[1]
+                            if (p.color == 'w'):
+                                spaceID = 15 - spaceID
+                            moves[piece.id][ spaceID ] = 1
 
         else: # otherwise, we must show which pieces can make an aggressive move
             if (self.passive_side == 'left'):
@@ -218,13 +233,23 @@ class ShobuEnv(gym.Env):
 
             # find aggressive moves on the appropriate boards, opposite passive side
             for piece in (p.active_pieces[ opposite_boards[0] ]):
-                if piece and self.is_valid_aggressive(piece, self.passive_move_made):
-                    amoves[piece.id] = 1
+                if piece:
+                    valid, target_coords = self.is_valid_aggressive(piece, self.passive_move_made)
+                    if valid:
+                        spaceID = target_coords[0] * 4 + target_coords[1]
+                        if (p.color == 'w'):
+                            spaceID = 15 - spaceID
+                        moves[piece.id][ spaceID ] = 1
             for piece in (p.active_pieces[ opposite_boards[1] ]):
-                if piece and self.is_valid_aggressive(piece, self.passive_move_made):
-                    amoves[piece.id] = 1
+                if piece:
+                    valid, target_coords = self.is_valid_aggressive(piece, self.passive_move_made)
+                    if valid:
+                        spaceID = target_coords[0] * 4 + target_coords[1]
+                        if (p.color == 'w'):
+                            spaceID = 15 - spaceID
+                        moves[piece.id][ spaceID ] = 1
         
-        legal_actions = np.append(pmoves.flatten(), amoves)
+        legal_actions = moves.flatten()
         return legal_actions
 
     def move_piece(self, pc: Piece, target_row: int, target_col: int):
@@ -241,7 +266,7 @@ class ShobuEnv(gym.Env):
         board[target_row][target_col] = pc
         pc.move(target_row,target_col)
 
-    def do_aggressive_move(self, pc: Piece, move: tuple) -> None:
+    def do_aggressive_move(self, pc: Piece, move: tuple):
         """Aggressively moves the 'piece' object according to the given move tuple (direction, distance). 
         Updates the position of both the board object and the piece object itself, along with any stones
         that were pushed around."""
@@ -257,12 +282,13 @@ class ShobuEnv(gym.Env):
             # is the spot to move to empty?
             if not A:
                 self.move_piece(pc, A_row, A_col)
-                return
+                return 0
             # we can assume that there is an enemy stone at A
             B_row, B_col = A_row - direction[1], A_col + direction[0]
             self.move_piece(A, B_row, B_col)
             self.move_piece(pc, A_row, A_col)
-            return
+            # return 0
+            return 0.03 if (self.is_off_board(B_row, B_col)) else 0
 
         # dist == 2 here
         B_row, B_col = A_row - direction[1], A_col + direction[0]
@@ -270,18 +296,17 @@ class ShobuEnv(gym.Env):
         if (not A) and (not B):
             # both A and B have no stones, so no pushing happens
             self.move_piece(pc, B_row, B_col)
-            return
+            return 0
         # there is a stone on A or B (or both)
         C_row, C_col = B_row - direction[1], B_col + direction[0]
         if A:
             # enemy stone on A: push them to C
             self.move_piece(A, C_row, C_col)
-            self.move_piece(pc, B_row, B_col)
-            return
         else: # must be a stone on B and not on A: push them to C
             self.move_piece(B, C_row, C_col)
-            self.move_piece(pc, B_row, B_col)
-            return
+        self.move_piece(pc, B_row, B_col)
+        # return 0
+        return 0.03 if (self.is_off_board(C_row, C_col)) else 0
 
     def display_board(self):
         horiz_line = ('-' * 29) + '      ' + ('-' * 29)
@@ -338,7 +363,7 @@ class ShobuEnv(gym.Env):
         self.move_piece(pc, B_row, B_col)
         
     
-    def is_game_over(self):
+    def is_game_over(self, reward: list):
         """Checks if the current game state is a game-over situation. Always returns a tuple:
         A boolean for the variables 'done' and 'reward' in the step function."""
         pBlack = self.players[0]
@@ -347,17 +372,19 @@ class ShobuEnv(gym.Env):
         for board in pWhite.active_pieces:
             if (not any(board)):
                 self.winner = '⬛ Black'
-                return True, [1, -1]
+                # return True, [(self.max_moves * 1.12) / self.turns_taken, -1.1]
+                return True, [1,-1]
         for board in pBlack.active_pieces:
             if (not any(board)):
                 self.winner = '⬜ White'
-                return True, [-1, 1]
+                # return True, [-1.1, (self.max_moves * 1.12) / self.turns_taken]
+                return True, [-1,1]
         # else, game is not over yet
-        return False, [0,0]
+        return False, reward
 
     def cutoff_game(self):
         """Since the turn limit was reached, end the game and calculate the final rewards for the players."""
-        bonuses_list = [0, 3.5, 2.5, 1.25, 1]
+        bonuses_list = [0, 3.5, 2, 1.25, 1]
         bscore = wscore = 0
         for boardID in range(4):
             bpieces = self.players[0].active_pieces[boardID]
@@ -377,9 +404,9 @@ class ShobuEnv(gym.Env):
         if abs(bscore - wscore) < 0.01:
             score = [0,0]
         elif bscore > wscore:
-            score = [0.4,-0.4]
+            score = [0.1, -0.1]
         else:
-            score = [-0.4,0.4]
+            score = [-0.1, 0.1]
         return True, score
 
 
@@ -396,35 +423,52 @@ class ShobuEnv(gym.Env):
 
         # now play the move
         if self.passive_move_next:
-            # the player just submitted their passive move, action is from 0 to 127
-            pieceID, self.move_num_chosen = divmod(action, 16)
+            # the player just submitted their passive move, action is from 0 to 127?
+            pieceID, spaceID = divmod(action, 16)
             boardID, i = divmod(pieceID, 4)
-            self.passive_side = 'left' if (boardID == 0) else 'right'
             if p.color == 'w': # we must adjust this here because the move IDs follow piece IDs, not board IDs
                 boardID = 3 - boardID
+                spaceID = 15 - spaceID
+            target_row, target_col = divmod(spaceID, 4)
+            if (pieceID < 4):
+                self.passive_side = 'left'
+            else:
+                self.passive_side = 'right'
             piece_to_move = p.active_pieces[boardID][i]
-            self.passive_move_made = (self.move_num_chosen // 2, (self.move_num_chosen % 2) + 1)
+            # we must reverse-engineer the direction number to create a 'move' tuple again
+            dist = max(abs(piece_to_move.row - target_row), abs(piece_to_move.col - target_col))
+            direction = (target_col - piece_to_move.col)//dist, (piece_to_move.row - target_row)//dist
+            direction_num = self.direction_list.index(direction)
+            if p.color == 'w':
+                direction_num = (direction_num + 4) % 8
+
+            self.passive_move_made = (direction_num, dist)
             self.do_passive_move(piece_to_move, self.passive_move_made)
 
             self.passive_move_next = False            
 
         else:
             # play the aggressive move given and check for game over, action from 128-143
-            pieceID = action - 128
+            # reward = [0.01,0.01]
+            # reward[self.current_player_num] = -0.01
+            pieceID = action // 16
             boardID, i = divmod(pieceID, 4)
             if p.color == 'w': # moves follow the piece ID, not the board ID they are on (reversed for white)
                 boardID = 3 - boardID
             piece_to_move = p.active_pieces[boardID][i]
-            self.do_aggressive_move(piece_to_move, self.passive_move_made)
+
+            points = self.do_aggressive_move(piece_to_move, self.passive_move_made)
+            reward[self.current_player_num] += points
+            # reward[(self.current_player_num + 1) % 2] -= points
 
             self.turns_taken += 1
             # for stability (?) check if the game has lasted too long
-            if self.turns_taken >= 110:
-                # done, reward = self.cutoff_game()
-                done, reward = True, [0,0]
+            if self.turns_taken >= self.max_moves:
+                done, reward = self.cutoff_game()
+                # done, reward = True, [-0.5,-0.5]
             # else, check if game is over
             else:
-                done, reward = self.is_game_over()
+                done, reward = self.is_game_over(reward)
 
             self.current_player_num = (self.current_player_num + 1) % 2
             self.passive_move_next = True

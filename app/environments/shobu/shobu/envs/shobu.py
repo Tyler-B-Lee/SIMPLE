@@ -1,4 +1,4 @@
-import math
+import random
 import gym
 import numpy as np
 
@@ -6,7 +6,23 @@ import config
 
 from stable_baselines import logger
 
-from .classes import *
+# docker-compose exec app mpirun -np 2 python3 train.py -e shobu -ef 25600 -ne 50 -tpa 2560 -ob 2560
+# docker-compose exec app mpirun -np 2 python3 train.py -e shobu -ef 25600 -ne 50 -tpa 2560 -ob 2560 -t 0.15 -ent 0.01 -oe 8 -os 0.0001
+# Generation 6, games shorter on average (~120 turns total)
+# docker-compose exec app mpirun -np 2 python3 train.py -e shobu -ef 20480 -ne 70 -tpa 2048 -ob 2048 -ent 0.01 -oe 8 -os 0.0001
+# Generation 12, games much shorter again (~45 to 50 turns in total)
+# docker-compose exec app mpirun -np 2 python3 train.py -e shobu -ne 120 -ent 0.01 -oe 5 -os 0.0001 -t 0.4
+# Generation 16, racing to getting an unbeatable opening (15 to 20 moves total)
+# docker-compose exec app mpirun -np 2 python3 train.py -e shobu -ne 150 -ent 0.03 -oe 5 -os 0.0001 -t 0.32
+# Generation 21, much longer games again, around 40-60 moves now
+# docker-compose exec app mpirun -np 2 python3 train.py -e shobu -ne 120 -ent 0.03 -oe 5 -os 0.0001 -t 0.36
+
+# import logging
+# logging.basicConfig(filename='file.log',format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",filemode='w')
+# logger = logging.getLogger("classes")
+# logger.setLevel(logging.DEBUG)
+
+# from .classes import *
 
 class ShobuEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -16,7 +32,6 @@ class ShobuEnv(gym.Env):
         self.name = 'shobu'
         self.n_players = 2
         self.manual = manual
-        self.max_moves = 100
 
         # all possible moves for a piece (direction, distance)
         # 0 = up, towards the opponent's side, continues clockwise through 7
@@ -33,309 +48,347 @@ class ShobuEnv(gym.Env):
             (-1,1) # 7
         ]
 
-        self.action_space = gym.spaces.Discrete( # size = 256
-            # number of pieces * number of squares on each piece's own board to move to
-            16 * 16
+        self.action_space = gym.spaces.Discrete( # size = 1024
+            1024
         )
-        self.observation_space = gym.spaces.Box(0, 1, ( # size = 322 + 256 = 578
-            16 * 16 # location of each of the player's pieces within their own boards
-            + 4 * 16 # location of enemy pieces can be simplified when looking at each board
-            + 2 # passive or aggressive move?
-            # + 16 # if choosing an aggressive move, tell which move ID was just picked for their passive
-            + self.action_space.n  # legal_actions
+        self.observation_space = gym.spaces.Box(-1, 1, ( # size = 67 + 1024 = 1,091
+            64 # board info from view of current player (1 friendly, -1 enemy, 0 empty)
+            + 2 # is the next move from this position passive or aggressive?
+            + 1 # how close are we to the 500 turn limit? (decimal from 0 to 1)
+            + self.action_space.n  # legal_actions, which indirectly tells the passive direction chosen
             , )
         )  
         self.verbose = verbose
 
     @property
-    def current_player(self) -> Player:
+    def current_player(self):
         return self.players[self.current_player_num]
     
     @property
-    def opposing_player(self) -> Player:
+    def opposing_player(self):
         i = (self.current_player_num + 1) % 2
         return self.players[i]
         
     @property
     def observation(self):
-        # Locations of the current player's pieces (id 0 to 4)
-        ret = np.zeros((16, 16))
-        curr_pieces = self.current_player.active_pieces
-        #rng = range(4) if (self.current_player_num == 0) else range(3,-1,-1)
-        for group in curr_pieces:
-            for piece in group:
-                if piece:
-                    if self.current_player_num == 0:
-                        space_id = 4 * piece.row + piece.col
-                    else:
-                        space_id = 4 * (3 - piece.row) + (3 - piece.col)
-                    ret[piece.id][space_id] = 1
+        ret = self.get_board_array()
+        if self.current_player_num == 1: # flip boards / reverse color for white
+            ret = ret[::-1] * -1
+            for i in range(4):
+                ret[i] = np.flip(ret[i])
         
-        curr_pieces = self.opposing_player.active_pieces
-        foo = np.zeros((4,16))
-        for group in curr_pieces:
-            for piece in group:
-                if piece:
-                    if self.current_player_num == 0:
-                        space_id = 4 * piece.row + piece.col
-                    else:
-                        space_id = 4 * (3 - piece.row) + (3 - piece.col)
-                    board_id = piece.id // 4
-                    foo[board_id][space_id] = 1
-        ret = np.append(ret.flatten(), foo.flatten())
+        foo = np.zeros(3)
         if self.passive_move_next:
-            ret = np.append(ret, [1,0])
+            foo[0] = 1
         else:
-            ret = np.append(ret, [0,1])
-        # foo = np.zeros((16,))
-        # if not self.passive_move_next:
-        #     foo[self.move_num_chosen] = 1
-        # ret = np.append(ret, foo)
-        ret = np.append(ret, self.legal_actions)
+            foo[1] = 1
+        foo[2] = self.turns_taken / 500
+        ret = np.append(ret, foo)
 
-        return ret
+        return np.append(ret, self.legal_actions)
 
     def is_off_board(self, row: int, col: int):
         "Returns True if the given row and column IS OFF of one of the 4x4 game boards, False if it IS ON a board."
-        if (row < 0) or (col < 0) or (row > 3) or (col > 3):
-            return True
-        return False
+        return (row < 0) or (col < 0) or (row > 3) or (col > 3)
 
-    def is_valid_aggressive(self, pc: Piece, move: tuple):
-        """Returns True if the given piece 'pc' can make the given move from its current position as
-        a legal AGGRESSIVE move and False otherwise. Rotates moves for the white player.
-        Moves are a tuple: ( direction ID (0 to 7), distance (1 or 2) )"""
-        board = self.boards[ pc.board_i ]
+    def is_friendly_piece(self,piece_num:int):
+        "Returns True if the given piece number is a friendly piece of the current player (black is 1, white is -1)."
+        if self.current_player_num == 0:
+            return (piece_num == 1)
+        return (piece_num == -1)
+
+    def valid_aggressive_helper(self, board_i:int, start_row:int, start_col:int, move: tuple):
+        """Finds if the piece at the given start coords can make the given move from its current position
+        as a legal AGGRESSIVE move. Rotates moves for the white player.
+        Moves are a tuple: ( direction ID (0 to 7), distance (1 or 2) )
+        Returns a 3-tuple: a bool for if the move is legal, and the x and y coords of the
+        target square if legal."""
+        board = self.boards[ board_i ]
         dist = move[1]
         # we must move the opposite direction for the white player
-        move_id = move[0] if (self.current_player.color == 'b') else (move[0] + 4) % 8
+        move_id = move[0] if (self.current_player_num == 0) else (move[0] + 4) % 8
         direction = self.direction_list[ move_id ] # returns tuple for relative movement (x,y)
         # Current location -> Space A -> Space B -> Space C
-        A_row, A_col = pc.row - direction[1], pc.col + direction[0]
+        A_row, A_col = start_row - direction[1], start_col + direction[0]
         if self.is_off_board(A_row, A_col):
-            return False, (A_row, A_col)
+            return False,A_row,A_col
         if dist == 1:
-            A = board[A_row][A_col]
-            if not A:
-                return True, (A_row, A_col)
-            if (A.color == self.current_player.color):
-                return False, (A_row, A_col)
+            A = board.get((A_row,A_col),None)
+            if A is None:
+                return True,A_row,A_col
+            if self.is_friendly_piece(A):
+                return False,A_row,A_col
             B_row, B_col = A_row - direction[1], A_col + direction[0]
             if self.is_off_board(B_row, B_col):
-                return True, (A_row, A_col)
-            return (not board[B_row][B_col]), (A_row, A_col)
+                return True,A_row,A_col
+            return (board.get((B_row,B_col),None) is None),A_row,A_col
 
         # dist == 2 here
         B_row, B_col = A_row - direction[1], A_col + direction[0]
         if self.is_off_board(B_row, B_col):
-            return False, (B_row, B_col)
-        A,B = board[A_row][A_col], board[B_row][B_col]
-        if (not A) and (not B):
-            return True, (B_row, B_col) # both A and B have no stones, so no pushing happens
+            return False,B_row,B_col
+        A,B = board.get((A_row,A_col),None), board.get((B_row,B_col),None)
+        if (A is None) and (B is None):
+            return True,B_row,B_col # both A and B have no stones, so no pushing happens
         # there is a stone on A or B (or both)
         C_row, C_col = B_row - direction[1], B_col + direction[0]
-        if A:
-            if (A.color == self.current_player.color):
-                return False, (B_row, B_col)
+        if A is not None:
+            if self.is_friendly_piece(A):
+                return False,B_row,B_col
             # enemy stone on A: legal only if B is empty and C is either off board or empty
-            return ((not B) and (self.is_off_board(C_row,C_col) or (not board[C_row][C_col]))), (B_row, B_col)
+            return ((B is None) and (self.is_off_board(C_row,C_col) or (board.get((C_row,C_col),None) is None))),B_row,B_col
         else: # must be a stone on B and not on A
-            if (B.color == self.current_player.color):
-                return False, (B_row, B_col)
-            return (self.is_off_board(C_row,C_col) or (not board[C_row][C_col])), (B_row, B_col)
+            if self.is_friendly_piece(B):
+                return False,B_row,B_col
+            return (self.is_off_board(C_row,C_col) or (board.get((C_row,C_col),None) is None)),B_row,B_col
 
 
     def find_legal_passive_directions(self):
         """Finds and saves two sets in this object: one for aggressive directions legal on the current player's left side
         board and one for ones on their right side board. Note that the aggressive legal on one side = passive legal on other.
         The sets will contain integers tuples, representing each possible move a piece can make (direction ID, distance)."""
-        p = self.current_player
         self.left_side_aggressive_moves = set()
         self.right_side_aggressive_moves = set()
         # first, find the passive moves on the right side for this player - need aggressive directions on left
-        left_boards = (0,2) if (p.color == 'b') else (3,1) # which boards are on the left
-        right_boards = (3,1) if (p.color == 'b') else (0,2) # which boards are on the left
-        left_pieces = p.active_pieces[ left_boards[0] ] + p.active_pieces[ left_boards[1] ]
-        right_pieces = p.active_pieces[ right_boards[0] ] + p.active_pieces[ right_boards[1] ]
+        left_boards = (0,2) if (self.current_player_num == 0) else (3,1) # which boards are on the left
+        right_boards = (3,1) if (self.current_player_num == 0) else (0,2) # which boards are on the left
         # find aggresive directions possible on left
-        for pc in left_pieces:
-            if pc:
-                moves_to_check = self.moves - self.left_side_aggressive_moves
-                for move in moves_to_check:
-                    valid, _ = self.is_valid_aggressive(pc, move)
-                    if valid:
-                        self.left_side_aggressive_moves.add(move)
+        # logger.debug(f"> Finding legal aggressive directions on left side...")
+        for board_i in left_boards:
+            b = self.boards[board_i]
+            # logger.debug(f"\tChecking board {board_i}...")
+            for coords,color in b.items():
+                if self.is_friendly_piece(color):
+                    # logger.debug(f"\tChecking piece at {coords}...")
+                    moves_to_check = self.moves - self.left_side_aggressive_moves
+                    # logger.debug(f"\tMoves left to check: {moves_to_check}")
+                    for move in moves_to_check:
+                        valid,x,y = self.valid_aggressive_helper(board_i,coords[0],coords[1],move)
+                        if valid:
+                            # logger.debug(f"\t\tMove {move} is valid!")
+                            self.left_side_aggressive_moves.add(move)
         # next, for the right side
-        for pc in right_pieces:
-            if pc:
-                moves_to_check = self.moves - self.right_side_aggressive_moves
-                for move in moves_to_check:
-                    valid, _ = self.is_valid_aggressive(pc, move)
-                    if valid:
-                        self.right_side_aggressive_moves.add(move)
+        # logger.debug(f"> Finding legal aggressive directions on right side...")
+        for board_i in right_boards:
+            b = self.boards[board_i]
+            # logger.debug(f"\tChecking board {board_i}...")
+            for coords,color in b.items():
+                if self.is_friendly_piece(color):
+                    # logger.debug(f"\tChecking piece at {coords}...")
+                    moves_to_check = self.moves - self.right_side_aggressive_moves
+                    # logger.debug(f"\tMoves left to check: {moves_to_check}")
+                    for move in moves_to_check:
+                        valid,x,y = self.valid_aggressive_helper(board_i,coords[0],coords[1],move)
+                        if valid:
+                            # logger.debug(f"\t\tMove {move} is valid!")
+                            self.right_side_aggressive_moves.add(move)
 
-    def is_valid_passive(self, pc: Piece, move: tuple):
-        """Returns True if the given piece 'pc' can make the given move from its current position as
-        a legal PASSIVE move and False otherwise. Rotates moves for the white player. Assumes an aggressive
-        mirroring move can be made. Moves are a tuple: ( direction ID (0 to 7), distance (1 or 2) )"""
-        board = self.boards[ pc.board_i ]
+    def valid_passive_helper(self, board_i:int, start_row:int, start_col:int, move: tuple):
+        """Finds if the piece at the given coords can make the given move from its current position as
+        a legal PASSIVE move. Rotates moves for the white player. Assumes an aggressive
+        mirroring move can be made. Moves are a tuple: ( direction ID (0 to 7), distance (1 or 2) ).
+        Returns a tuple: with 3 parts: a bool for if the move is legal, and the x and y coords of the
+        target square if legal."""
+        board = self.boards[ board_i ]
         dist = move[1]
         # we must move the opposite direction for the white player
-        move_id = move[0] if (self.current_player.color == 'b') else (move[0] + 4) % 8
+        move_id = move[0] if (self.current_player_num == 0) else (move[0] + 4) % 8
         direction = self.direction_list[ move_id ] # returns tuple for relative movement (x,y)
         # Current location -> Space A -> Space B -> Space C
-        A_row, A_col = pc.row - direction[1], pc.col + direction[0]
+        A_row, A_col = start_row - direction[1], start_col + direction[0]
         if self.is_off_board(A_row, A_col):
-            return False, (A_row, A_col)
+            return False,A_row,A_col
         if dist == 1:
-            return (not board[A_row][A_col]), (A_row, A_col)
-
+            return (board.get((A_row,A_col),None) is None),A_row,A_col
         # dist == 2 here
         B_row, B_col = A_row - direction[1], A_col + direction[0]
         if self.is_off_board(B_row, B_col):
-            return False, (B_row, B_col)
-        A,B = board[A_row][A_col], board[B_row][B_col]
-        return ( (not A) and (not B) ), (B_row, B_col)
+            return False,B_row,B_col
+        A,B = board.get((A_row,A_col),None), board.get((B_row,B_col),None)
+        return ( (A is None) and (B is None) ),B_row,B_col
 
     @property
     def legal_actions(self):
-        p = self.current_player
-        moves = np.zeros((16,16))
-        if self.passive_move_next: # do we need to calculate ahead for the player to pick a passive move?
-            home_board_IDs = (0,1) if (p.color == 'b') else (3,2)
+        moves = []
+        if self.passive_move_next: # do we need to calculate ahead for the player to pick a passive move
+            home_board_IDs = (0,1) if (self.current_player_num == 0) else (3,2)
             self.find_legal_passive_directions()
-            for piece in (p.active_pieces[ home_board_IDs[0] ]): # passives on LEFT side of home board possible
-                if piece:
-                    for move in self.right_side_aggressive_moves:
-                        # we must find the ID of the square the piece would move to, if possible
-                        valid, target_coords = self.is_valid_passive(piece, move)
-                        if valid:
-                            spaceID = target_coords[0] * 4 + target_coords[1]
-                            if (p.color == 'w'):
-                                spaceID = 15 - spaceID
-                            moves[piece.id][ spaceID ] = 1
-
-            for piece in (p.active_pieces[ home_board_IDs[1] ]): # passives on RIGHT side of home board possible
-                if piece:
-                    for move in self.left_side_aggressive_moves:
-                        valid, target_coords = self.is_valid_passive(piece, move)
-                        if valid:
-                            spaceID = target_coords[0] * 4 + target_coords[1]
-                            if (p.color == 'w'):
-                                spaceID = 15 - spaceID
-                            moves[piece.id][ spaceID ] = 1
+            left_home_pieces = [coords for coords,color in self.boards[home_board_IDs[0]].items() if self.is_friendly_piece(color)]
+            for start_row,start_col in left_home_pieces: # passives on LEFT side of home board possible
+                for move in self.right_side_aggressive_moves:
+                    valid,end_row,end_col = self.valid_passive_helper(home_board_IDs[0],start_row,start_col,move)
+                    if valid:
+                        if self.current_player_num == 0:
+                            moveID = home_board_IDs[0]*256 + (start_row*4+start_col)*16 + (end_row*4+end_col)
+                        else:
+                            moveID = (3-home_board_IDs[0])*256 + ((3-start_row)*4+(3-start_col))*16 + ((3-end_row)*4+(3-end_col))
+                        moves.append(moveID)
+            right_home_pieces = [coords for coords,color in self.boards[home_board_IDs[1]].items() if self.is_friendly_piece(color)]
+            for start_row,start_col in right_home_pieces: # passives on RIGHT side of home board possible
+                for move in self.left_side_aggressive_moves:
+                    valid,end_row,end_col = self.valid_passive_helper(home_board_IDs[1],start_row,start_col,move)
+                    if valid:
+                        if self.current_player_num == 0:
+                            moveID = home_board_IDs[1]*256 + (start_row*4+start_col)*16 + (end_row*4+end_col)
+                        else:
+                            moveID = (3-home_board_IDs[1])*256 + ((3-start_row)*4+(3-start_col))*16 + ((3-end_row)*4+(3-end_col))
+                        moves.append(moveID)
 
         else: # otherwise, we must show which pieces can make an aggressive move
             if (self.passive_side == 'left'):
-                opposite_boards = (1,3) if (p.color == 'b') else (2,0)
+                opposite_boards = (1,3) if (self.current_player_num == 0) else (2,0)
             else:
-                opposite_boards = (0,2) if (p.color == 'b') else (3,1)
+                opposite_boards = (0,2) if (self.current_player_num == 0) else (3,1)
+            # logger.debug(f"Passive Side: {self.passive_side}")
+            # logger.debug(f"Passive Move Made Last: {self.passive_move_made}")
 
             # find aggressive moves on the appropriate boards, opposite passive side
-            for piece in (p.active_pieces[ opposite_boards[0] ]):
-                if piece:
-                    valid, target_coords = self.is_valid_aggressive(piece, self.passive_move_made)
-                    if valid:
-                        spaceID = target_coords[0] * 4 + target_coords[1]
-                        if (p.color == 'w'):
-                            spaceID = 15 - spaceID
-                        moves[piece.id][ spaceID ] = 1
-            for piece in (p.active_pieces[ opposite_boards[1] ]):
-                if piece:
-                    valid, target_coords = self.is_valid_aggressive(piece, self.passive_move_made)
-                    if valid:
-                        spaceID = target_coords[0] * 4 + target_coords[1]
-                        if (p.color == 'w'):
-                            spaceID = 15 - spaceID
-                        moves[piece.id][ spaceID ] = 1
+            opposite_pieces_1 = [coords for coords,color in self.boards[opposite_boards[0]].items() if self.is_friendly_piece(color)]
+            # logger.debug(f"opp_pieces 1: {opposite_pieces_1}")
+            for start_row,start_col in opposite_pieces_1:
+                valid,end_row,end_col = self.valid_aggressive_helper(opposite_boards[0],start_row,start_col,self.passive_move_made)
+                if valid:
+                    if self.current_player_num == 0:
+                        moveID = opposite_boards[0]*256 + (start_row*4+start_col)*16 + (end_row*4+end_col)
+                    else:
+                        moveID = (3-opposite_boards[0])*256 + ((3-start_row)*4+(3-start_col))*16 + ((3-end_row)*4+(3-end_col))
+                    moves.append(moveID)
+                    
+            opposite_pieces_2 = [coords for coords,color in self.boards[opposite_boards[1]].items() if self.is_friendly_piece(color)]
+            # logger.debug(f"opp_pieces 2: {opposite_pieces_2}")
+            for start_row,start_col in opposite_pieces_2:
+                valid,end_row,end_col = self.valid_aggressive_helper(opposite_boards[1],start_row,start_col,self.passive_move_made)
+                if valid:
+                    if self.current_player_num == 0:
+                        moveID = opposite_boards[1]*256 + (start_row*4+start_col)*16 + (end_row*4+end_col)
+                    else:
+                        moveID = (3-opposite_boards[1])*256 + ((3-start_row)*4+(3-start_col))*16 + ((3-end_row)*4+(3-end_col))
+                    moves.append(moveID)
         
-        legal_actions = moves.flatten()
+        legal_actions = np.zeros(self.action_space.n)
+        if len(moves) == 0:
+            np.put(legal_actions,0,1)
+        else:
+            np.put(legal_actions,moves,1)
         return legal_actions
 
-    def move_piece(self, pc: Piece, target_row: int, target_col: int):
+    def move_piece(self,board_i:int,start_row:int,start_col:int,target_row:int,target_col:int):
         """Updates the row/col stored in the piece and the pointers of where the piece ends up, or removes
         it from the game when the target location is off the board."""
-        board = self.boards[ pc.board_i ]
-        board[pc.row][pc.col] = None # remove piece from board
+        board = self.boards[ board_i ]
+        piece = board.pop((start_row,start_col)) # remove piece from board
+        sym = '⚫ Black Piece' if piece == 1 else '⚪ White Piece'
+        logger.debug(f"Moving {sym} on board {board_i} from ({start_row},{start_col}) to ({target_row},{target_col})")
         if self.is_off_board(target_row, target_col):
             # we must kill this piece, which must have belonged to the opposing player
-            self.opposing_player.active_pieces[pc.board_i][pc.id % 4] = None
-            logger.debug(f"\n     --- Piece eliminated from board {pc.board_i}! ({pc.symbol})     ---")
+            enemy_symbol = ' ⚫ Black ' if (self.current_player_num == 1) else ' ⚪ White '
+            logger.debug(f"\n     --- Piece eliminated from board {board_i}! ({enemy_symbol})     ---")
             return
         # else, move the piece to the target square
-        board[target_row][target_col] = pc
-        pc.move(target_row,target_col)
+        board[(target_row,target_col)] = piece
 
-    def do_aggressive_move(self, pc: Piece, move: tuple):
+    def do_aggressive_move(self,board_i:int,start_row:int,start_col:int,target_row:int,target_col:int) -> None:
         """Aggressively moves the 'piece' object according to the given move tuple (direction, distance). 
         Updates the position of both the board object and the piece object itself, along with any stones
         that were pushed around."""
-        board = self.boards[ pc.board_i ]
-        dist = move[1]
-        # we must move the opposite direction for the white player
-        move_id = move[0] if (self.current_player.color == 'b') else (move[0] + 4) % 8
-        direction = self.direction_list[ move_id ] # returns tuple for relative movement (x,y)
+        board = self.boards[ board_i ]
+        dist = max(abs(start_row - target_row),abs(start_col - target_col))
         # Current location -> Space A -> Space B -> Space C
-        A_row, A_col = pc.row - direction[1], pc.col + direction[0]
         if dist == 1:
-            A = board[A_row][A_col]
+            A_row, A_col = target_row, target_col
+            A = board.get((A_row,A_col), None)
             # is the spot to move to empty?
-            if not A:
-                self.move_piece(pc, A_row, A_col)
-                return 0
+            if A is None:
+                self.move_piece(board_i,start_row,start_col,target_row,target_col)
+                return
             # we can assume that there is an enemy stone at A
-            B_row, B_col = A_row - direction[1], A_col + direction[0]
-            self.move_piece(A, B_row, B_col)
-            self.move_piece(pc, A_row, A_col)
-            # return 0
-            return 0.03 if (self.is_off_board(B_row, B_col)) else 0
+            B_row, B_col = 2*target_row - start_row, 2*target_col - start_col
+            self.move_piece(board_i,A_row,A_col,B_row,B_col)
+            self.move_piece(board_i,start_row,start_col,A_row,A_col)
+            return
 
         # dist == 2 here
-        B_row, B_col = A_row - direction[1], A_col + direction[0]
-        A,B = board[A_row][A_col], board[B_row][B_col]
-        if (not A) and (not B):
+        A_row, A_col = target_row - (target_row - start_row)//2, target_col - (target_col - start_col)//2
+        B_row, B_col = target_row, target_col
+        A,B = board.get((A_row,A_col),None), board.get((B_row,B_col),None)
+        if (A is None) and (B is None):
             # both A and B have no stones, so no pushing happens
-            self.move_piece(pc, B_row, B_col)
-            return 0
+            self.move_piece(board_i, start_row, start_col, B_row, B_col)
+            return
         # there is a stone on A or B (or both)
-        C_row, C_col = B_row - direction[1], B_col + direction[0]
-        if A:
+        C_row, C_col = 2*B_row - A_row, 2*B_col - A_col
+        if A is not None:
             # enemy stone on A: push them to C
-            self.move_piece(A, C_row, C_col)
+            self.move_piece(board_i,A_row,A_col,C_row,C_col)
+            self.move_piece(board_i,start_row,start_col,B_row,B_col)
+            return
         else: # must be a stone on B and not on A: push them to C
-            self.move_piece(B, C_row, C_col)
-        self.move_piece(pc, B_row, B_col)
-        # return 0
-        return 0.03 if (self.is_off_board(C_row, C_col)) else 0
+            self.move_piece(board_i,B_row,B_col,C_row,C_col)
+            self.move_piece(board_i,start_row,start_col,B_row,B_col)
+            return
+    
+    def get_board_array(self):
+        "Returns the current state of the board as a 4x4x4 array of 1/0/-1"
+        full_board = np.zeros((4,4,4))
+        for board_id in range(4):
+            b = self.boards[board_id]
+            for coords,piece in b.items():
+                full_board[board_id][coords[0]][coords[1]] = piece
+        return full_board
 
     def display_board(self):
-        horiz_line = ('-' * 29) + '      ' + ('-' * 29)
-        thick_line = '=' * 75
+        horiz_line = ('-' * 29)
+        thick_line = '=' * 22
         full_blank_row = 'I   ' + ('   I   ' * 3) + '   I      |   ' + ('   |   ' * 3) + '   |'
 
+        # for i,j in ((2,3),(0,1)):
+        #     b1, b2 = self.boards[i], self.boards[j]
+        #     logger.debug('\n\t' + horiz_line)
+        #     for row in range(4):
+        #         logger.debug('\t' + full_blank_row)
+        #         rlist1 = []
+        #         rlist2 = []
+        #         for col in range(4):
+        #             piece = b1[row][col]
+        #             if piece:
+        #                 rlist1.append(piece.symbol)
+        #             else:
+        #                 rlist1.append('------')
+        #             piece = b2[row][col]
+        #             if piece:
+        #                 rlist2.append(piece.symbol)
+        #             else:
+        #                 rlist2.append('------')
+        #         logger.debug('\tI' + 'I'.join(rlist1) + 'I      |' + '|'.join(rlist2) + '|')
+        #         logger.debug('\t' + full_blank_row)
+        #         logger.debug('\t' + horiz_line)
+        #     if i == 2:
+        #         logger.debug('\n' + thick_line)
+        full_board = self.get_board_array()
         for i,j in ((2,3),(0,1)):
-            b1, b2 = self.boards[i], self.boards[j]
-            logger.debug('\n\t' + horiz_line)
+            b1, b2 = full_board[i], full_board[j]
+            # logger.debug('\t' + horiz_line)
             for row in range(4):
-                logger.debug('\t' + full_blank_row)
+                # logger.debug('\t' + full_blank_row)
                 rlist1 = []
                 rlist2 = []
                 for col in range(4):
                     piece = b1[row][col]
-                    if piece:
-                        rlist1.append(piece.symbol)
+                    if piece != 0:
+                        rlist1.append('B' if piece == 1 else 'W')
                     else:
-                        rlist1.append('------')
+                        rlist1.append('-')
                     piece = b2[row][col]
                     if piece:
-                        rlist2.append(piece.symbol)
+                        rlist2.append('B' if piece == 1 else 'W')
                     else:
-                        rlist2.append('------')
-                logger.debug('\tI' + 'I'.join(rlist1) + 'I      |' + '|'.join(rlist2) + '|')
-                logger.debug('\t' + full_blank_row)
-                logger.debug('\t' + horiz_line)
+                        rlist2.append('-')
+                logger.debug('I  ' + ''.join(rlist1) + '  I  |  ' + ''.join(rlist2) + '  |')
+                # logger.debug('\t' + full_blank_row)
+                # logger.debug('\t' + horiz_line)
             if i == 2:
-                logger.debug('\n' + thick_line)
+                logger.debug(thick_line)
+        
 
     def error_catch(self):
         logger.debug(f"Current Player: {self.current_player.symbol}")
@@ -344,47 +397,28 @@ class ShobuEnv(gym.Env):
             logger.debug(f"Passive move made last: {self.passive_move_made}")
         self.display_board()
 
-    def do_passive_move(self, pc: Piece, move: tuple) -> None:
+    def do_passive_move(self,board_i:int,start_row:int,start_col:int,target_row:int,target_col:int) -> None:
         """Passively moves the 'piece' object according to the given move tuple (direction, distance). 
         Updates the position of both the board object and the piece object itself."""
-        if not pc:
-            self.error_catch()
-        dist = move[1]
-        # we must move the opposite direction for the white player
-        move_id = move[0] if (self.current_player.color == 'b') else (move[0] + 4) % 8
-        direction = self.direction_list[ move_id ] # returns tuple for relative movement (x,y)
-        # Current location -> Space A -> Space B -> Space C
-        A_row, A_col = pc.row - direction[1], pc.col + direction[0]
-        if dist == 1:
-            self.move_piece(pc, A_row, A_col)
-            return
-        # dist == 2 here
-        B_row, B_col = A_row - direction[1], A_col + direction[0]
-        self.move_piece(pc, B_row, B_col)
-        
+        self.move_piece(board_i,start_row,start_col,target_row,target_col)
     
-    def is_game_over(self, reward: list):
+    def is_game_over(self):
         """Checks if the current game state is a game-over situation. Always returns a tuple:
         A boolean for the variables 'done' and 'reward' in the step function."""
-        pBlack = self.players[0]
-        pWhite = self.players[1]
         # did anyone just push all of their opponent's stones off one of the boards?
-        for board in pWhite.active_pieces:
-            if (not any(board)):
+        for board in self.boards:
+            if (-1 not in board.values()):
                 self.winner = '⬛ Black'
-                # return True, [(self.max_moves * 1.12) / self.turns_taken, -1.1]
-                return True, [1,-1]
-        for board in pBlack.active_pieces:
-            if (not any(board)):
+                return True, [1, -1]
+            if (1 not in board.values()):
                 self.winner = '⬜ White'
-                # return True, [-1.1, (self.max_moves * 1.12) / self.turns_taken]
-                return True, [-1,1]
+                return True, [-1, 1]
         # else, game is not over yet
-        return False, reward
+        return False, [0,0]
 
     def cutoff_game(self):
         """Since the turn limit was reached, end the game and calculate the final rewards for the players."""
-        bonuses_list = [0, 3.5, 2, 1.25, 1]
+        bonuses_list = [0, 3.5, 2.5, 1.25, 1]
         bscore = wscore = 0
         for boardID in range(4):
             bpieces = self.players[0].active_pieces[boardID]
@@ -404,113 +438,89 @@ class ShobuEnv(gym.Env):
         if abs(bscore - wscore) < 0.01:
             score = [0,0]
         elif bscore > wscore:
-            score = [0.1, -0.1]
+            score = [0.4,-0.4]
         else:
-            score = [-0.1, 0.1]
+            score = [-0.4,0.4]
         return True, score
 
 
     def step(self, action):
         reward = [0, 0]
         done = False
-        p = self.current_player
 
-        # check move legality
-        # if self.legal_actions[action] == 0:
-        #     reward = [1.0,1.0]
-        #     reward[self.current_player_num] = -1
-        #     done = True
-
-        # now play the move
-        if self.passive_move_next:
-            # the player just submitted their passive move, action is from 0 to 127?
-            pieceID, spaceID = divmod(action, 16)
-            boardID, i = divmod(pieceID, 4)
-            if p.color == 'w': # we must adjust this here because the move IDs follow piece IDs, not board IDs
-                boardID = 3 - boardID
-                spaceID = 15 - spaceID
-            target_row, target_col = divmod(spaceID, 4)
-            if (pieceID < 4):
-                self.passive_side = 'left'
+        # player has no legal passive moves
+        if action == 0:
+            if self.skipped_last_turn:
+                logger.debug(">>> Ending game, neither player has any moves...")
+                return self.observation, [0,0], True, {}
             else:
-                self.passive_side = 'right'
-            piece_to_move = p.active_pieces[boardID][i]
-            # we must reverse-engineer the direction number to create a 'move' tuple again
-            dist = max(abs(piece_to_move.row - target_row), abs(piece_to_move.col - target_col))
-            direction = (target_col - piece_to_move.col)//dist, (piece_to_move.row - target_row)//dist
-            direction_num = self.direction_list.index(direction)
-            if p.color == 'w':
-                direction_num = (direction_num + 4) % 8
+                logger.debug(">>> Player has no legal actions, skipping their turn...")
+                self.current_player_num = (self.current_player_num + 1) % 2
+                self.skipped_last_turn = True
+                return self.observation, reward, done, {}
 
-            self.passive_move_made = (direction_num, dist)
-            self.do_passive_move(piece_to_move, self.passive_move_made)
+        self.skipped_last_turn = False
+        # moves have 3 parts: board, start position, end position
+        boardID, foo = divmod(action, 256)
+        start, end = divmod(foo, 16)
+        start_row,start_col = divmod(start,4)
+        end_row,end_col = divmod(end,4)
+        if self.current_player_num == 1: # white (flipping move for orientation with black's POV)
+            boardID = 3 - boardID
+            start_row,start_col = 3-start_row,3-start_col
+            end_row,end_col = 3-end_row,3-end_col
+        dist = max(abs(start_row - end_row),abs(start_col - end_col))
+        x_dir = (end_col - start_col) // dist
+        y_dir = (start_row - end_row) // dist
+        if self.passive_move_next:
+            direction = self.direction_list.index((x_dir,y_dir))
+            if self.current_player_num == 0: # black
+                self.passive_side = 'left' if (boardID == 0) else 'right'
+                self.passive_move_made = (direction, dist)
+            else: # white (flipping move for orientation with black's POV)
+                self.passive_side = 'left' if (boardID == 3) else 'right'
+                self.passive_move_made = ((direction + 4) % 8,dist)
+            
+            self.do_passive_move(boardID,start_row,start_col,end_row,end_col)
 
             self.passive_move_next = False            
 
         else:
-            # play the aggressive move given and check for game over, action from 128-143
-            # reward = [0.01,0.01]
-            # reward[self.current_player_num] = -0.01
-            pieceID = action // 16
-            boardID, i = divmod(pieceID, 4)
-            if p.color == 'w': # moves follow the piece ID, not the board ID they are on (reversed for white)
-                boardID = 3 - boardID
-            piece_to_move = p.active_pieces[boardID][i]
-
-            points = self.do_aggressive_move(piece_to_move, self.passive_move_made)
-            reward[self.current_player_num] += points
-            # reward[(self.current_player_num + 1) % 2] -= points
+            # play the aggressive move given and check for game over
+            self.do_aggressive_move(boardID,start_row,start_col,end_row,end_col)
 
             self.turns_taken += 1
             # for stability (?) check if the game has lasted too long
-            if self.turns_taken >= self.max_moves:
-                done, reward = self.cutoff_game()
-                # done, reward = True, [-0.5,-0.5]
+            if self.turns_taken >= 500:
+                # done, reward = self.cutoff_game()
+                done, reward = True, [0,0]
             # else, check if game is over
             else:
-                done, reward = self.is_game_over(reward)
+                done, reward = self.is_game_over()
+            # done, reward = self.is_game_over()
 
             self.current_player_num = (self.current_player_num + 1) % 2
             self.passive_move_next = True
+            self.passive_move_made = None
 
         self.done = done
 
         return self.observation, reward, done, {}
 
     def reset(self):
-        self.players = []
         self.boards = []
-        colors = ('b','w')
-        for player_color in colors:
-            p = Player(player_color)
-            self.players.append(p)
-
-        for b in range(4):
-            foo = []
+        
+        for _ in range(4):
+            board = {}
             for i in range(4):
-                row = [None] * 4
-                foo.append(row)
-            self.boards.append(foo)
-
-        for player_i in range(2):
-            plr = self.players[player_i]
-            if (player_i == 0):
-                rng = range(4)
-                row = 3
-            else:
-                rng = range(3,-1,-1)
-                row = 0
-            pieceID = 0
-            for board_index in rng:
-                for col in rng: # player id 0 = Black, id 1 = White
-                    piece = Piece(pieceID, plr.color, row, col, board_index)
-                    plr.active_pieces[board_index].append(piece)
-                    brd = self.boards[board_index]
-                    brd[row][col] = piece
-                    pieceID += 1
+                board[(3,i)] = 1 # black pieces are 1 by default
+                board[(0,i)] = -1 # white is -1 by default
+            self.boards.append(board)
         
         self.current_player_num = 0
         self.passive_move_next = True
+        self.passive_move_made = None
+        self.skipped_last_turn = False
         self.winner = 'Nobody?'
 
         self.turns_taken = 0
@@ -527,7 +537,7 @@ class ShobuEnv(gym.Env):
 
         if not self.done:
             logger.debug(f'\n\n-------TURN {self.turns_taken + 1}-----------')
-            logger.debug(f"It is the {self.current_player.symbol} Player's turn")
+            logger.debug(f"It is the {'Black' if self.current_player_num == 0 else 'White'} Player's turn")
             if (self.passive_move_next):
                 logger.debug(f"☮️  -- Must Choose a PASSIVE Move --  ☮️")
             else:
@@ -551,3 +561,67 @@ class ShobuEnv(gym.Env):
 
     def rules_move(self):
         raise Exception('Rules based agent is not yet implemented for Shobu!')
+
+if __name__ == "__main__":
+    env = ShobuEnv()
+    env.reset()
+    np.set_printoptions(threshold=np.inf)
+
+    # done = False
+    # action_count = 0
+    # while action_count < 15:
+    # while not done:
+    #     env.display_board()
+    #     legal_actions = [i for i,o in enumerate(env.legal_actions) if o != 0]
+    #     logger.debug(f"> Action {action_count} - Player: {'Black' if env.current_player_num == 0 else 'White'}")
+    #     logger.debug(f'Legal actions: {legal_actions}')
+    #     print(f"> Action {action_count} - Player: {'Black' if env.current_player_num == 0 else 'White'}")
+    #     # print(f'\nLegal actions: {legal_actions}')
+
+    #     # action = 1023
+    #     # while legal_actions[action] != 1:
+    #     #     action = int(input("Choose a valid action: "))
+    #     action = random.choice(legal_actions)
+    #     print(f"\tAction Chosen: {action}")
+    #     logger.info(f"\t> Action Chosen: {action}")
+    #     obs,reward,done,_ = env.step(action)
+    #     action_count += 1
+    # env.display_board()
+    # print("Reward:",reward)
+    # print("Actions:",action_count)
+    
+    # obs = env.get_observation().reshape((40,8,8))
+    # for i,sq in enumerate(obs):
+    #     logger.debug(f"- Observation Square {i}:\n{sq}\n")
+
+    # logger.setLevel(logging.WARNING)
+    N = 1
+    glens = []
+    for _ in range(N):
+        done = False
+        action_count = 0
+        while not done:
+            legal_actions = [i for i,o in enumerate(env.legal_actions) if o != 0]
+            # logger.info(f"Player: {ID_TO_PLAYER[env.to_play()]}")
+            # logger.info(f"> Action {action_count} - Legal Actions: {legal_actions}")
+            # print(f"Player: {ID_TO_PLAYER[env.to_play()]}")
+            # print(f"> Action {action_count} - Legal Actions: {legal_actions}")
+
+            # action = -1
+            # while action not in legal_actions:
+            #     action = int(input("Choose a valid action: "))
+            action = random.choice(legal_actions)
+            # print(f"\tAction Chosen: {action}")
+            # logger.info(f"\t> Action Chosen: {action}")
+            obs,reward,done,_ = env.step(action)
+            logger.debug(obs)
+            action_count += 1
+        glens.append(action_count)
+        print(reward)
+        env.display_board()
+        env.reset()
+
+    print(f"\nGames: {glens}")
+    print(f"\nLongest Length: {max(glens)}")
+    print(f"Shortest Length: {min(glens)}")
+    print(f"Average Length: {sum(glens)/N}")
