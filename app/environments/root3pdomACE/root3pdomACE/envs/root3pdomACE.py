@@ -17,7 +17,7 @@ class rootEnv(gym.Env):
 
     def __init__(self, verbose = False, manual = False):
         super(rootEnv, self).__init__()
-        self.name = 'root3pACE'
+        self.name = 'root3pdomACE'
         self.n_players = 3
         self.manual = manual
 
