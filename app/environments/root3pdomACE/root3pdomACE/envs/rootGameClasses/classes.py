@@ -1,15 +1,15 @@
 import copy
 import random
 from typing import Tuple,List
-import logging
-# from stable_baselines import logger
+# import logging
+from stable_baselines import logger
 import numpy as np
 
 Recipe = Tuple[int,int,int,int]
 
-logging.basicConfig(filename='file.log',format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",filemode='w')
-logger = logging.getLogger("classes")
-logger.setLevel(logging.DEBUG)
+# logging.basicConfig(filename='file.log',format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",filemode='w')
+# logger = logging.getLogger("classes")
+# logger.setLevel(logging.DEBUG)
 
 ### Named Constants
 SUIT_MOUSE = 0
@@ -72,6 +72,8 @@ AID_CRAFT_RC_MAPPING = {
 }
 
 N_PLAYERS = 3
+TURN_MEMORY = 6
+
 PIND_MARQUISE = 0
 PIND_EYRIE = 1
 PIND_ALLIANCE = 2
@@ -188,6 +190,165 @@ AID_ORDER_SYMPATHY = AID_ORGANIZE + 12
 AID_ORDER_BASE_MOUSE = AID_ORDER_SYMPATHY + 1
 AID_ORDER_BASE_RABBIT = AID_ORDER_BASE_MOUSE + 1
 AID_ORDER_BASE_FOX = AID_ORDER_BASE_RABBIT + 1
+
+
+class TurnLog():
+    """
+    Keeps track of the current turn for the agents to be
+    able to observe a sort of "history" of the current game. This info
+    will be changed slightly over a turn, and then compiled into a full
+    history object to be saved at the end of a turn.
+    """
+    def __init__(self) -> None:
+        self.reset_current_turn()
+    
+    def reset_current_turn(self):
+        self.current_turn = {
+            'dp_reset': False,
+            'marq_supp_additions': np.zeros((42,3)),
+            'eyrie_supp_additions': np.zeros((42,3)),
+            'alliance_supp_payments': np.zeros((42,3))
+        }
+        for i in range(N_PLAYERS):
+            self.current_turn[i] = {
+                'hand_size_change': 0,
+                'warrior_supply_change': 0,
+                'point_change': 0,
+                'cards_lost': np.zeros((42,3)),
+                'cards_gained': np.zeros((42,3)),
+                'persistent_used': np.zeros((11,3)),
+                'cards_crafted': np.zeros(38)
+            }
+        for i in range(12):
+            clr = {'battles': np.zeros((3,3))}
+            for j in range(N_PLAYERS):
+                clr[j] = {
+                    'warrior_change': 0,
+                    'buildings_change': np.zeros(3),
+                    'tokens_change': np.zeros(2)
+                }
+            self.current_turn[f'c{i}'] = clr
+
+    def get_array(self,priv_player_id:int):
+        """
+        Get an array of fixed length contining all of the current
+        info stored in this object. Meant for giving information
+        to the player whose turn it currently is.
+        """
+        t = self.current_turn
+        ret = np.append(np.array([int(t['dp_reset'])]), t['alliance_supp_payments'])
+        for player_i in range(N_PLAYERS):
+            p_info = t[player_i]
+            max_warriors = [25,20,10][player_i]
+            foo = np.zeros(3)
+            foo[0] = p_info['hand_size_change'] / 8
+            foo[1] = p_info['warrior_supply_change'] / max_warriors
+            foo[2] = min(p_info['point_change'] / 15, 1)
+            for att in ('cards_lost','cards_gained','persistent_used','cards_crafted'):
+                foo = np.append(foo,p_info[att])
+            ret = np.append(ret,foo)            
+        # save info stored for each clearing
+        for clearing_i in range(12):
+            c_info = t[f'c{clearing_i}']
+            foo = c_info['battles']
+            for player_i in range(N_PLAYERS):
+                max_warriors = [25,20,10][player_i]
+                foo = np.append(foo,c_info[player_i]['warrior_change'] / max_warriors)
+                foo = np.append(foo,c_info[player_i]['buildings_change'] / 3)
+                bar = c_info[player_i]['tokens_change'].copy()
+                if player_i == PIND_MARQUISE:
+                    bar[TIND_WOOD] /= 8
+                foo = np.append(foo,bar)
+            ret = np.append(ret,foo)
+        # save this turn in the history
+        if priv_player_id == PIND_MARQUISE:
+            foo = np.append(t['marq_supp_additions'], np.full((42,3),-1))
+        elif priv_player_id == PIND_EYRIE:
+            foo = np.append(np.full((42,3),-1), t['eyrie_supp_additions'])
+        else:
+            foo = np.append(t['marq_supp_additions'], t['eyrie_supp_additions'])
+
+        ret = np.append(ret,foo)
+        # logger.debug(f"TurnLog.get_array for id {priv_player_id}: {len(ret)}")
+
+        return ret
+    
+    def record_battle(self,clr:int,attacker:int,defender:int):
+        self.current_turn[f'c{clr}']['battles'][attacker][defender] = 1
+    
+    def change_clr_warriors(self,clr:int,fac:int,amount:int):
+        self.current_turn[f'c{clr}'][fac]['warrior_change'] += amount
+    
+    def change_clr_building(self,clr:int,fac:int,bld:int,amount:int):
+        self.current_turn[f'c{clr}'][fac]['buildings_change'][bld] += amount
+    
+    def change_clr_tokens(self,clr:int,fac:int,tok:int,amount:int):
+        self.current_turn[f'c{clr}'][fac]['tokens_change'][tok] += amount
+
+    def change_plr_hand_size(self,fac:int,amount:int):
+        self.current_turn[fac]['hand_size_change'] += amount
+
+    def change_plr_warrior_supply(self,fac:int,amount:int):
+        self.current_turn[fac]['warrior_supply_change'] += amount
+    
+    def change_plr_points(self,fac:int,amount:int):
+        self.current_turn[fac]['point_change'] += amount
+
+    def change_plr_cards_lost(self,fac:int,card_id:int):
+        a = self.current_turn[fac]['cards_lost']
+        if a[card_id][0] == 1:
+            a[card_id][0] = 0
+            a[card_id][1] = 1
+        elif a[card_id][1] == 1:
+            a[card_id][1] = 0
+            a[card_id][2] = 1
+        else:
+            a[card_id][0] = 1
+    def change_plr_cards_gained(self,fac:int,card_id:int):
+        a = self.current_turn[fac]['cards_gained']
+        if a[card_id][0] == 1:
+            a[card_id][0] = 0
+            a[card_id][1] = 1
+        elif a[card_id][1] == 1:
+            a[card_id][1] = 0
+            a[card_id][2] = 1
+        else:
+            a[card_id][0] = 1
+    def change_alliance_payments(self,card_id:int):
+        a = self.current_turn['alliance_supp_payments']
+        if a[card_id][0] == 1:
+            a[card_id][0] = 0
+            a[card_id][1] = 1
+        elif a[card_id][1] == 1:
+            a[card_id][1] = 0
+            a[card_id][2] = 1
+        else:
+            a[card_id][0] = 1
+    def change_alliance_supp_addition(self,paying_fac:int,card_id:int):
+        if paying_fac == PIND_MARQUISE:
+            a = self.current_turn['marq_supp_additions']
+        else:
+            a = self.current_turn['eyrie_supp_additions']
+        if a[card_id][0] == 1:
+            a[card_id][0] = 0
+            a[card_id][1] = 1
+        elif a[card_id][1] == 1:
+            a[card_id][1] = 0
+            a[card_id][2] = 1
+        else:
+            a[card_id][0] = 1
+    def change_plr_cards_crafted(self,fac:int,card_id:int):
+        a = self.current_turn[fac]['cards_crafted']
+        a[card_id] = 1
+    
+    def change_plr_pers_used(self,fac:int,pers_id:int,target:int = -1):
+        if target < 0:
+            self.current_turn[fac]['persistent_used'][pers_id] = 1
+        else:
+            self.current_turn[fac]['persistent_used'][pers_id][target] = 1
+    
+    def discard_pile_was_reset(self):
+        self.current_turn['dp_reset'] = True
 
 
 class Clearing:
@@ -985,7 +1146,7 @@ class Eyrie(Player):
             foo[self.chosen_leader_index + 4] = 1
         ret = np.append(ret,foo)
 
-        foo = np.zeros((4,39,3))
+        foo = np.zeros((4,43,3))
         for dec_i in range(4):
             for c in self.decree[dec_i]:
                 cid = c.id
@@ -996,7 +1157,7 @@ class Eyrie(Player):
                     foo[dec_i][cid][1] = 0
                     foo[dec_i][cid][2] = 1
                 else:
-                    foo[dec_i][i][0] = 1
+                    foo[dec_i][cid][0] = 1
         return np.append(ret,foo)
 
     def get_num_cards_to_draw(self) -> int:
@@ -1115,7 +1276,7 @@ class Alliance(Player):
             foo[self.get_num_tokens_in_store(TIND_SYMPATHY) - 1] = 1
         ret = np.append(ret,foo)
 
-        foo = np.zeros(50)
+        foo = np.zeros(54)
         if len(self.supporters) > 0:
             foo[len(self.supporters) - 1] = 1
         ret = np.append(ret,foo)
@@ -1179,6 +1340,7 @@ class Alliance(Player):
         return self.point_track[10 - n]
 
 class Battle:
+    "Keeps track of info about the current active battle."
     # a choice must be made about using an ambush card
     STAGE_DEF_AMBUSH = 0
     STAGE_ATT_AMBUSH = 1
@@ -1248,6 +1410,7 @@ class Battle:
         foo[0][self.att_hits_to_deal] = 1
         foo[1][self.def_hits_to_deal] = 1
         return np.append(ret,foo)
+
 
 # (Card info, Amount in deck)
 # Recipe amounts are (Mouse, Bunny, Fox, Wild)

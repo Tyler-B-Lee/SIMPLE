@@ -7,10 +7,10 @@ from stable_baselines import logger
 from .rootGameClasses.classes import *
 from .rootGameClasses.rootMechanics import *
 
-# Generation 11, games ~65-70 steps per player
-# docker-compose exec app mpirun -np 2 python3 train.py -e root3pACE -ne 100 -t -0.2 -ent 0.01 -oe 8 -os 0.0001
-# Generation 16, games ~60 steps per player, Eyrie winning a little more???
-# docker-compose exec app mpirun -np 2 python3 train.py -e root3pACE -ne 75 -t 0 -ent 0.01 -os 0.0001
+# start (base), avg games around 150 actions per player
+# docker-compose exec app mpirun -np 2 python3 train.py -e root3pdomACE -ne 30 -t -0.15 -ent 0.01 -os 0.0001
+# gen 5, ~ 80 moves per player, alliance winning a lot
+# docker-compose exec app mpirun -np 3 python3 train.py -e root3pdomACE -ne 18 -t -0.11 -ent 0.05 -os 0.0001 -oe 6
 
 class rootEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -21,10 +21,11 @@ class rootEnv(gym.Env):
         self.n_players = 3
         self.manual = manual
 
-        self.action_space = gym.spaces.Discrete(4732)
+        self.action_space = gym.spaces.Discrete(4858)
         self.observation_space = gym.spaces.Box(-1, 1, (
-            3475
-            + self.action_space.n  # legal_actions
+            # 47_315 (15 memory)
+            21_674
+            + self.action_space.n
             , )
         )  
         self.verbose = verbose

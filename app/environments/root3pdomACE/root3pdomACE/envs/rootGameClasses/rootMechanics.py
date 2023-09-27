@@ -1,7 +1,7 @@
 import random
 import numpy as np
-# from .classes import *
-from classes import *
+from .classes import *
+# from classes import *
 
 # python -m tensorboard.main --logdir="C:\Users\tyler\Desktop\Desktop Work\SIMPLE\app\logs"
 
@@ -35,6 +35,7 @@ class RootGame:
         return 1 if (x == 0) else -1
     
     def reset_general_items(self):
+        self.num_actions_played = 0
         self.acting_player = 0
         self.outside_turn_this_action = 0
         self.legal_actions_to_get = None
@@ -87,20 +88,25 @@ class RootGame:
             next_index = (place + 1) % 3
             self.next_player_index[i] = self.turn_order[next_index]
         
+        self.public_history = [None] * TURN_MEMORY
+        self.private_history = [None] * TURN_MEMORY
+        self.turn_log = TurnLog()
+
         self.draw_cards(PIND_MARQUISE,3)
         self.draw_cards(PIND_EYRIE,3)
         self.draw_cards(PIND_ALLIANCE,3)
+
         self.marquise_seen_hands = {
-            PIND_EYRIE: [np.full((42,3),-1) for _ in range(3)],
-            PIND_ALLIANCE: [np.full((42,3),-1) for _ in range(3)]
+            PIND_EYRIE: [np.full((42,3),-1) for _ in range(TURN_MEMORY)],
+            PIND_ALLIANCE: [np.full((42,3),-1) for _ in range(TURN_MEMORY)]
         }
         self.eyrie_seen_hands = {
-            PIND_MARQUISE: [np.full((42,3),-1) for _ in range(3)],
-            PIND_ALLIANCE: [np.full((42,3),-1) for _ in range(3)]
+            PIND_MARQUISE: [np.full((42,3),-1) for _ in range(TURN_MEMORY)],
+            PIND_ALLIANCE: [np.full((42,3),-1) for _ in range(TURN_MEMORY)]
         }
         self.alliance_seen_hands = {
-            PIND_EYRIE: [np.full((42,3),-1) for _ in range(3)],
-            PIND_MARQUISE: [np.full((42,3),-1) for _ in range(3)]
+            PIND_EYRIE: [np.full((42,3),-1) for _ in range(TURN_MEMORY)],
+            PIND_MARQUISE: [np.full((42,3),-1) for _ in range(TURN_MEMORY)]
         }
 
     def reset_for_marquise(self):
@@ -155,6 +161,135 @@ class RootGame:
         self.reset_for_eyrie()
         self.reset_for_alliance()
         return self.get_observation()
+
+    def save_to_history(self):
+        """
+        Saves information about the current state of the game
+        and the info in the current Turn Log to the first index in
+        the history.
+        """
+        # save all info in turn log / end of turn info
+        # logger.debug(f"Current TurnLog: {vars(self.turn_log)}")
+        t = self.turn_log
+        aplayer = self.players[PIND_ALLIANCE]
+        full_turn = np.zeros(6)
+        full_turn[self.acting_player] = 1
+        full_turn[3] = int(t.current_turn['dp_reset'])
+        # alliance board info
+        full_turn[4] = min(len(aplayer.supporters) / 25, 1)
+        full_turn[5] = aplayer.num_officers / 10
+        full_turn = np.append(full_turn,t.current_turn['alliance_supp_payments'])
+        # save eyrie decree
+        eplayer = self.players[PIND_EYRIE]
+        foo = np.zeros((4,43,3))
+        for dec_i in range(4):
+            for c in eplayer.decree[dec_i]:
+                cid = c.id
+                if foo[dec_i][cid][0] == 1:
+                    foo[dec_i][cid][0] = 0
+                    foo[dec_i][cid][1] = 1
+                elif foo[dec_i][cid][1] == 1:
+                    foo[dec_i][cid][1] = 0
+                    foo[dec_i][cid][2] = 1
+                else:
+                    foo[dec_i][cid][0] = 1
+        full_turn = np.append(full_turn,foo)
+        # save leader
+        foo = np.zeros(4)
+        foo[eplayer.chosen_leader_index] = 1
+        full_turn = np.append(full_turn,foo)
+        # save current discard pile and available dominances
+        full_turn = np.append(full_turn,self.discard_array)
+        full_turn = np.append(full_turn,np.array(self.available_dominances))
+        # save info stored for each player
+        for player_i in range(N_PLAYERS):
+            p_info = t.current_turn[player_i]
+            max_warriors = [25,20,10][player_i]
+            foo = np.zeros(3)
+            foo[0] = p_info['hand_size_change'] / 8
+            foo[1] = p_info['warrior_supply_change'] / max_warriors
+            foo[2] = min(p_info['point_change'] / 15, 1)
+            for att in ('cards_lost','cards_gained','persistent_used','cards_crafted'):
+                foo = np.append(foo,p_info[att])
+            full_turn = np.append(full_turn,foo)
+            # static / end of turn info
+            foo = np.zeros(31)
+            bar = np.zeros(4)
+            if self.active_dominances[player_i] is None:
+                foo[min(30,self.victory_points[player_i])] = 1
+            else:
+                bar[self.active_dominances[player_i].suit] = 1
+            foo = np.append(foo,bar)
+            full_turn = np.append(full_turn,foo)
+        # save info stored for each clearing
+        for clearing_i in range(12):
+            c = self.board.clearings[clearing_i]
+            c_info = t.current_turn[f'c{clearing_i}']
+            foo = c_info['battles']
+            end_warriors = np.zeros(3)
+            end_buildings = np.zeros(7)
+            end_tokens = np.zeros(3)
+            for player_i in range(N_PLAYERS):
+                max_warriors = [25,20,10][player_i]
+                foo = np.append(foo,c_info[player_i]['warrior_change'] / max_warriors)
+                foo = np.append(foo,c_info[player_i]['buildings_change'] / 3)
+                bar = c_info[player_i]['tokens_change'].copy()
+                if player_i == PIND_MARQUISE:
+                    bar[TIND_WOOD] /= 8
+                foo = np.append(foo,bar)
+                end_warriors[player_i] = c.warriors[player_i] * 0.75 / max_warriors + 0.25 * int(c.warriors[player_i] > 0)
+                if player_i == PIND_MARQUISE:
+                    for bind in range(3):
+                        num_bind = c.get_num_buildings(PIND_MARQUISE,bind)
+                        if num_bind > 0:
+                            end_buildings[bind] = num_bind * 0.25 + 0.25
+                    end_tokens[0] = c.get_num_tokens(PIND_MARQUISE,TIND_KEEP)
+                    end_tokens[1] = c.get_num_tokens(PIND_MARQUISE,TIND_WOOD) / 8
+                elif player_i == PIND_EYRIE:
+                    end_buildings[3] = c.get_num_buildings(PIND_EYRIE)
+                else: # Alliance
+                    for bind in range(3):
+                        end_buildings[bind + 4] = c.get_num_buildings(PIND_ALLIANCE,bind)
+                    end_tokens[2] = c.get_num_tokens(PIND_ALLIANCE,TIND_SYMPATHY)
+            full_turn = np.append(full_turn,foo)
+            full_turn = np.append(full_turn,end_warriors)
+            full_turn = np.append(full_turn,end_buildings)
+            full_turn = np.append(full_turn,end_tokens)
+
+        # logger.debug(f"save to hist fullturn: {len(full_turn)}")
+
+        # for i,val in enumerate(full_turn):
+        #     if val != 0:
+        #         logger.debug(f"{i}: {val}")
+
+        # save this turn in the history
+        marq_priv = np.append(t.current_turn['marq_supp_additions'], np.full((42,3),-1))
+        eyrie_priv = np.append(np.full((42,3),-1), t.current_turn['eyrie_supp_additions'])
+        all_priv = np.append(t.current_turn['marq_supp_additions'], t.current_turn['eyrie_supp_additions'])
+        
+        # logger.debug(f"{[marq_priv,eyrie_priv,all_priv]}")
+        # logger.debug(f"\n{self.turn_log.get_array(self.acting_player)}")
+
+        self.private_history.insert(0,[marq_priv,eyrie_priv,all_priv])
+        self.private_history.pop()
+        self.public_history.insert(0,full_turn)
+        self.public_history.pop()
+        # reset the TurnLog for the next one
+        self.turn_log.reset_current_turn()
+    
+    def get_history(self,viewing_player:int):
+        """
+        Returns an array of the entire recorded history, combined with
+        the private history viewable only by the given player.
+        """
+        ret = np.zeros(0)
+        for i in range(TURN_MEMORY):
+            if self.public_history[i] is not None:
+                ret = np.append(ret,self.public_history[i])
+                ret = np.append(ret,self.private_history[i][viewing_player])
+            else:
+                ret = np.append(ret,np.full(2597,0))
+        return ret
 
     def step(self, action):
         actions_to_return = []
@@ -281,6 +416,11 @@ class RootGame:
         else:
             done = (max(self.victory_points) >= 30) and (self.battle.stage == Battle.STAGE_DONE)
             reward = self.get_winner_points() if done else [0,0,0]
+        
+        self.num_actions_played += 1
+        if (not done) and (self.num_actions_played >= 900):
+            done = True
+            reward = [0,0,0]
 
         return self.get_observation(), reward, done
 
@@ -366,6 +506,7 @@ class RootGame:
         # alliance draws 1 card for supporters
         if self.deck.size() == 0:
             self.deck.add(self.discard_pile) # includes shuffling
+            self.turn_log.discard_pile_was_reset()
             self.discard_pile = []
             self.discard_array = np.zeros((42,3))
         draw = self.deck.draw(1)
@@ -376,6 +517,7 @@ class RootGame:
         c_drawn = draw[0]
         if self.deck.size() == 0:
             self.deck.add(self.discard_pile) # includes shuffling
+            self.turn_log.discard_pile_was_reset()
             self.discard_pile = []
             self.discard_array = np.zeros((42,3))
         logger.debug(f"\tAlliance draws: {c_drawn.name} (added to supporters)")
@@ -392,6 +534,7 @@ class RootGame:
                 len(aplayer.supporters) >= 5):
             # Limit of 5 supporters with no bases built
             logger.debug(f"\t\t-> Cannot add more than five supporters with no bases built.")
+            self.turn_log.change_alliance_payments(c_to_add.id)
             self.add_to_discard(c_to_add)
         else:
             # add to the supporter pile
@@ -401,7 +544,10 @@ class RootGame:
         actions_to_return = []
         self.outrage_suits.pop()
         c_to_pay = self.get_card(self.outrage_offender,action-AID_DISCARD_CARD,"hand")
+        self.turn_log.change_plr_hand_size(self.outrage_offender,-1)
+        self.turn_log.change_alliance_supp_addition(self.outrage_offender,c_to_pay.id)
         self.add_to_supporters_check(aplayer,c_to_pay)
+
         offender = self.players[self.outrage_offender]
         while len(self.outrage_suits) > 0:
             logger.debug(f"Outrage Triggered! {ID_TO_PLAYER[self.outrage_offender]} must pay the Alliance 1 {ID_TO_SUIT[self.outrage_suits[-1]]} Card")
@@ -479,16 +625,16 @@ class RootGame:
 
 
     def get_observation(self):
-        return []
         ret = np.zeros((12,3))
         for i,c in enumerate(self.board.clearings):
             ret[i][c.suit] = 1
-        foo = np.zeros(50)
+        foo = np.zeros(54)
         if self.deck.size() > 0:
             foo[self.deck.size() - 1] = 1
         ret = np.append(ret,foo)
 
         ret = np.append(ret,self.discard_array)
+        ret = np.append(ret,np.array(self.available_dominances))
 
         foo = np.zeros((7,2))
         for i,a in self.available_items.items():
@@ -497,8 +643,13 @@ class RootGame:
         ret = np.append(ret,foo)
         
         foo = np.zeros((3,31))
+        bar = np.zeros((3,4))
         for i in range(3):
-            foo[i][min(30,self.victory_points[i])] = 1
+            if self.active_dominances[i] is None:
+                foo[i][min(30,self.victory_points[i])] = 1
+            else:
+                bar[i][self.active_dominances[i].suit] = 1
+        foo = np.append(foo,bar)
         ret = np.append(ret,foo)
         
         foo = np.zeros(18)
@@ -518,7 +669,7 @@ class RootGame:
         ret = np.append(ret,self.players[2].get_obs_array())
 
         curr_player = self.players[self.current_player]
-        foo = np.zeros((38,3))
+        foo = np.zeros((42,3))
         for c in curr_player.hand:
             cid = c.id
             if foo[cid][0] == 1:
@@ -591,7 +742,7 @@ class RootGame:
                 bar = np.zeros((3,30))
                 for i in range(3):
                     bar[i][curr_player.supporter_suit_counts[i]] = 1
-                ump = np.zeros((38,3))
+                ump = np.zeros((42,3))
                 for c in curr_player.supporters:
                     cid = c.id
                     if ump[cid][0] == 1:
@@ -604,14 +755,16 @@ class RootGame:
                         ump[cid][0] = 1
                 bar = np.append(bar,ump)
             else:
-                bar = np.full(204,-1)
+                bar = np.full(216,-1)
             foo = np.append(foo,bar)
         else:
-            foo = np.full(218,-1)
+            foo = np.full(230,-1)
         ret = np.append(ret,foo)
         
         ret = np.append(ret,self.battle.get_obs_array())
         ret = np.append(ret,self.board.get_obs_array())
+
+        ret = np.append(ret,self.turn_log.get_array(self.current_player))
 
         if self.current_player == PIND_MARQUISE:
             seen = self.marquise_seen_hands[PIND_EYRIE] + self.marquise_seen_hands[PIND_ALLIANCE]
@@ -623,7 +776,7 @@ class RootGame:
         for hand in seen:
             ret = np.append(ret,hand)
 
-        return ret
+        return np.append(ret,self.get_history(self.current_player))
 
     def legal_actions(self):
         while self.legal_actions_to_get is None:
@@ -660,6 +813,7 @@ class RootGame:
         # added to the discard since the last draw attempt
         if self.deck.size() == 0:
             self.deck.add(self.discard_pile) # includes shuffling
+            self.turn_log.discard_pile_was_reset()
             self.discard_pile = []
             self.discard_array = np.zeros((42,3))
         while amount:
@@ -671,8 +825,10 @@ class RootGame:
             c_drawn = draw[0]
             logger.debug(f"\t{ID_TO_PLAYER[player_index]} draws: {c_drawn.name}")
             p.hand.append(c_drawn)
+            self.turn_log.change_plr_hand_size(player_index,1)
             if self.deck.size() == 0:
                 self.deck.add(self.discard_pile) # includes shuffling
+                self.turn_log.discard_pile_was_reset()
                 self.discard_pile = []
                 self.discard_array = np.zeros((42,3))
             amount -= 1
@@ -709,11 +865,14 @@ class RootGame:
         "Makes a player discard a card of the matching id from their hand, assuming they have it."
         c_to_discard = self.get_card(player_index,card_id,"hand")
         self.add_to_discard(c_to_discard)
+        self.turn_log.change_plr_hand_size(player_index,-1)
+        self.turn_log.change_plr_cards_lost(player_index,card_id)
     
     def discard_from_persistent(self,player_index:int,card_id:int):
         "Makes a player discard a card of the matching id from their persistent cards, assuming they have it."
         c_to_discard = self.get_card(player_index,card_id,"persistent")
         self.add_to_discard(c_to_discard)
+        self.turn_log.change_plr_cards_lost(player_index,card_id)
     
     def discard_from_supporters(self,aplayer:Alliance, card_id:int):
         "Makes an alliance player discard a card from their supporters."
@@ -724,6 +883,7 @@ class RootGame:
                 break
         self.add_to_discard(c_to_discard)
         aplayer.spend_supporter_helper(c_to_discard.suit)
+        self.turn_log.change_alliance_payments(card_id)
 
     def change_score(self,player_index:int,amount:int):
         "Makes a player score some amount of points. Use a negative amount to lose points."
@@ -736,7 +896,10 @@ class RootGame:
         logger.debug(f"\t\tNew Score:")
         for i in range(3):
             logger.debug(f"\t\t> {ID_TO_PLAYER[i]}: {self.victory_points[i]}")
+            if self.active_dominances[i] is not None:
+                logger.debug(f"\t\t\t- {ID_TO_SUIT[self.active_dominances[i].suit]} Dominance Active")
         # self.points_scored_this_action += amount if (player_index == self.acting_player) else -amount
+        self.turn_log.change_plr_points(player_index,amount)
         if player_index == self.acting_player:
             self.points_scored_this_action += amount
 
@@ -753,6 +916,7 @@ class RootGame:
         if card_to_craft is None:
             print(f"ERROR: Could not find card id {card_id} in Player {player_index}'s hand: {p.hand}")
 
+        self.turn_log.change_plr_cards_crafted(player_index,card_id)
         item_id = card_to_craft.crafting_item
         if item_id != ITEM_NONE:
             # we are crafting an item
@@ -763,13 +927,13 @@ class RootGame:
             # Disdain for Trade for the Eyrie (unless they have Builder leader)
             points_scored = 1 if (player_index == PIND_EYRIE and p.chosen_leader_index != LEADER_BUILDER) else card_to_craft.points
             self.change_score(player_index,points_scored)
-            
             self.discard_from_hand(player_index,card_id)
         elif card_to_craft.is_persistent:
             # we are crafting a persistent card
             logger.debug(f"\t{ID_TO_PLAYER[player_index]} crafts: {card_to_craft.name}")
             p.persistent_cards.append(card_to_craft)
             p.hand.pop(hand_i)
+            self.turn_log.change_plr_hand_size(player_index,-1)
         elif card_id in CID_FAVORS:
             # a favor card has been activated
             logger.debug(f"\t{ID_TO_PLAYER[player_index]} crafts: {card_to_craft.name}")
@@ -782,16 +946,22 @@ class RootGame:
                     foo = clearing.get_num_warriors(faction_i)
                     logger.debug(f"\t\tRemoving {foo} {ID_TO_PLAYER[faction_i]} warriors in clearing {cid}")
                     clearing.change_num_warriors(faction_i,-foo)
+                    self.turn_log.change_clr_warriors(cid,faction_i,-foo)
                     player.change_num_warriors(foo)
+                    self.turn_log.change_plr_warrior_supply(faction_i,foo)
+
                     while len(clearing.buildings[faction_i]) > 0:
                         foo = clearing.buildings[faction_i].pop()
                         player.change_num_buildings(foo,1)
+                        self.turn_log.change_clr_building(cid,faction_i,foo,-1)
                         logger.debug(f"\t\tBuilding of {ID_TO_PLAYER[faction_i]} removed from clearing {cid}")
                         if faction_i == PIND_ALLIANCE:
                             self.base_removal_helper(player,clearing.suit)
+
                     while len(clearing.tokens[faction_i]) > 0:
                         foo = clearing.tokens[faction_i].pop()
                         player.change_num_tokens(foo,1)
+                        self.turn_log.change_clr_tokens(cid,faction_i,foo,-1)
                         logger.debug(f"\t\tToken of {ID_TO_PLAYER[faction_i]} removed from clearing {cid}")
                         if faction_i == PIND_ALLIANCE:
                             self.outrage_offender = player_index
@@ -813,7 +983,9 @@ class RootGame:
                 hand_i = i
                 break
         p.persistent_cards.append(card_to_craft)
+        self.turn_log.change_plr_cards_crafted(player_index,CID_ROYAL_CLAIM)
         p.hand.pop(hand_i)
+        self.turn_log.change_plr_hand_size(player_index,-1)
         recipe_used = AID_CRAFT_RC_MAPPING[action]
         logger.debug(f"\t{ID_TO_PLAYER[player_index]} crafts: {card_to_craft.name} with recipe {recipe_used} (Mouse,Rabbit,Fox)")
         for i in range(3):
@@ -830,7 +1002,9 @@ class RootGame:
         logger.debug(f"\tField Hospitals activated, Marquise recovered {amount} warrior(s)")
         keep_clearing = self.players[PIND_MARQUISE].keep_clearing_id
         self.players[PIND_MARQUISE].change_num_warriors(-amount)
+        self.turn_log.change_plr_warrior_supply(PIND_MARQUISE,-amount)
         self.board.place_warriors(PIND_MARQUISE,amount,keep_clearing)
+        self.turn_log.change_clr_warriors(keep_clearing,PIND_MARQUISE,amount)
         self.discard_from_hand(PIND_MARQUISE,payment_card_id)
 
     def score_battle_points(self,faction_index:int,is_attacker:bool,cardboard_removed:int):
@@ -871,7 +1045,9 @@ class RootGame:
             if target_clearing.get_num_warriors(faction_index) > 0:
                 logger.debug(f"- Removed 1 {ID_TO_PLAYER[faction_index]} warrior from clearing {clearing_index}")
                 target_clearing.change_num_warriors(faction_index,-1)
+                self.turn_log.change_clr_warriors(clearing_index,faction_index,-1)
                 target_faction.change_num_warriors(1)
+                self.turn_log.change_plr_warrior_supply(faction_index,1)
                 warriors_removed += 1
                 amount -= 1
             # then check if there is a choice of building / token
@@ -890,6 +1066,7 @@ class RootGame:
                             logger.debug(f"-- {ID_TO_MBUILD[bid]} destroyed in clearing {clearing_index}")
                             target_clearing.remove_building(faction_index,bid)
                             target_faction.change_num_buildings(bid,1)
+                            self.turn_log.change_clr_building(clearing_index,faction_index,bid,-1)
                             cardboard_removed += 1
                             amount -= 1
                 # if it is a token, remove one of them
@@ -899,6 +1076,7 @@ class RootGame:
                             logger.debug(f"-- {ID_TO_MTOKEN[tid]} destroyed in clearing {clearing_index}")
                             target_clearing.remove_token(faction_index,tid)
                             target_faction.change_num_tokens(tid,1)
+                            self.turn_log.change_clr_tokens(clearing_index,faction_index,tid,-1)
                             cardboard_removed += 1
                             amount -= 1
                 # if no other item is present, the remaining hits are lost
@@ -910,6 +1088,7 @@ class RootGame:
                     logger.debug(f"-- Roost destroyed in clearing {clearing_index}")
                     target_clearing.remove_building(faction_index,BIND_ROOST)
                     target_faction.change_num_buildings(BIND_ROOST,1)
+                    self.turn_log.change_clr_building(clearing_index,faction_index,BIND_ROOST,-1)
                     cardboard_removed += 1
                     amount -= 1
                 else:
@@ -928,6 +1107,7 @@ class RootGame:
                         if target_clearing.get_num_buildings(faction_index,bid) > 0:
                             logger.debug(f"-- {ID_TO_ABUILD[bid]} destroyed in clearing {clearing_index}")
                             target_clearing.remove_building(faction_index,bid)
+                            self.turn_log.change_clr_building(clearing_index,faction_index,bid,-1)
                             self.base_removal_helper(target_faction,bid)
                             cardboard_removed += 1
                             amount -= 1
@@ -935,6 +1115,7 @@ class RootGame:
                 elif token_choices == 1:
                     logger.debug(f"-- Sympathy destroyed in clearing {clearing_index}")
                     target_clearing.remove_token(faction_index,TIND_SYMPATHY)
+                    self.turn_log.change_clr_tokens(clearing_index,faction_index,TIND_SYMPATHY,-1)
                     target_faction.change_num_tokens(TIND_SYMPATHY,1)
                     self.outrage_offender = self.battle.attacker_id if (self.battle.defender_id == PIND_ALLIANCE) else self.battle.defender_id
                     self.outrage_suits.append(target_clearing.suit)
@@ -974,21 +1155,25 @@ class RootGame:
             if self.battle.defender_id == PIND_MARQUISE:
                 if action in {AID_ORDER_KEEP,AID_ORDER_WOOD}:
                     clearing.remove_token(self.battle.defender_id,action - AID_ORDER_KEEP)
+                    self.turn_log.change_clr_tokens(self.battle.clearing_id,self.battle.defender_id,action - AID_ORDER_KEEP,-1)
                     defender.change_num_tokens(action - AID_ORDER_KEEP,1)
                     item = ID_TO_MTOKEN[action - AID_ORDER_KEEP]
                 else:
                     clearing.remove_building(self.battle.defender_id,action - AID_ORDER_SAWMILL)
+                    self.turn_log.change_clr_building(self.battle.clearing_id,self.battle.defender_id,action - AID_ORDER_SAWMILL,-1)
                     defender.change_num_buildings(action - AID_ORDER_SAWMILL,1)
                     item = ID_TO_MBUILD[action - AID_ORDER_SAWMILL]
             elif self.battle.defender_id == PIND_ALLIANCE:
                 if action == AID_ORDER_SYMPATHY:
                     clearing.remove_token(PIND_ALLIANCE,TIND_SYMPATHY)
+                    self.turn_log.change_clr_tokens(self.battle.clearing_id,self.battle.defender_id,TIND_SYMPATHY,-1)
                     defender.change_num_tokens(TIND_SYMPATHY,1)
                     item = ID_TO_ATOKEN[TIND_SYMPATHY]
                     self.outrage_offender = self.battle.attacker_id
                     self.outrage_suits.append(clearing.suit)
                 else:
                     clearing.remove_building(PIND_ALLIANCE,action - AID_ORDER_BASE_MOUSE)
+                    self.turn_log.change_clr_building(self.battle.clearing_id,self.battle.defender_id,action - AID_ORDER_BASE_MOUSE,-1)
                     self.base_removal_helper(defender,clearing.suit)
                     item = ID_TO_ABUILD[action - AID_ORDER_BASE_MOUSE]
             logger.debug(f"{ID_TO_PLAYER[self.battle.defender_id]} chose to destroy {item}")
@@ -1041,21 +1226,25 @@ class RootGame:
             if self.battle.attacker_id == PIND_MARQUISE:
                 if action in {AID_ORDER_KEEP,AID_ORDER_WOOD}:
                     clearing.remove_token(self.battle.attacker_id,action - AID_ORDER_KEEP)
+                    self.turn_log.change_clr_tokens(self.battle.clearing_id,self.battle.defender_id,action - AID_ORDER_KEEP,-1)
                     attacker.change_num_tokens(action - AID_ORDER_KEEP,1)
                     item = ID_TO_MTOKEN[action - AID_ORDER_KEEP]
                 else:
                     clearing.remove_building(self.battle.attacker_id,action - AID_ORDER_SAWMILL)
+                    self.turn_log.change_clr_building(self.battle.clearing_id,self.battle.defender_id,action - AID_ORDER_SAWMILL,-1)
                     attacker.change_num_buildings(action - AID_ORDER_SAWMILL,1)
                     item = ID_TO_MBUILD[action - AID_ORDER_SAWMILL]
             elif self.battle.attacker_id == PIND_ALLIANCE:
                 if action == AID_ORDER_SYMPATHY:
                     clearing.remove_token(PIND_ALLIANCE,TIND_SYMPATHY)
+                    self.turn_log.change_clr_tokens(self.battle.clearing_id,self.battle.defender_id,TIND_SYMPATHY,-1)
                     attacker.change_num_tokens(TIND_SYMPATHY,1)
                     item = ID_TO_ATOKEN[TIND_SYMPATHY]
                     self.outrage_offender = self.battle.defender_id
                     self.outrage_suits.append(clearing.suit)
                 else:
                     clearing.remove_building(PIND_ALLIANCE,action - AID_ORDER_BASE_MOUSE)
+                    self.turn_log.change_clr_building(self.battle.clearing_id,self.battle.defender_id,action - AID_ORDER_BASE_MOUSE,-1)
                     self.base_removal_helper(attacker,clearing.suit)
                     item = ID_TO_ABUILD[action - AID_ORDER_BASE_MOUSE]
             logger.debug(f"{ID_TO_PLAYER[self.battle.attacker_id]} chose to destroy {item}")
@@ -1112,6 +1301,7 @@ class RootGame:
                 # check if the attacker has Scouting Party (nullifies ambush cards used up)
                 if any((c.id == CID_SCOUTING_PARTY) for c in attacker.persistent_cards):
                     logger.debug("The ambush is thwarted by a Scouting Party!")
+                    self.turn_log.change_plr_pers_used(self.battle.attacker_id, CID_TO_PERS_INDEX[CID_SCOUTING_PARTY],self.battle.defender_id)
                     self.battle.stage = Battle.STAGE_DICE_ROLL
                 # otherwise, see if attacker can choose to counter ambush
                 else:
@@ -1287,10 +1477,12 @@ class RootGame:
                 logger.debug(f"{ID_TO_PLAYER[self.battle.attacker_id]} activates Armorers (ignores rolled hits)")
                 self.battle.def_rolled_hits = 0
                 self.discard_from_persistent(self.battle.attacker_id,CID_ARMORERS)
+                self.turn_log.change_plr_pers_used(self.battle.attacker_id, CID_TO_PERS_INDEX[CID_ARMORERS],self.battle.defender_id)
             if action in {AID_EFFECTS_BRUTTACT,AID_EFFECTS_ARM_BT}:
                 # brutal tactics is used
                 logger.debug(f"{ID_TO_PLAYER[self.battle.attacker_id]} activates Brutal Tactics (+1 hit dealt)")
                 self.battle.att_extra_hits += 1
+                self.turn_log.change_plr_pers_used(self.battle.attacker_id, CID_TO_PERS_INDEX[CID_BRUTAL_TACTICS],self.battle.defender_id)
                 self.change_score(self.battle.defender_id,1)
             # check if the defender can choose extra effects
             ans = defender.get_defender_card_actions()
@@ -1350,11 +1542,13 @@ class RootGame:
                 # Armorers is used up
                 logger.debug(f"{ID_TO_PLAYER[self.battle.defender_id]} activates Armorers (ignores rolled hits)")
                 self.battle.att_rolled_hits = 0
+                self.turn_log.change_plr_pers_used(self.battle.defender_id, CID_TO_PERS_INDEX[CID_ARMORERS],self.battle.attacker_id)
                 self.discard_from_persistent(self.battle.defender_id,CID_ARMORERS)
             if action in {AID_EFFECTS_SAPPERS,AID_EFFECTS_ARMSAP}:
                 # sappers is used
                 logger.debug(f"{ID_TO_PLAYER[self.battle.defender_id]} activates Sappers (+1 hit dealt)")
                 self.battle.def_extra_hits += 1
+                self.turn_log.change_plr_pers_used(self.battle.defender_id, CID_TO_PERS_INDEX[CID_SAPPERS],self.battle.attacker_id)
                 self.discard_from_persistent(self.battle.defender_id,CID_SAPPERS)
             # next, the defender takes hits first
             logger.debug("--- Dealing hits to defender...")
@@ -1409,6 +1603,7 @@ class RootGame:
         points = sum((i == player_index) for i in self.board.get_rulers())
         self.change_score(player_index,points)
         self.discard_from_persistent(player_index, CID_ROYAL_CLAIM)
+        self.turn_log.change_plr_pers_used(player_index, CID_TO_PERS_INDEX[CID_ROYAL_CLAIM])
     
     def activate_stand_and_deliver(self,player_index:int,target_index:int):
         "In Birdsong, may take a random card from another player. That player scores one point."
@@ -1416,17 +1611,26 @@ class RootGame:
         target_p_hand = self.players[target_index].hand
         chosen_i = random.randint(0,len(target_p_hand) - 1)
         chosen_card = target_p_hand.pop(chosen_i)
+        self.turn_log.change_plr_hand_size(target_index,-1)
         logger.debug(f"\t\tCard Taken: {chosen_card.name}")
 
         self.players[player_index].hand.append(chosen_card)
+        self.turn_log.change_plr_hand_size(player_index,1)
         self.change_score(target_index,1)
+        self.turn_log.change_plr_pers_used(player_index, CID_TO_PERS_INDEX[CID_STAND_AND_DELIVER],target_index)
 
     def activate_tax_collector(self,player_index:int,clearing_index:int):
         "Once in Daylight, may remove one of your warriors from the map to draw a card."
         logger.debug(f"\t{ID_TO_PLAYER[player_index]} activates Tax Collector...")
         self.board.place_warriors(player_index,-1,clearing_index)
+        self.turn_log.change_clr_warriors(clearing_index,player_index,-1)
+        
         self.players[player_index].change_num_warriors(1)
+        self.turn_log.change_plr_warrior_supply(player_index,1)
+
         self.draw_cards(player_index,1)
+        self.turn_log.change_plr_hand_size(player_index,1)
+        self.turn_log.change_plr_pers_used(player_index, CID_TO_PERS_INDEX[CID_TAX_COLLECTOR])
         if player_index == PIND_MARQUISE:
             self.field_hospitals.append((1,self.board.clearings[clearing_index].suit))
 
@@ -1435,6 +1639,9 @@ class RootGame:
         logger.debug(f"\t{ID_TO_PLAYER[player_index]} activates Better Burrow Bank...")
         self.draw_cards(player_index,1)
         self.draw_cards(target_index,1)
+        self.turn_log.change_plr_hand_size(player_index,1)
+        self.turn_log.change_plr_hand_size(target_index,1)
+        self.turn_log.change_plr_pers_used(player_index, CID_TO_PERS_INDEX[CID_BBB],target_index)
     
     def activate_codebreakers(self,player_index:int,target_index:int):
         "Once in Daylight, may look at another player's hand."
@@ -1456,6 +1663,7 @@ class RootGame:
             self.eyrie_seen_hands[target_index][0] = target_hand
         elif player_index == PIND_ALLIANCE:
             self.alliance_seen_hands[target_index][0] = target_hand
+        self.turn_log.change_plr_pers_used(player_index, CID_TO_PERS_INDEX[CID_CODEBREAKERS], target_index)
 
     def can_craft(self,card:Card,player:Player):
         "Returns True only if the current player can currently craft the given card. Checks the remaining crafting power."
@@ -1515,6 +1723,7 @@ class RootGame:
             while n_sawmills:
                 mplayer.change_num_tokens(TIND_WOOD, -1)
                 self.board.place_token(PIND_MARQUISE,TIND_WOOD,i)
+                self.turn_log.change_clr_tokens(i,PIND_MARQUISE,TIND_WOOD,1)
                 n_sawmills -= 1
         return True
 
@@ -1535,7 +1744,9 @@ class RootGame:
         for i in clearings_with_recruiter_ids:
             n_recruiters = recruiter_counts[i]
             mplayer.change_num_warriors(-n_recruiters)
+            self.turn_log.change_plr_warrior_supply(PIND_MARQUISE,-n_recruiters)
             self.board.place_warriors(PIND_MARQUISE,n_recruiters,i)
+            self.turn_log.change_clr_warriors(i,PIND_MARQUISE,n_recruiters)
         return True
     
     def place_marquise_building(self,mplayer:Marquise,building_index:int,clearing_index:int):
@@ -1554,6 +1765,7 @@ class RootGame:
         logger.debug(f"Building a {ID_TO_MBUILD[building_index]} in clearing {clearing_index}")
         logger.debug(f"\tWood Cost: {wood_cost}")
         self.board.place_building(PIND_MARQUISE,building_index,clearing_index)
+        self.turn_log.change_clr_building(clearing_index,PIND_MARQUISE,building_index,1)
         self.change_score(PIND_MARQUISE,points_scored)
         if wood_cost == 0:
             return True
@@ -1573,6 +1785,7 @@ class RootGame:
             logger.debug(f"\tRemoving {wood_cost} wood solely from clearing {one_clearing_id}...")
             for i in range(wood_cost):
                 self.board.clearings[one_clearing_id].remove_token(PIND_MARQUISE,TIND_WOOD)
+                self.turn_log.change_clr_tokens(one_clearing_id,PIND_MARQUISE,TIND_WOOD,-1)
             mplayer.change_num_tokens(TIND_WOOD,wood_cost)
             return True
         # if we have exactly enough wood to pay, then use up all of the usable wood
@@ -1581,6 +1794,7 @@ class RootGame:
             for i,amount in enumerate(usable_wood):
                 while amount > 0:
                     self.board.clearings[i].remove_token(PIND_MARQUISE,TIND_WOOD)
+                    self.turn_log.change_clr_tokens(i,PIND_MARQUISE,TIND_WOOD,-1)
                     amount -= 1
             mplayer.change_num_tokens(TIND_WOOD,wood_cost)
             return True
@@ -1807,7 +2021,7 @@ class RootGame:
                 if clearing_rulers[i] == player_index and clearing_rulers[j] == player_index:
                     logger.debug(f">>> The {ID_TO_PLAYER[player_index]} rule clearings {i} and {j}!")
                     return True
-            logger.debug(f">>> Bird Dominance not fulfilled for {ID_TO_PLAYER[player_index]}...")
+            logger.debug(f">>> Bird Dominance NOT fulfilled for {ID_TO_PLAYER[player_index]}...")
             return False
         # not bird dominance
         dom_suit_clearings = CLEARING_SUITS[dom_suit]
@@ -1815,7 +2029,7 @@ class RootGame:
             logger.debug(f">>> The {ID_TO_PLAYER[player_index]} rule enough clearings!")
             return True
         else:
-            logger.debug(f">>> {ID_TO_SUIT[dom_suit]} Dominance not fulfilled for {ID_TO_PLAYER[player_index]}...")
+            logger.debug(f">>> {ID_TO_SUIT[dom_suit]} Dominance NOT fulfilled for {ID_TO_PLAYER[player_index]}...")
             return False
     
     def revolt_helper(self,aplayer:Alliance,clearing_index:int):
@@ -1837,32 +2051,41 @@ class RootGame:
             foo = clearing.get_num_warriors(faction_i)
             logger.debug(f"\t\tRemoving {foo} {ID_TO_PLAYER[faction_i]} warriors in clearing {clearing_index}")
             clearing.change_num_warriors(faction_i,-foo)
+            self.turn_log.change_clr_warriors(clearing_index,faction_i,-foo)
             player.change_num_warriors(foo)
+            self.turn_log.change_plr_warrior_supply(faction_i,foo)
+
             if (faction_i == PIND_MARQUISE and
                     foo > 0):
                 self.field_hospitals.append((foo,clearing.suit))
             while len(clearing.buildings[faction_i]) > 0:
                 foo = clearing.buildings[faction_i].pop()
                 player.change_num_buildings(foo,1)
+                self.turn_log.change_clr_building(clearing_index,faction_i,foo,-1)
                 logger.debug(f"\t\tDestroyed a building of {ID_TO_PLAYER[faction_i]}")
                 self.change_score(PIND_ALLIANCE,1)
             while len(clearing.tokens[faction_i]) > 0:
                 foo = clearing.tokens[faction_i].pop()
                 player.change_num_tokens(foo,1)
+                self.turn_log.change_clr_tokens(clearing_index,faction_i,foo,-1)
                 logger.debug(f"\t\tDestroyed a token of {ID_TO_PLAYER[faction_i]}")
                 self.change_score(PIND_ALLIANCE,1)
         # place matching base
         csuit = clearing.suit
         aplayer.change_num_buildings(csuit,-1)
         self.board.place_building(PIND_ALLIANCE,csuit,clearing_index)
+        self.turn_log.change_clr_building(clearing_index,PIND_ALLIANCE,csuit,1)
         # place recruits
         n_recruits = min(self.board.get_num_sympathetic(csuit),aplayer.warrior_storage)
         aplayer.change_num_warriors(-n_recruits)
+        self.turn_log.change_plr_warrior_supply(PIND_ALLIANCE,-n_recruits)
         self.board.place_warriors(PIND_ALLIANCE,n_recruits,clearing_index)
+        self.turn_log.change_clr_warriors(clearing_index,PIND_ALLIANCE,n_recruits)
         # add 1 officer
         if aplayer.warrior_storage > 0:
             logger.debug("\tRecruiting 1 Officer...")
             aplayer.change_num_warriors(-1)
+            self.turn_log.change_plr_warrior_supply(PIND_ALLIANCE,-1)
             aplayer.num_officers += 1
 
     def base_removal_helper(self,aplayer:Alliance,suit:int):
@@ -1880,6 +2103,7 @@ class RootGame:
         logger.debug(f"\tThe Alliance loses {n_to_remove} officer(s)")
         aplayer.num_officers -= n_to_remove
         aplayer.change_num_warriors(n_to_remove)
+        self.turn_log.change_plr_warrior_supply(PIND_ALLIANCE,n_to_remove)
 
     # GAME ADVANCEMENT
     def advance_game(self):
@@ -2104,6 +2328,7 @@ class RootGame:
                 return [0]
             logger.debug("--- End of Marquise's Turn ---\n")
             self.phase_steps = 0
+            self.save_to_history()
             self.current_player = self.next_player_index[PIND_MARQUISE]
             if self.current_player == PIND_EYRIE:
                 self.phase = self.PHASE_BIRDSONG_EYRIE
@@ -2178,9 +2403,12 @@ class RootGame:
                         # automatically place the roost
                         current_player.place_roost()
                         self.board.place_building(PIND_EYRIE, BIND_ROOST, ans[0] - AID_BUILD1)
+                        self.turn_log.change_clr_building(ans[0] - AID_BUILD1,PIND_EYRIE,BIND_ROOST,1)
                         n_warriors = min(3,current_player.warrior_storage)
                         self.board.place_warriors(PIND_EYRIE, n_warriors, ans[0] - AID_BUILD1)
+                        self.turn_log.change_clr_warriors(ans[0] - AID_BUILD1,PIND_EYRIE,n_warriors)
                         current_player.change_num_warriors(-n_warriors)
+                        self.turn_log.change_plr_warrior_supply(PIND_EYRIE,-n_warriors)
                     else:
                         logger.debug("Choosing where to add new roost...")
                         return ans
@@ -2283,6 +2511,7 @@ class RootGame:
                 to_discard,pts = current_player.turmoil_helper()
                 self.change_score(PIND_EYRIE,-pts)
                 for c in to_discard:
+                    # self.turn_log.change_plr_cards_lost(PIND_EYRIE,c.id)
                     self.add_to_discard(c)
 
                 logger.debug("Choosing new leader after turmoil...")
@@ -2317,6 +2546,7 @@ class RootGame:
                 return [0]
             logger.debug("--- End of Eyrie's Turn ---\n")
             self.phase_steps = 0
+            self.save_to_history()
             self.current_player = self.next_player_index[PIND_EYRIE]
             if self.current_player == PIND_MARQUISE:
                 self.phase = self.PHASE_BIRDSONG_MARQUISE
@@ -2511,6 +2741,7 @@ class RootGame:
                 return [0]
             logger.debug("--- End of Alliance's Turn ---\n")
             self.phase_steps = 0
+            self.save_to_history()
             self.current_player = self.next_player_index[PIND_ALLIANCE]
             if self.current_player == PIND_EYRIE:
                 self.phase = self.PHASE_BIRDSONG_EYRIE
@@ -2571,25 +2802,31 @@ class RootGame:
             current_player.keep_clearing_id = chosen_clearing
             current_player.change_num_tokens(TIND_KEEP,-1)
             self.board.place_token(PIND_MARQUISE,TIND_KEEP,chosen_clearing)
+            self.turn_log.change_clr_tokens(chosen_clearing,PIND_MARQUISE,TIND_KEEP,1)
             # Garrison
             skip = self.board.clearings[chosen_clearing].opposite_corner_id
             for i in range(12):
                 if i != skip:
                     self.board.place_warriors(PIND_MARQUISE,1,i)
+                    self.turn_log.change_clr_warriors(i,PIND_MARQUISE,1)
             current_player.change_num_warriors(-11)
+            self.turn_log.change_plr_warrior_supply(PIND_MARQUISE,-11)
             logger.debug(f"1 Marquise warrior placed in each clearing except {skip}")
         elif s == 1: # choosing where to place a sawmill
             chosen_clearing = action - AID_BUILD1
             current_player.update_from_building_placed(BIND_SAWMILL)
             self.board.place_building(PIND_MARQUISE,BIND_SAWMILL,chosen_clearing)
+            self.turn_log.change_clr_building(chosen_clearing,PIND_MARQUISE,BIND_SAWMILL,1)
         elif s == 2: # choosing where to place a workshop
             chosen_clearing = action - AID_BUILD2
             current_player.update_from_building_placed(BIND_WORKSHOP)
             self.board.place_building(PIND_MARQUISE,BIND_WORKSHOP,chosen_clearing)
+            self.turn_log.change_clr_building(chosen_clearing,PIND_MARQUISE,BIND_WORKSHOP,1)
         elif s == 3: # choosing where to place a recruiter
             chosen_clearing = action - AID_BUILD3
             current_player.update_from_building_placed(BIND_RECRUITER)
             self.board.place_building(PIND_MARQUISE,BIND_RECRUITER,chosen_clearing)
+            self.turn_log.change_clr_building(chosen_clearing,PIND_MARQUISE,BIND_RECRUITER,1)
         self.phase_steps += 1
 
     def marquise_birdsong(self,action:int,current_player:Marquise):
@@ -2599,6 +2836,7 @@ class RootGame:
             self.available_wood_spots[action - AID_CHOOSE_CLEARING] -= 1
             current_player.change_num_tokens(TIND_WOOD,-1)
             self.board.place_token(PIND_MARQUISE,TIND_WOOD,action - AID_CHOOSE_CLEARING)
+            self.turn_log.change_clr_tokens(action - AID_CHOOSE_CLEARING,PIND_MARQUISE,TIND_WOOD,1)
             can_place_wood = [(x > 0) for x in self.available_wood_spots]
             if (current_player.get_num_tokens_in_store(TIND_WOOD) == 0) or (sum(can_place_wood) == 0):
                 # finished placing wood
@@ -2613,6 +2851,7 @@ class RootGame:
                 while amount_to_place > 0:
                     current_player.change_num_tokens(TIND_WOOD,-1)
                     self.board.place_token(PIND_MARQUISE,TIND_WOOD,i)
+                    self.turn_log.change_clr_tokens(i,PIND_MARQUISE,TIND_WOOD,1)
                     amount_to_place -= 1
                 self.phase_steps = 2
             # if neither of the two conditions above are
@@ -2654,6 +2893,7 @@ class RootGame:
             self.marquise_actions += 1
         elif action >= AID_BATTLE_EYRIE and action <= AID_BATTLE_EYRIE + 11:
             self.battle = Battle(PIND_MARQUISE,PIND_EYRIE,action - AID_BATTLE_EYRIE)
+            self.turn_log.record_battle(action - AID_BATTLE_EYRIE,PIND_MARQUISE,PIND_EYRIE)
             if self.phase_steps == 0:
                 logger.debug("Command Warren Activated:")
                 self.phase_steps = 1
@@ -2662,6 +2902,7 @@ class RootGame:
                 self.marquise_actions -= 1
         elif action >= AID_BATTLE_ALLIANCE and action <= AID_BATTLE_ALLIANCE + 11:
             self.battle = Battle(PIND_MARQUISE,PIND_ALLIANCE,action - AID_BATTLE_ALLIANCE)
+            self.turn_log.record_battle(action - AID_BATTLE_ALLIANCE,PIND_MARQUISE,PIND_ALLIANCE)
             if self.phase_steps == 0:
                 logger.debug("Command Warren Activated:")
                 self.phase_steps = 1
@@ -2672,6 +2913,8 @@ class RootGame:
             start,foo = divmod(action - AID_MOVE,300)
             end,amount = divmod(foo,25)
             self.board.move_warriors(PIND_MARQUISE,amount + 1,start,end)
+            self.turn_log.change_clr_warriors(start,PIND_MARQUISE,-amount-1)
+            self.turn_log.change_clr_warriors(end,PIND_MARQUISE,amount+1)
             
             dest = self.board.clearings[end]
             if dest.is_sympathetic():
@@ -2717,11 +2960,13 @@ class RootGame:
             self.discard_from_hand(PIND_MARQUISE,card_id)
             current_player.change_num_tokens(TIND_WOOD,-1)
             self.board.place_token(PIND_MARQUISE,TIND_WOOD,clearing_id)
+            self.turn_log.change_clr_tokens(clearing_id,PIND_MARQUISE,TIND_WOOD,1)
         elif self.phase_steps == 5:
             # we are choosing where to take wood from
             logger.debug(f"\tChose wood from clearing {action - AID_CHOOSE_CLEARING}")
             self.board.clearings[action - AID_CHOOSE_CLEARING].remove_token(PIND_MARQUISE,TIND_WOOD)
             current_player.change_num_tokens(TIND_WOOD,1)
+            self.turn_log.change_clr_tokens(action - AID_CHOOSE_CLEARING,PIND_MARQUISE,TIND_WOOD,-1)
             self.remaining_wood_cost -= 1
             logger.debug(f"\t\tRemaining wood cost: {self.remaining_wood_cost}")
             self.available_wood_spots[action - AID_CHOOSE_CLEARING] -= 1
@@ -2739,6 +2984,7 @@ class RootGame:
                 while self.remaining_wood_cost:
                     current_player.change_num_tokens(TIND_WOOD,1)
                     self.board.clearings[i].remove_token(PIND_MARQUISE,TIND_WOOD)
+                    self.turn_log.change_clr_tokens(i,PIND_MARQUISE,TIND_WOOD,-1)
                     self.remaining_wood_cost -= 1
                 self.phase_steps = 2
             # if neither of the two conditions above are
@@ -2749,7 +2995,9 @@ class RootGame:
             # we are choosing where to recruit
             logger.debug(f"Chose to recruit in clearing {action - AID_CHOOSE_CLEARING}")
             current_player.change_num_warriors(-1)
+            self.turn_log.change_plr_warrior_supply(PIND_MARQUISE,-1)
             self.board.place_warriors(PIND_MARQUISE,1,action - AID_CHOOSE_CLEARING)
+            self.turn_log.change_clr_warriors(action - AID_CHOOSE_CLEARING,PIND_MARQUISE,1)
             self.available_recruiters[action - AID_CHOOSE_CLEARING] -= 1
             can_recruit = [(x > 0) for x in self.available_recruiters]
             if (current_player.warrior_storage == 0) or (sum(can_recruit) == 0):
@@ -2762,7 +3010,9 @@ class RootGame:
                 foo = self.available_recruiters[i]
                 amount_to_place = min(foo, current_player.warrior_storage)
                 current_player.change_num_warriors(-amount_to_place)
+                self.turn_log.change_plr_warrior_supply(PIND_MARQUISE,-amount_to_place)
                 self.board.place_warriors(PIND_MARQUISE,amount_to_place,action - AID_CHOOSE_CLEARING)
+                self.turn_log.change_clr_warriors(action - AID_CHOOSE_CLEARING,PIND_MARQUISE,amount_to_place)
                 self.phase_steps = 2
             # if neither of the two conditions above are
             # satisfied, then we still have a choice and
@@ -2776,11 +3026,14 @@ class RootGame:
             dom_card = self.available_dom_card_objs[suit]
             self.available_dom_card_objs[suit] = None
             current_player.hand.append(dom_card)
+            self.turn_log.change_plr_hand_size(PIND_MARQUISE,1)
+            self.turn_log.change_plr_cards_gained(PIND_MARQUISE,dom_card.id)
         elif action >= AID_ACTIVATE_DOM and action <= AID_ACTIVATE_DOM + 3:
             suit = action - AID_ACTIVATE_DOM
             target_id = suit + 38
             logger.debug(f">>> The Marquise activates the {ID_TO_SUIT[suit]} Dominance Card! <<<")
             dom_card = self.get_card(PIND_MARQUISE,target_id,'hand')
+            self.turn_log.change_plr_hand_size(PIND_MARQUISE,-1)
             self.active_dominances[PIND_MARQUISE] = dom_card
             self.victory_points[PIND_MARQUISE] = -1
 
@@ -2800,6 +3053,8 @@ class RootGame:
             start,foo = divmod(action - AID_MOVE,300)
             end,amount = divmod(foo,25)
             self.board.move_warriors(PIND_MARQUISE,amount + 1,start,end)
+            self.turn_log.change_clr_warriors(start,PIND_MARQUISE,-amount-1)
+            self.turn_log.change_clr_warriors(end,PIND_MARQUISE,amount+1)
 
             dest = self.board.clearings[end]
             if dest.is_sympathetic():
@@ -2824,8 +3079,11 @@ class RootGame:
             setup_id = self.board.clearings[keep_id].opposite_corner_id
             current_player.place_roost()
             current_player.change_num_warriors(-6)
+            self.turn_log.change_plr_warrior_supply(PIND_EYRIE,-6)
             self.board.place_building(PIND_EYRIE,BIND_ROOST,setup_id)
+            self.turn_log.change_clr_building(setup_id,PIND_EYRIE,BIND_ROOST,1)
             self.board.place_warriors(PIND_EYRIE,6,setup_id)
+            self.turn_log.change_clr_warriors(setup_id,PIND_EYRIE,6)
             # action is the leader that was chosen
             current_player.choose_new_leader(action - AID_CHOOSE_LEADER)
         self.phase_steps += 1
@@ -2842,6 +3100,7 @@ class RootGame:
 
         elif action >= AID_DECREE_RECRUIT and action <= AID_DECREE_RECRUIT + 41: # add card to RECRUIT
             c = self.get_card(PIND_EYRIE,action - AID_DECREE_RECRUIT,'hand')
+            self.turn_log.change_plr_hand_size(PIND_EYRIE,-1)
             current_player.add_to_decree(c, DECREE_RECRUIT)
             self.eyrie_cards_added += 1
             if c.suit == SUIT_BIRD:
@@ -2850,6 +3109,7 @@ class RootGame:
                 self.phase_steps = 3
         elif action >= AID_DECREE_MOVE and action <= AID_DECREE_MOVE + 41: # add card to MOVE
             c = self.get_card(PIND_EYRIE,action - AID_DECREE_MOVE,'hand')
+            self.turn_log.change_plr_hand_size(PIND_EYRIE,-1)
             current_player.add_to_decree(c, DECREE_MOVE)
             self.eyrie_cards_added += 1
             if c.suit == SUIT_BIRD:
@@ -2858,6 +3118,7 @@ class RootGame:
                 self.phase_steps = 3
         elif action >= AID_DECREE_BATTLE and action <= AID_DECREE_BATTLE + 41: # add card to BATTLE
             c = self.get_card(PIND_EYRIE,action - AID_DECREE_BATTLE,'hand')
+            self.turn_log.change_plr_hand_size(PIND_EYRIE,-1)
             current_player.add_to_decree(c, DECREE_BATTLE)
             self.eyrie_cards_added += 1
             if c.suit == SUIT_BIRD:
@@ -2866,6 +3127,7 @@ class RootGame:
                 self.phase_steps = 3
         elif action >= AID_DECREE_BUILD and action <= AID_DECREE_BUILD + 41: # add card to BUILD
             c = self.get_card(PIND_EYRIE,action - AID_DECREE_BUILD,'hand')
+            self.turn_log.change_plr_hand_size(PIND_EYRIE,-1)
             current_player.add_to_decree(c, DECREE_BUILD)
             self.eyrie_cards_added += 1
             if c.suit == SUIT_BIRD:
@@ -2882,9 +3144,12 @@ class RootGame:
         elif action >= AID_BUILD1 and action <= AID_BUILD1 + 11: # choose new roost location with no roosts
             current_player.place_roost()
             self.board.place_building(PIND_EYRIE, BIND_ROOST, action - AID_BUILD1)
+            self.turn_log.change_clr_building(action - AID_BUILD1,PIND_EYRIE,BIND_ROOST,1)
             n_warriors = min(3,current_player.warrior_storage)
             self.board.place_warriors(PIND_EYRIE, n_warriors, action - AID_BUILD1)
+            self.turn_log.change_clr_warriors(action - AID_BUILD1,PIND_EYRIE,n_warriors)
             current_player.change_num_warriors(-n_warriors)
+            self.turn_log.change_plr_warrior_supply(PIND_EYRIE,-n_warriors)
             self.phase_steps = 4
     
     def eyrie_daylight(self,action:int,current_player:Eyrie):
@@ -2903,6 +3168,7 @@ class RootGame:
 
         elif action >= AID_BATTLE_MARQUISE and action <= AID_BATTLE_MARQUISE + 11:
             self.battle = Battle(PIND_EYRIE,PIND_MARQUISE,action - AID_BATTLE_MARQUISE)
+            self.turn_log.record_battle(action - AID_BATTLE_MARQUISE,PIND_EYRIE,PIND_MARQUISE)
             if self.phase_steps == 0:
                 logger.debug("Command Warren Activated:")
                 self.phase_steps = 1
@@ -2912,6 +3178,7 @@ class RootGame:
                 self.reduce_decree_count(DECREE_BATTLE, self.board.clearings[action - AID_BATTLE_MARQUISE].suit)
         elif action >= AID_BATTLE_ALLIANCE and action <= AID_BATTLE_ALLIANCE + 11:
             self.battle = Battle(PIND_EYRIE,PIND_ALLIANCE,action - AID_BATTLE_ALLIANCE)
+            self.turn_log.record_battle(action - AID_BATTLE_ALLIANCE,PIND_EYRIE,PIND_ALLIANCE)
             if self.phase_steps == 0:
                 logger.debug("Command Warren Activated:")
                 self.phase_steps = 1
@@ -2924,6 +3191,8 @@ class RootGame:
             start,foo = divmod(action - AID_MOVE,300)
             end,amount = divmod(foo,25)
             self.board.move_warriors(PIND_EYRIE,amount + 1,start,end)
+            self.turn_log.change_clr_warriors(start,PIND_EYRIE,-amount-1)
+            self.turn_log.change_clr_warriors(end,PIND_EYRIE,amount+1)
 
             dest = self.board.clearings[end]
             if dest.is_sympathetic():
@@ -2943,7 +3212,9 @@ class RootGame:
             else:
                 turmoil = False
             current_player.change_num_warriors(-amount)
+            self.turn_log.change_plr_warrior_supply(PIND_EYRIE,-amount)
             self.board.place_warriors(PIND_EYRIE,amount,action - AID_CHOOSE_CLEARING)
+            self.turn_log.change_clr_warriors(action - AID_CHOOSE_CLEARING,PIND_EYRIE,amount)
             self.reduce_decree_count(DECREE_RECRUIT, self.board.clearings[action - AID_CHOOSE_CLEARING].suit)
             if turmoil:
                 self.phase_steps = 3
@@ -2951,6 +3222,7 @@ class RootGame:
             # building a Roost
             logger.debug(">> Decree: BUILD")
             self.board.place_building(PIND_EYRIE,BIND_ROOST,action - AID_BUILD1)
+            self.turn_log.change_clr_building(action - AID_BUILD1,PIND_EYRIE,BIND_ROOST,1)
             current_player.place_roost()
             self.reduce_decree_count(DECREE_BUILD, self.board.clearings[action - AID_BUILD1].suit)
         elif self.phase_steps == 3:
@@ -2966,11 +3238,14 @@ class RootGame:
             dom_card = self.available_dom_card_objs[suit]
             self.available_dom_card_objs[suit] = None
             current_player.hand.append(dom_card)
+            self.turn_log.change_plr_hand_size(PIND_EYRIE,1)
+            self.turn_log.change_plr_cards_gained(PIND_EYRIE,dom_card.id)
         elif action >= AID_ACTIVATE_DOM and action <= AID_ACTIVATE_DOM + 3:
             suit = action - AID_ACTIVATE_DOM
             target_id = suit + 38
             logger.debug(f">>> The Eyrie activates the {ID_TO_SUIT[suit]} Dominance Card! <<<")
             dom_card = self.get_card(PIND_EYRIE,target_id,'hand')
+            self.turn_log.change_plr_hand_size(PIND_EYRIE,-1)
             self.active_dominances[PIND_EYRIE] = dom_card
             self.victory_points[PIND_EYRIE] = -1
 
@@ -2990,6 +3265,8 @@ class RootGame:
             start,foo = divmod(action - AID_MOVE,300)
             end,amount = divmod(foo,25)
             self.board.move_warriors(PIND_EYRIE,amount + 1,start,end)
+            self.turn_log.change_clr_warriors(start,PIND_EYRIE,-amount-1)
+            self.turn_log.change_clr_warriors(end,PIND_EYRIE,amount+1)
 
             dest = self.board.clearings[end]
             if dest.is_sympathetic():
@@ -3058,6 +3335,7 @@ class RootGame:
             elif self.phase_steps == 4:
                 # place sympathy token/score
                 self.board.place_token(PIND_ALLIANCE,TIND_SYMPATHY,self.alliance_action_clearing)
+                self.turn_log.change_clr_tokens(self.alliance_action_clearing,PIND_ALLIANCE,TIND_SYMPATHY,1)
                 pts = current_player.spread_sympathy_helper()
                 self.change_score(PIND_ALLIANCE,pts)
             self.alliance_action_clearing = None
@@ -3080,12 +3358,14 @@ class RootGame:
 
         elif action >= AID_MOBILIZE and action <= AID_MOBILIZE + 41:
             c_to_add = self.get_card(PIND_ALLIANCE,action - AID_MOBILIZE,"hand")
+            self.turn_log.change_plr_hand_size(PIND_ALLIANCE,-1)
             logger.debug(f"\t> Mobilize: {c_to_add.name} added to supporters")
             self.add_to_supporters_check(current_player,c_to_add)
         elif action >= AID_TRAIN and action <= AID_TRAIN + 41:
             self.discard_from_hand(PIND_ALLIANCE,action - AID_TRAIN)
             current_player.num_officers += 1
             current_player.change_num_warriors(-1)
+            self.turn_log.change_plr_warrior_supply(PIND_ALLIANCE,-1)
             logger.debug(f"> Train: Added an Officer to box ({current_player.num_officers} Total)")
         
         elif action >= AID_CARD_CODEBREAKERS and action <= AID_CARD_CODEBREAKERS + 2:
@@ -3096,11 +3376,13 @@ class RootGame:
             self.activate_tax_collector(PIND_ALLIANCE,action - AID_CARD_TAX_COLLECTOR)
         elif action >= AID_BATTLE_EYRIE and action <= AID_BATTLE_EYRIE + 11:
             self.battle = Battle(PIND_ALLIANCE,PIND_EYRIE,action - AID_BATTLE_EYRIE)
+            self.turn_log.record_battle(action - AID_BATTLE_EYRIE,PIND_ALLIANCE,PIND_EYRIE)
             logger.debug("Command Warren Activated:")
             self.phase_steps = 1
             self.persistent_used_this_turn.add(CID_COMMAND_WARREN)
         elif action >= AID_BATTLE_MARQUISE and action <= AID_BATTLE_MARQUISE + 11:
             self.battle = Battle(PIND_ALLIANCE,PIND_MARQUISE,action - AID_BATTLE_MARQUISE)
+            self.turn_log.record_battle(action - AID_BATTLE_MARQUISE,PIND_ALLIANCE,PIND_MARQUISE)
             logger.debug("Command Warren Activated:")
             self.phase_steps = 1
             self.persistent_used_this_turn.add(CID_COMMAND_WARREN)
@@ -3113,11 +3395,14 @@ class RootGame:
             dom_card = self.available_dom_card_objs[suit]
             self.available_dom_card_objs[suit] = None
             current_player.hand.append(dom_card)
+            self.turn_log.change_plr_hand_size(PIND_ALLIANCE,1)
+            self.turn_log.change_plr_cards_gained(PIND_ALLIANCE,dom_card.id)
         elif action >= AID_ACTIVATE_DOM and action <= AID_ACTIVATE_DOM + 3:
             suit = action - AID_ACTIVATE_DOM
             target_id = suit + 38
             logger.debug(f">>> The Alliance activates the {ID_TO_SUIT[suit]} Dominance Card! <<<")
             dom_card = self.get_card(PIND_ALLIANCE,target_id,'hand')
+            self.turn_log.change_plr_hand_size(PIND_ALLIANCE,-1)
             self.active_dominances[PIND_ALLIANCE] = dom_card
             self.victory_points[PIND_ALLIANCE] = -1
 
@@ -3137,26 +3422,39 @@ class RootGame:
             start,foo = divmod(action - AID_MOVE,300)
             end,amount = divmod(foo,25)
             self.board.move_warriors(PIND_ALLIANCE,amount + 1,start,end)
+            self.turn_log.change_clr_warriors(start,PIND_ALLIANCE,-amount-1)
+            self.turn_log.change_clr_warriors(end,PIND_ALLIANCE,amount+1)
+
         elif action >= AID_BATTLE_EYRIE and action <= AID_BATTLE_EYRIE + 11:
             self.battle = Battle(PIND_ALLIANCE,PIND_EYRIE,action - AID_BATTLE_EYRIE)
+            self.turn_log.record_battle(action - AID_BATTLE_EYRIE,PIND_ALLIANCE,PIND_EYRIE)
             logger.debug("> Operation: Battle")
             self.evening_actions_left -= 1
         elif action >= AID_BATTLE_MARQUISE and action <= AID_BATTLE_MARQUISE + 11:
             self.battle = Battle(PIND_ALLIANCE,PIND_MARQUISE,action - AID_BATTLE_MARQUISE)
+            self.turn_log.record_battle(action - AID_BATTLE_MARQUISE,PIND_ALLIANCE,PIND_MARQUISE)
             logger.debug("> Operation: Battle")
             self.evening_actions_left -= 1
+
         elif action >= AID_RECRUIT_ALLIANCE and action <= AID_RECRUIT_ALLIANCE + 11:
             logger.debug("> Operation: Recruit")
             self.evening_actions_left -= 1
             current_player.change_num_warriors(-1)
+            self.turn_log.change_plr_warrior_supply(PIND_ALLIANCE,-1)
             self.board.place_warriors(PIND_ALLIANCE,1,action - AID_RECRUIT_ALLIANCE)
+            self.turn_log.change_clr_warriors(action - AID_RECRUIT_ALLIANCE,PIND_ALLIANCE,1)
         elif action >= AID_ORGANIZE and action <= AID_ORGANIZE + 11:
             logger.debug("> Operation: Organize")
             self.evening_actions_left -= 1
             cid = action - AID_ORGANIZE
+
             self.board.place_warriors(PIND_ALLIANCE,-1,cid)
+            self.turn_log.change_clr_warriors(cid,PIND_ALLIANCE,-1)
             current_player.change_num_warriors(1)
+            self.turn_log.change_plr_warrior_supply(PIND_ALLIANCE,1)
+
             self.board.place_token(PIND_ALLIANCE,TIND_SYMPATHY,cid)
+            self.turn_log.change_clr_tokens(cid,PIND_ALLIANCE,TIND_SYMPATHY,1)
             pts = current_player.spread_sympathy_helper()
             self.change_score(PIND_ALLIANCE,pts)
         elif action == AID_GENERIC_SKIP: # choose not to use cobbler / any more military operations
@@ -3186,8 +3484,9 @@ if __name__ == "__main__":
     action_count = 0
     np.set_printoptions(threshold=np.inf)
     env.reset()
-    # while action_count < 15:
-    while not done:
+
+    while action_count < 100:
+    # while not done:
         legal_actions = env.legal_actions()
         logger.debug(f"> Action {action_count} - Player: {ID_TO_PLAYER[env.current_player]}")
         logger.info(f"Legal Actions: {legal_actions}")
@@ -3201,23 +3500,27 @@ if __name__ == "__main__":
         # print(f"\tAction Chosen: {action}")
         logger.info(f"\t> Action Chosen: {action}")
         obs,reward,done = env.step(action)
+
+        logger.debug(f"Observation length: {len(obs)}")
+        # if action_count % 10 == 0:
+        #     logger.debug(f"{obs}")
         # if env.battle.stage != Battle.STAGE_DONE:
         #     for i,sq in enumerate(obs.reshape((139,5,5))):
         #         logger.debug(f"- Observation Square {i}:\n{sq}\n")
         # if done:
         #     env.render()
-        logger.debug(f"-> Earned {reward} points from this action")
 
+        logger.debug(f"-> Earned {reward} points from this action")
         action_count += 1
+
     # obs = env.get_observation()
     # logger.debug(f"Length: {len(obs)}\n{obs}")
     # for i,sq in enumerate(obs.reshape((139,5,5))):
     #     logger.debug(f"- Observation Square {i}:\n{sq}\n")
 
-    # logger.setLevel(logging.WARNING)
     # glens = []
-    # obs = env.get_observation()
-    # logger.debug(f"Length: {len(obs)}\n{obs}")
+    # # obs = env.get_observation()
+    # # logger.debug(f"Length: {len(obs)}\n{obs}")
     # for _ in range(25):
     #     done = False
     #     action_count = 0
