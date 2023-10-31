@@ -1,9 +1,7 @@
 import random
 import numpy as np
-from .classes import *
-# from classes import *
-
-# COPY - REWARD SHAPING
+# from .classes import *
+from classes import *
 
 # python -m tensorboard.main --logdir="C:\Users\tyler\Desktop\Desktop Work\SIMPLE\app\logs"
 
@@ -15,37 +13,23 @@ from .classes import *
 # avg score of +9 ~ 60% win rate? "wins" seem to give +23 avg, losses half that, negated (-11 ish)
 # docker-compose exec app mpirun -np 2 python3 train.py -e root3pdomACE -ne 12 -t 9 -ent 0.01 -os 0.0003
 
-# gen 1, games ~85 actions long
-# gen 2, games ~70 actions long
-# gen 3, games ~ 65? long
-# docker-compose exec app mpirun -np 2 python3 train.py -e root3pdomACE -ne 15 -t 11 -ent 0.01 -os 0.00025
-
-# gen 5, games ~55-60 long
-# docker-compose exec app mpirun -np 2 python3 train.py -e root3pdomACE -ne 15 -t 14 -ent 0.01 -os 0.00025
-
-# gen 7, games ~55 long, reward not going as high as 14 or even 13 on tests
-# docker-compose exec app mpirun -np 2 python3 train.py -e root3pdomACE -ne 15 -t 12.5 -ent 0.01 -os 0.00025
-
-# gen 12, games still ~55 avg, reward going higher on avg again?
-# docker-compose exec app mpirun -np 2 python3 train.py -e root3pdomACE -ne 30 -t 15 -ent 0.01 -os 0.0002
-
-# gen 13 adjusted rewards to make game points 0.25 their base value, winning unchanged
-# avg points dropped to ~2.7, or ~53% wr?
-# docker-compose exec app mpirun -np 2 python3 train.py -e root3pdomACE -ne 30 -t 4 -ent 0.01 -os 0.0002
-
 
 class RootGame:
     PHASE_SETUP_MARQUISE = 0
     PHASE_SETUP_EYRIE = 1
-    PHASE_BIRDSONG_MARQUISE = 2
-    PHASE_BIRDSONG_EYRIE = 3
-    PHASE_BIRDSONG_ALLIANCE = 4
-    PHASE_DAYLIGHT_MARQUISE = 5
-    PHASE_DAYLIGHT_EYRIE = 6
-    PHASE_DAYLIGHT_ALLIANCE = 7
-    PHASE_EVENING_MARQUISE = 8
-    PHASE_EVENING_EYRIE = 9
-    PHASE_EVENING_ALLIANCE = 10
+    PHASE_SETUP_VAGABOND = 2
+    PHASE_BIRDSONG_MARQUISE = 3
+    PHASE_BIRDSONG_EYRIE = 4
+    PHASE_BIRDSONG_ALLIANCE = 5
+    PHASE_BIRDSONG_VAGABOND = 6
+    PHASE_DAYLIGHT_MARQUISE = 7
+    PHASE_DAYLIGHT_EYRIE = 8
+    PHASE_DAYLIGHT_ALLIANCE = 9
+    PHASE_DAYLIGHT_VAGABOND = 10
+    PHASE_EVENING_MARQUISE = 11
+    PHASE_EVENING_EYRIE = 12
+    PHASE_EVENING_ALLIANCE = 13
+    PHASE_EVENING_VAGABOND = 14
 
     def __init__(self, board_composition:list, deck_composition:list):
         self.n_players = N_PLAYERS
@@ -73,11 +57,12 @@ class RootGame:
         self.alliance_interrupt_player = None
         self.points_scored_this_action = [0] * N_PLAYERS
         self.current_player = 0
-        self.players = [Marquise(0), Eyrie(1), Alliance(2)]
-        self.victory_points = [0,0,0]
+        self.players = [Marquise(0), Eyrie(1), Alliance(2), Vagabond(3)]
+        self.victory_points = [0] * N_PLAYERS
 
         self.dominance_win = False
-        self.active_dominances = [None,None,None]
+        self.active_dominances = [None] * N_PLAYERS
+        self.coalition_partner = [0] * N_PLAYERS
         self.available_dominances = [0,0,0,0]
         self.available_dom_card_objs = [None,None,None,None]
 
@@ -89,7 +74,6 @@ class RootGame:
         self.outrage_suits = []
 
         self.persistent_used_this_turn = set()
-        # self.available_dominances = set()
         self.remaining_craft_power = [0]
         self.board.reset()
         self.deck.reset()
@@ -107,14 +91,14 @@ class RootGame:
             ITEM_HAMMER: 1
         }
         # random turn order
-        self.turn_order = [0,1,2]
+        self.turn_order = [i for i in range(N_PLAYERS)]
         random.shuffle(self.turn_order)
         # make a dict to easily find which PIND should be
         # transitioned to at the end of a turn
         self.next_player_index = {}
-        for i in range(3):
+        for i in range(N_PLAYERS):
             place = self.turn_order.index(i)
-            next_index = (place + 1) % 3
+            next_index = (place + 1) % N_PLAYERS
             self.next_player_index[i] = self.turn_order[next_index]
         
         self.public_history = [None] * TURN_MEMORY
@@ -124,18 +108,27 @@ class RootGame:
         self.draw_cards(PIND_MARQUISE,3)
         self.draw_cards(PIND_EYRIE,3)
         self.draw_cards(PIND_ALLIANCE,3)
+        self.draw_cards(PIND_VAGABOND,3)
 
         self.marquise_seen_hands = {
             PIND_EYRIE: [np.full((42,3),-1) for _ in range(TURN_MEMORY)],
-            PIND_ALLIANCE: [np.full((42,3),-1) for _ in range(TURN_MEMORY)]
+            PIND_ALLIANCE: [np.full((42,3),-1) for _ in range(TURN_MEMORY)],
+            PIND_VAGABOND: [np.full((42,3),-1) for _ in range(TURN_MEMORY)]
         }
         self.eyrie_seen_hands = {
             PIND_MARQUISE: [np.full((42,3),-1) for _ in range(TURN_MEMORY)],
-            PIND_ALLIANCE: [np.full((42,3),-1) for _ in range(TURN_MEMORY)]
+            PIND_ALLIANCE: [np.full((42,3),-1) for _ in range(TURN_MEMORY)],
+            PIND_VAGABOND: [np.full((42,3),-1) for _ in range(TURN_MEMORY)]
         }
         self.alliance_seen_hands = {
             PIND_EYRIE: [np.full((42,3),-1) for _ in range(TURN_MEMORY)],
-            PIND_MARQUISE: [np.full((42,3),-1) for _ in range(TURN_MEMORY)]
+            PIND_MARQUISE: [np.full((42,3),-1) for _ in range(TURN_MEMORY)],
+            PIND_VAGABOND: [np.full((42,3),-1) for _ in range(TURN_MEMORY)]
+        }
+        self.vagabond_seen_hands = {
+            PIND_EYRIE: [np.full((42,3),-1) for _ in range(TURN_MEMORY)],
+            PIND_MARQUISE: [np.full((42,3),-1) for _ in range(TURN_MEMORY)],
+            PIND_ALLIANCE: [np.full((42,3),-1) for _ in range(TURN_MEMORY)]
         }
 
     def reset_for_marquise(self):
@@ -151,10 +144,9 @@ class RootGame:
 
         self.persistent_used_this_turn = set()
         self.remaining_craft_power = [0]
-        self.marquise_seen_hands[PIND_EYRIE].insert(0,np.full((42,3),-1))
-        self.marquise_seen_hands[PIND_ALLIANCE].insert(0,np.full((42,3),-1))
-        self.marquise_seen_hands[PIND_EYRIE].pop()
-        self.marquise_seen_hands[PIND_ALLIANCE].pop()
+        for k in self.marquise_seen_hands.keys():
+            self.marquise_seen_hands[k].insert(0,np.full((42,3),-1))
+            self.marquise_seen_hands[k].pop()
     def reset_for_eyrie(self):
         # print(self.board)
         self.eyrie_cards_added = 0
@@ -167,10 +159,9 @@ class RootGame:
         }
         self.persistent_used_this_turn = set()
         self.remaining_craft_power = [0]
-        self.eyrie_seen_hands[PIND_ALLIANCE].insert(0,np.full((42,3),-1))
-        self.eyrie_seen_hands[PIND_MARQUISE].insert(0,np.full((42,3),-1))
-        self.eyrie_seen_hands[PIND_ALLIANCE].pop()
-        self.eyrie_seen_hands[PIND_MARQUISE].pop()
+        for k in self.eyrie_seen_hands.keys():
+            self.eyrie_seen_hands[k].insert(0,np.full((42,3),-1))
+            self.eyrie_seen_hands[k].pop()
     def reset_for_alliance(self):
         # print(self.board)
         self.remaining_supporter_cost = 0
@@ -179,16 +170,23 @@ class RootGame:
         self.alliance_action_clearing = None
         self.persistent_used_this_turn = set()
         self.remaining_craft_power = [0]
-        self.alliance_seen_hands[PIND_EYRIE].insert(0,np.full((42,3),-1))
-        self.alliance_seen_hands[PIND_MARQUISE].insert(0,np.full((42,3),-1))
-        self.alliance_seen_hands[PIND_EYRIE].pop()
-        self.alliance_seen_hands[PIND_MARQUISE].pop()
+        for k in self.alliance_seen_hands.keys():
+            self.alliance_seen_hands[k].insert(0,np.full((42,3),-1))
+            self.alliance_seen_hands[k].pop()
+    def reset_for_vagabond(self):
+        # print(self.board)
+        self.persistent_used_this_turn = set()
+        self.remaining_craft_power = [0]
+        for k in self.vagabond_seen_hands.keys():
+            self.vagabond_seen_hands[k].insert(0,np.full((42,3),-1))
+            self.vagabond_seen_hands[k].pop()
 
     def reset(self):
         self.reset_general_items()
         self.reset_for_marquise()
         self.reset_for_eyrie()
         self.reset_for_alliance()
+        self.reset_for_vagabond()
         return self.get_observation()
 
     def save_to_history(self):

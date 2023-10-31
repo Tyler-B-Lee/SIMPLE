@@ -1,15 +1,15 @@
 import copy
 import random
 from typing import Tuple,List
-# import logging
-from stable_baselines import logger
+import logging
+# from stable_baselines import logger
 import numpy as np
 
-Recipe = Tuple[int,int,int,int]
+Recipe = Tuple[int]
 
-# logging.basicConfig(filename='file.log',format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",filemode='w')
-# logger = logging.getLogger("classes")
-# logger.setLevel(logging.DEBUG)
+logging.basicConfig(filename='file.log',format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",filemode='w')
+logger = logging.getLogger("classes")
+logger.setLevel(logging.DEBUG)
 
 ### Named Constants
 SUIT_MOUSE = 0
@@ -30,7 +30,8 @@ ITEM_TEA = 3
 ITEM_COINS = 4
 ITEM_BAG = 5
 ITEM_CROSSBOW = 6
-ITEM_NONE = 7
+ITEM_TORCH = 7
+ITEM_NONE = 8
 ID_TO_ITEM = {
     ITEM_HAMMER: "Hammer",
     ITEM_SWORD: "Sword",
@@ -39,6 +40,7 @@ ID_TO_ITEM = {
     ITEM_COINS: "Coins",
     ITEM_BAG: "Bag",
     ITEM_CROSSBOW: "Crossbow",
+    ITEM_TORCH: "Torch",
     ITEM_NONE: "None"
 }
 
@@ -71,18 +73,20 @@ AID_CRAFT_RC_MAPPING = {
     AID_CRAFT_ROYAL_CLAIM + 14: (1,1,2),
 }
 
-N_PLAYERS = 3
-TURN_MEMORY = 6
+N_PLAYERS = 4
+TURN_MEMORY = 3
 WIN_SCALAR = 1
-GAME_SCALAR = 0.25
+GAME_SCALAR = 1
 
 PIND_MARQUISE = 0
 PIND_EYRIE = 1
 PIND_ALLIANCE = 2
+PIND_VAGABOND = 3
 ID_TO_PLAYER = {
     PIND_MARQUISE: "Marquise de Cat",
     PIND_EYRIE: "Eyrie Dynasties",
     PIND_ALLIANCE: "Woodland Alliance",
+    PIND_VAGABOND: "Vagabond",
     -1: "None"
 }
 
@@ -193,6 +197,10 @@ AID_ORDER_BASE_MOUSE = AID_ORDER_SYMPATHY + 1
 AID_ORDER_BASE_RABBIT = AID_ORDER_BASE_MOUSE + 1
 AID_ORDER_BASE_FOX = AID_ORDER_BASE_RABBIT + 1
 
+# VAGABOND
+CHAR_THIEF = 0
+CHAR_RANGER = 1
+CHAR_TINKER = 2
 
 class TurnLog():
     """
@@ -354,16 +362,18 @@ class TurnLog():
 
 
 class Clearing:
-    def __init__(self,id:int,suit:int,num_building_slots:int,num_ruins:int,opposite_corner_id:int,adj_clearing_ids:set) -> None:
+    def __init__(self,id:int,suit:int,num_building_slots:int,num_ruins:int,opposite_corner_id:int,adj_clearing_ids:set,adj_forest_ids:set) -> None:
         self.id = id
         self.suit = suit
         self.num_building_slots = num_building_slots
         self.num_ruins = num_ruins
         self.opposite_corner_id = opposite_corner_id
+        self.vagabond_present = 0
         self.warriors = {i:0 for i in range(N_PLAYERS)}
         self.tokens = {i:[] for i in range(N_PLAYERS)}
         self.buildings = {i:[] for i in range(N_PLAYERS)}
         self.adjacent_clearing_ids = adj_clearing_ids
+        self.adjacent_forest_ids = adj_forest_ids
     
     def __str__(self) -> str:
         ret = f"Clearing {self.id} ({ID_TO_SUIT[self.suit]}) - Ruler: {ID_TO_PLAYER[self.get_ruler()]}"
@@ -584,10 +594,17 @@ class Clearing:
                 return True
         return False
 
-MapComp = List[Clearing]
+
+class Forest:
+    def __init__(self,id:int,adj_clearing_ids:set,adj_forest_ids:set) -> None:
+        self.id = id
+        self.adj_clearing_ids = adj_clearing_ids
+        self.adj_forest_ids = adj_forest_ids
+        self.vagabond_present = 0
+
 
 class Board:
-    def __init__(self, board_comp:MapComp) -> None:
+    def __init__(self, board_comp:tuple) -> None:
         self.board_comp = board_comp
         self.reset()
     
@@ -613,7 +630,8 @@ class Board:
 
     def reset(self):
         "Resets the map to the cleared starting state."
-        self.clearings = copy.deepcopy(self.board_comp)
+        self.clearings = copy.deepcopy(self.board_comp[0])
+        self.forests = copy.deepcopy(self.board_comp[1])
         # self.randomize_suits()
         
     def get_total_building_counts(self,faction_index:int,building_index:int = -1):
@@ -1341,6 +1359,127 @@ class Alliance(Player):
         self.change_num_tokens(TIND_SYMPATHY,-1)
         return self.point_track[10 - n]
 
+class QuestCard():
+    def __init__(self,id:int,suit:int,name:str,requirements:dict) -> None:
+        self.id = id
+        self.suit = suit
+        self.name = name
+        self.requirements = requirements
+
+class Vagabond(Player):
+    TRACK_IDS = {ITEM_TEA,ITEM_COINS,ITEM_BAG}
+    def __init__(self, id: int,) -> None:
+        super().__init__(id)
+        self.satchel_undamaged = []
+        self.satchel_damaged = []
+        self.tea_track = 0
+        self.coins_track = 0
+        self.bag_track = 0
+        self.chosen_character = None
+        self.relationships = {i:1 for i in range(3)}
+        self.completed_quests = {i:[] for i in range(3)}
+    
+    def __str__(self) -> str:
+        return "--- Vagabond ---\n" + super().__str__() + f"\ntodo (if ever)"
+
+    def get_obs_array(self):
+        ret = np.zeros(10)
+        if self.warrior_storage > 0:
+            ret[self.warrior_storage - 1] = 1
+        
+        foo = np.zeros(3)
+        for i,a in self.buildings.items():
+            if a > 0:
+                foo[i]= 1
+        ret = np.append(ret,foo)
+        
+        foo = np.zeros(10)
+        if self.tokens[TIND_SYMPATHY] > 0:
+            foo[self.get_num_tokens_in_store(TIND_SYMPATHY) - 1] = 1
+        ret = np.append(ret,foo)
+
+        foo = np.zeros(54)
+        if len(self.supporters) > 0:
+            foo[len(self.supporters) - 1] = 1
+        ret = np.append(ret,foo)
+
+        foo = np.zeros(10)
+        if self.num_officers > 0:
+            foo[self.num_officers - 1] = 1
+        ret = np.append(ret,foo)
+
+        foo = np.zeros(14)
+        if len(self.hand) > 0:
+            foo[len(self.hand) - 1] = 1
+        ret = np.append(ret,foo)
+        
+        foo = np.zeros(11)
+        foo.put([CID_TO_PERS_INDEX[c.id] for c in self.persistent_cards], 1)
+        ret = np.append(ret,foo)
+        
+        foo = np.zeros((7,2))
+        for i,a in self.crafted_items.items():
+            if a > 0:
+                foo[i][a - 1] = 1
+        return np.append(ret,foo)
+
+    def get_num_cards_to_draw(self) -> int:
+        "Returns the number of cards to draw at the end of the turn (In Evening)."
+        return 1 + self.coin_track
+
+    def change_track_amount(self,item_id:int,amount:int):
+        if item_id == ITEM_TEA:
+            self.tea_track += amount
+        if item_id == ITEM_COINS:
+            self.coins_track += amount
+        if item_id == ITEM_BAG:
+            self.bag_track += amount
+    
+    def add_item(self,item_id:int,damaged:int,exhausted:int):
+        if damaged == 0:
+            self.satchel_undamaged.append((item_id,exhausted))
+        else:
+            self.satchel_damaged.append((item_id,exhausted))
+
+    def remove_item(self,item_id:int,damaged:int,exhausted:int):
+        if damaged == 0:
+            self.satchel_undamaged.remove((item_id,exhausted))
+        else:
+            self.satchel_damaged.remove((item_id,exhausted))
+
+    def damage_item(self,item_id:int,exhausted:int):
+        "Damages the target item, moving the tuple to the damaged item part of the satchel."
+        if item_id in Vagabond.TRACK_IDS and (exhausted == 0):
+            self.change_track_amount(item_id,-1)
+        else:
+            self.remove_item(item_id,0,exhausted)
+        self.add_item(item_id,1,exhausted)
+    
+    def repair_item(self,item_id:int,exhausted:int):
+        "Repairs the target item, adding it to the track automatically if possible."
+        self.remove_item(item_id,1,exhausted)
+        if item_id in Vagabond.TRACK_IDS and (exhausted == 0):
+            self.change_track_amount(item_id,1)
+        else:
+            self.add_item(item_id,0,exhausted)
+    
+    def exhaust_item(self,item_id:int):
+        "Exhausts one of the given item, assuming it's not damaged, and takes it off the track if needed."
+        if item_id in Vagabond.TRACK_IDS:
+            self.change_track_amount(item_id,-1)
+        else:
+            self.remove_item(item_id,0,0)
+        self.add_item(item_id,0,1)
+    
+    def refresh_item(self,item_id:int,damaged:int):
+        "Refreshes the given item, putting it on the track if it's undamaged."
+        self.remove_item(item_id,damaged,1)
+        if item_id in Vagabond.TRACK_IDS and (damaged == 0):
+            self.change_track_amount(item_id,1)
+        else:
+            self.add_item(item_id,damaged,0)
+
+
 class Battle:
     "Keeps track of info about the current active battle."
     # a choice must be made about using an ambush card
@@ -1509,21 +1648,29 @@ ACTION_TO_BIRD_ID = {
 }
 BIRD_ID_TO_ACTION = {i:a for (a,i) in ACTION_TO_BIRD_ID.items()}
 
-MAP_AUTUMN = [
-    #        id, suit,         num_building_slots, num_ruins, opposite_corner_id, set of adj clearings
-    Clearing(0,  SUIT_FOX,     1,                 0,         11,                  {1,3,4}),
-    Clearing(1,  SUIT_RABBIT,  2,                 0,         -1,                  {0,2}),
-    Clearing(2,  SUIT_MOUSE,   2,                 0,         8,                   {1,3,7}),
-    Clearing(3,  SUIT_RABBIT,  1,                 1,         -1,                  {0,2,5}),
-    Clearing(4,  SUIT_MOUSE,   2,                 0,         -1,                  {0,5,8}),
-    Clearing(5,  SUIT_FOX,     1,                 1,         -1,                  {3,4,6,8,10}),
-    Clearing(6,  SUIT_MOUSE,   2,                 1,         -1,                  {5,7,11}),
-    Clearing(7,  SUIT_FOX,     1,                 1,         -1,                  {2,6,11}),
-    Clearing(8,  SUIT_RABBIT,  1,                 0,         2,                   {4,5,9}),
-    Clearing(9,  SUIT_FOX,     2,                 0,         -1,                  {8,10}),
-    Clearing(10, SUIT_MOUSE,   2,                 0,         -1,                  {5,9,11}),
-    Clearing(11, SUIT_RABBIT,  1,                 0,         0,                   {6,7,10})
-]
+MAP_AUTUMN = ([ # board clearings
+    #        id, suit,         num_building_slots, num_ruins, opposite_corner_id, set of adj clearings / forests
+    Clearing(0,  SUIT_FOX,     1,                 0,         11,                  {1,3,4}, {0,1}),
+    Clearing(1,  SUIT_RABBIT,  2,                 0,         -1,                  {0,2}, {0}),
+    Clearing(2,  SUIT_MOUSE,   2,                 0,         8,                   {1,3,7}, {0,2}),
+    Clearing(3,  SUIT_RABBIT,  1,                 1,         -1,                  {0,2,5}, {0,1,2}),
+    Clearing(4,  SUIT_MOUSE,   2,                 0,         -1,                  {0,5,8}, {1,3}),
+    Clearing(5,  SUIT_FOX,     1,                 1,         -1,                  {3,4,6,8,10}, {1,2,3,4,5}),
+    Clearing(6,  SUIT_MOUSE,   2,                 1,         -1,                  {5,7,11}, {2,5,6}),
+    Clearing(7,  SUIT_FOX,     1,                 1,         -1,                  {2,6,11}, {2,6}),
+    Clearing(8,  SUIT_RABBIT,  1,                 0,         2,                   {4,5,9}, {3,4}),
+    Clearing(9,  SUIT_FOX,     2,                 0,         -1,                  {8,10}, {4}),
+    Clearing(10, SUIT_MOUSE,   2,                 0,         -1,                  {5,9,11}, {4,5}),
+    Clearing(11, SUIT_RABBIT,  1,                 0,         0,                   {6,7,10}, {5,6})
+], [ # board forests
+    Forest(0,{0,1,2,3},{1,2}),
+    Forest(1,{0,3,4,5},{0,2,3}),
+    Forest(2,{2,3,5,6,7},{0,1,5,6}),
+    Forest(3,{4,5,8},{1,4}),
+    Forest(4,{5,8,9,10},{3,5}),
+    Forest(5,{5,6,10,11},{2,4,6}),
+    Forest(6,{6,7,11},{2,5})
+])
 
 MAP_WINTER = [
     #        id, suit,         num_building_slots, num_ruins, opposite_corner_id, set of adj clearings
@@ -1548,3 +1695,21 @@ CLEARING_SUITS = {
     SUIT_MOUSE: [c.id for c in CHOSEN_MAP if c.suit == SUIT_MOUSE],
     SUIT_RABBIT: [c.id for c in CHOSEN_MAP if c.suit == SUIT_RABBIT]
 }
+
+QUEST_DECK_COMP = [
+    (QuestCard(0,SUIT_MOUSE,"Expel Bandits",{ITEM_SWORD:2}), 1),
+    (QuestCard(1,SUIT_MOUSE,"Guard Duty",{ITEM_SWORD:1,ITEM_TORCH:1}), 1),
+    (QuestCard(2,SUIT_MOUSE,"Fend off a Bear",{ITEM_CROSSBOW:1,ITEM_TORCH:1}), 1),
+    (QuestCard(3,SUIT_MOUSE,"Escort",{ITEM_BOOT:2}), 1),
+    (QuestCard(4,SUIT_MOUSE,"Logistics Help",{ITEM_BOOT:1,ITEM_BAG:1}), 1),
+    (QuestCard(5,SUIT_RABBIT,"Guard Duty",{ITEM_SWORD:1,ITEM_TORCH:1}), 1),
+    (QuestCard(6,SUIT_RABBIT,"Errand",{ITEM_TEA:1,ITEM_BOOT:1}), 1),
+    (QuestCard(7,SUIT_RABBIT,"Give a Speech",{ITEM_TEA:1,ITEM_TORCH:1}), 1),
+    (QuestCard(8,SUIT_RABBIT,"Fend off a Bear",{ITEM_CROSSBOW:1,ITEM_TORCH:1}), 1),
+    (QuestCard(9,SUIT_RABBIT,"Expel Bandits",{ITEM_SWORD:2}), 1),
+    (QuestCard(10,SUIT_FOX,"Fundraising",{ITEM_TEA:1,ITEM_COINS:1}), 1),
+    (QuestCard(11,SUIT_FOX,"Errand",{ITEM_TEA:1,ITEM_BOOT:1}), 1),
+    (QuestCard(12,SUIT_FOX,"Logistics Help",{ITEM_BOOT:1,ITEM_BAG:1}), 1),
+    (QuestCard(13,SUIT_FOX,"Repair a Shed",{ITEM_HAMMER:1,ITEM_TORCH:1}), 1),
+    (QuestCard(14,SUIT_FOX,"Give a Speech",{ITEM_TEA:1,ITEM_TORCH:1}), 1)
+]
