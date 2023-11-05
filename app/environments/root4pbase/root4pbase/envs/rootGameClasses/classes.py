@@ -50,7 +50,8 @@ AID_CHOOSE_CLEARING = 1
 AID_BATTLE_MARQUISE = 13
 AID_BATTLE_EYRIE = AID_BATTLE_MARQUISE + 12
 AID_BATTLE_ALLIANCE = AID_BATTLE_EYRIE + 12
-AID_BUILD1 = AID_BATTLE_ALLIANCE + 12
+AID_BATTLE_VAGABOND = AID_BATTLE_ALLIANCE + 12
+AID_BUILD1 = AID_BATTLE_VAGABOND + 12
 AID_BUILD2 = AID_BUILD1 + 12
 AID_BUILD3 = AID_BUILD2 + 12
 AID_CRAFT_CARD = AID_BUILD3 + 12
@@ -132,10 +133,10 @@ AID_EFFECTS_ARM_BT = AID_EFFECTS_SAPPERS + 1
 AID_EFFECTS_ARMSAP = AID_EFFECTS_ARM_BT + 1
 
 AID_CARD_BBB = AID_EFFECTS_ARMSAP + 1
-AID_CARD_ROYAL_CLAIM = AID_CARD_BBB + 3
+AID_CARD_ROYAL_CLAIM = AID_CARD_BBB + N_PLAYERS
 AID_CARD_STAND_DELIVER = AID_CARD_ROYAL_CLAIM + 1
-AID_CARD_CODEBREAKERS = AID_CARD_STAND_DELIVER + 3
-AID_CARD_TAX_COLLECTOR = AID_CARD_CODEBREAKERS + 3
+AID_CARD_CODEBREAKERS = AID_CARD_STAND_DELIVER + N_PLAYERS
+AID_CARD_TAX_COLLECTOR = AID_CARD_CODEBREAKERS + N_PLAYERS
 
 AID_ACTIVATE_DOM = AID_CARD_TAX_COLLECTOR + 12
 AID_TAKE_DOM = AID_ACTIVATE_DOM + 4
@@ -199,8 +200,35 @@ AID_ORDER_BASE_FOX = AID_ORDER_BASE_RABBIT + 1
 
 # VAGABOND
 CHAR_THIEF = 0
-CHAR_RANGER = 1
-CHAR_TINKER = 2
+CHAR_TINKER = 1
+CHAR_RANGER = 2
+
+AID_CHOOSE_VB_CLASS = AID_ORDER_BASE_FOX + 1
+AID_STARTING_FOREST = AID_CHOOSE_VB_CLASS + 3
+
+AID_REFRESH_UNDAM = AID_STARTING_FOREST + 7
+AID_REFRESH_DAM = AID_REFRESH_UNDAM + 8
+AID_VB_MOVE = AID_REFRESH_DAM + 8
+AID_EXPLORE = AID_VB_MOVE + 361
+
+AID_START_AIDING = AID_EXPLORE + 1
+AID_CHOOSE_AID_ITEMS = AID_START_AIDING + 126
+
+AID_COMPLETE_QUEST = AID_CHOOSE_AID_ITEMS + 64
+AID_STRIKE = AID_COMPLETE_QUEST + 30
+AID_REPAIR_UNEXH = AID_STRIKE + 13
+AID_REPAIR_EXH = AID_REPAIR_UNEXH + 8
+AID_THIEF_ABILITY = AID_REPAIR_EXH + 8
+AID_TINKER_ABILITY = AID_THIEF_ABILITY + 3
+AID_RANGER_ABILITY = AID_TINKER_ABILITY + 42
+AID_DISCARD_ITEM = AID_RANGER_ABILITY + 1
+AID_DAMAGE_UNEXH = AID_DISCARD_ITEM + 32
+AID_DAMAGE_EXH = AID_DAMAGE_UNEXH + 8
+AID_ACTIVATE_COALITION = AID_DAMAGE_EXH + 8
+AID_ALLY_MOVE_CHOICE = AID_ACTIVATE_COALITION + 12
+AID_ALLY_MOVE_AMOUNT = AID_ALLY_MOVE_CHOICE + 4
+AID_BATTLE_WITH_ALLY = AID_ALLY_MOVE_AMOUNT + 25
+AID_BATTLE_ALLY_HITS = AID_BATTLE_WITH_ALLY + 4
 
 class TurnLog():
     """
@@ -451,6 +479,8 @@ class Clearing:
     
     def get_ruling_power(self, faction_index:int) -> int:
         "Returns the total ruling power of the given faction: # of Warriors + # of buildings."
+        if faction_index == PIND_VAGABOND:
+            return 0
         return self.warriors[faction_index] + len(self.buildings[faction_index])
     
     def has_presence(self, faction_index:int) -> bool:
@@ -461,6 +491,8 @@ class Clearing:
 
         This means that that the given faction could be attacked.
         """
+        if faction_index == PIND_VAGABOND:
+            return bool(self.vagabond_present)
         return bool(self.get_ruling_power(faction_index) or len(self.tokens[faction_index]))
 
     def get_ruler(self) -> int:
@@ -511,7 +543,6 @@ class Clearing:
         # logger.debug(f"\t\tBuilding {building_index} removed for {ID_TO_PLAYER[faction_index]} in clearing {self.id}")
         self.buildings[faction_index].remove(building_index)
 
-
     ### TOKEN METHODS
     def get_num_tokens(self,faction_index:int,token_index:int = -1) -> int:
         """Returns the number of tokens of the given type for the given faction in the clearing.
@@ -550,6 +581,8 @@ class Clearing:
         Returns True if one faction can attack the other as directed
         in this particular clearing, and False otherwise.
         """
+        if attacker_index == PIND_VAGABOND:
+            return bool( self.vagabond_present and self.has_presence(defender_index) )
         return bool( self.warriors[attacker_index] and self.has_presence(defender_index) )
 
     def can_place(self,faction_index:int) -> bool:
@@ -588,7 +621,7 @@ class Clearing:
     def has_martial_law(self):
         "Returns True only if there are 3+ warriors of a single player that is NOT the Alliance."
         for pid in range(N_PLAYERS):
-            if pid == PIND_ALLIANCE:
+            if pid == PIND_ALLIANCE or pid == PIND_VAGABOND:
                 continue
             if self.get_num_warriors(pid) >= 3:
                 return True
@@ -598,8 +631,8 @@ class Clearing:
 class Forest:
     def __init__(self,id:int,adj_clearing_ids:set,adj_forest_ids:set) -> None:
         self.id = id
-        self.adj_clearing_ids = adj_clearing_ids
-        self.adj_forest_ids = adj_forest_ids
+        self.adjacent_clearing_ids = adj_clearing_ids
+        self.adjacent_forest_ids = adj_forest_ids
         self.vagabond_present = 0
 
 
@@ -752,6 +785,17 @@ class Board:
         start_c.change_num_warriors(faction_index,-amount)
         end_c.change_num_warriors(faction_index,amount)
 
+    def move_vagabond(self,start_location:int,end_location:int):
+        "Moves the vagabond pawn from one clearing/forest to another."
+        if start_location <= 11:
+            self.clearings[start_location].vagabond_present = 0
+        else:
+            self.forests[start_location - 12].vagabond_present = 0
+        if end_location <= 11:
+            self.clearings[end_location].vagabond_present = 1
+        else:
+            self.forests[end_location - 12].vagabond_present = 1
+
     def place_warriors(self,faction_index:int,amount:int,clearing_index:int):
         "Adds the given number of warriors of the faction to the clearing, assuming it is legal to do so."
         logger.debug(f"\t\tPlacing {amount} {ID_TO_PLAYER[faction_index]} warriors in clearing {clearing_index}")
@@ -863,6 +907,27 @@ class Board:
         "Returns the number of sympathetic clearings currently on the board with the given suit."
         return sum([bool(c.suit == suit and c.is_sympathetic()) for c in self.clearings])
     
+    def get_slip_actions(self,vb_location:int):
+        """
+        Given a location, returns a list of AIDs for all of the valid
+        slip actions possible from that location. This is a single, free VB
+        movement option that seems to always be valid (ignores rule/relationships).
+        """
+        ans = []
+        if vb_location <= 11: # in clearing
+            clearing = self.clearings[vb_location]
+            for end_i in clearing.adjacent_clearing_ids:
+                ans.append(AID_VB_MOVE + 19*vb_location + end_i)
+            for end_i in clearing.adjacent_forest_ids:
+                ans.append(AID_VB_MOVE + 19*vb_location + (end_i + 12))
+        else: # in forest
+            forest = self.forests[vb_location - 12]
+            for end_i in forest.adjacent_clearing_ids:
+                ans.append(AID_VB_MOVE + 19*vb_location + end_i)
+            for end_i in forest.adjacent_forest_ids:
+                ans.append(AID_VB_MOVE + 19*vb_location + (end_i + 12))
+        return ans
+
 
 class Card:
     def __init__(self,id:int,suit:int,name:str,recipe:Recipe,is_ambush:bool,is_dominance:bool,is_persistent:bool,item:int,points:int) -> None:
@@ -1378,6 +1443,7 @@ class Vagabond(Player):
         self.chosen_character = None
         self.relationships = {i:1 for i in range(3)}
         self.completed_quests = {i:[] for i in range(3)}
+        self.location = None # 0-11 clearings, 12-18 forests
     
     def __str__(self) -> str:
         return "--- Vagabond ---\n" + super().__str__() + f"\ntodo (if ever)"
@@ -1422,18 +1488,59 @@ class Vagabond(Player):
             if a > 0:
                 foo[i][a - 1] = 1
         return np.append(ret,foo)
-
-    def get_num_cards_to_draw(self) -> int:
-        "Returns the number of cards to draw at the end of the turn (In Evening)."
-        return 1 + self.coin_track
+    
+    def get_refresh_actions(self):
+        "Returns a list of AIDs for actions related to refreshing items."
+        ans = set()
+        for i,exh in self.satchel_undamaged:
+            if exh == 1:
+                ans.add(i+AID_REFRESH_UNDAM)
+        for i,exh in self.satchel_damaged:
+            if exh == 1:
+                ans.add(i+AID_REFRESH_DAM)
+        return list(ans)
+    
+    def has_exhaustable(self,item_id:int,amount:int=1):
+        """
+        Returns True only if the Vagabond has at least 'amount' number
+        of undamaged AND unexhausted 'item_id' items in their inventory,
+        False otherwise.
+        """
+        if item_id in Vagabond.TRACK_IDS:
+            if item_id == ITEM_TEA:
+                return self.tea_track >= amount
+            if item_id == ITEM_COINS:
+                return self.coins_track >= amount
+            return self.bag_track >= amount
+        # non track item
+        count = 0
+        for i,exh in self.satchel_undamaged:
+            if i == item_id and exh == 0:
+                count += 1
+                if count >= amount:
+                    return True
+        return False
+    
+    def has_any_exhaustable(self):
+        "Returns True if the VB has ANY exhaustable item."
+        if (self.tea_track + self.coins_track + self.bag_track) > 0:
+            return True
+        for i,exh in self.satchel_undamaged:
+            if exh == 0:
+                return True
+        return False
 
     def change_track_amount(self,item_id:int,amount:int):
         if item_id == ITEM_TEA:
             self.tea_track += amount
+            word = "Tea"
         if item_id == ITEM_COINS:
             self.coins_track += amount
+            word = "Coins"
         if item_id == ITEM_BAG:
             self.bag_track += amount
+            word = "Bag"
+        logger.debug(f"\t\t\t{word} Track changed by {amount}")
     
     def add_item(self,item_id:int,damaged:int,exhausted:int):
         if damaged == 0:
@@ -1450,34 +1557,50 @@ class Vagabond(Player):
     def damage_item(self,item_id:int,exhausted:int):
         "Damages the target item, moving the tuple to the damaged item part of the satchel."
         if item_id in Vagabond.TRACK_IDS and (exhausted == 0):
-            self.change_track_amount(item_id,-1)
+            if item_id == ITEM_BAG and self.bag_track == 3 and ((ITEM_BAG,0) in self.satchel_undamaged):
+                self.remove_item(ITEM_BAG,0,0)
+            else:
+                self.change_track_amount(item_id,-1)
         else:
             self.remove_item(item_id,0,exhausted)
         self.add_item(item_id,1,exhausted)
+        logger.debug(f"\t\tVagabond damages an {'exhausted' if exhausted else 'unexhausted'} {ID_TO_ITEM[item_id]}")
     
     def repair_item(self,item_id:int,exhausted:int):
         "Repairs the target item, adding it to the track automatically if possible."
         self.remove_item(item_id,1,exhausted)
         if item_id in Vagabond.TRACK_IDS and (exhausted == 0):
-            self.change_track_amount(item_id,1)
+            if item_id == ITEM_BAG and self.bag_track == 3:
+                self.add_item(ITEM_BAG,0,0)
+            else:
+                self.change_track_amount(item_id,1)
         else:
             self.add_item(item_id,0,exhausted)
+        logger.debug(f"\t\tVagabond repairs an {'exhausted' if exhausted else 'unexhausted'} {ID_TO_ITEM[item_id]}")
     
     def exhaust_item(self,item_id:int):
         "Exhausts one of the given item, assuming it's not damaged, and takes it off the track if needed."
         if item_id in Vagabond.TRACK_IDS:
-            self.change_track_amount(item_id,-1)
+            if item_id == ITEM_BAG and self.bag_track == 3 and ((ITEM_BAG,0) in self.satchel_undamaged):
+                self.remove_item(ITEM_BAG,0,0)
+            else:
+                self.change_track_amount(item_id,-1)
         else:
             self.remove_item(item_id,0,0)
         self.add_item(item_id,0,1)
+        logger.debug(f"\t\tVagabond exhausts a {ID_TO_ITEM[item_id]}")
     
     def refresh_item(self,item_id:int,damaged:int):
         "Refreshes the given item, putting it on the track if it's undamaged."
         self.remove_item(item_id,damaged,1)
         if item_id in Vagabond.TRACK_IDS and (damaged == 0):
-            self.change_track_amount(item_id,1)
+            if item_id == ITEM_BAG and self.bag_track == 3:
+                self.add_item(ITEM_BAG,0,0)
+            else:
+                self.change_track_amount(item_id,1)
         else:
             self.add_item(item_id,damaged,0)
+        logger.debug(f"\t\tVagabond refreshes {'a damaged' if damaged else 'an undamaged'} {ID_TO_ITEM[item_id]}")
 
 
 class Battle:
@@ -1513,6 +1636,7 @@ class Battle:
         self.def_ambush_id = None
         self.att_cardboard_removed = False
         self.def_cardboard_removed = False
+        self.vagabond_ally_hits = 0
     
     def __str__(self) -> str:
         ret = f"--- BATTLE: {ID_TO_PLAYER[self.attacker_id]} attacking {ID_TO_PLAYER[self.defender_id]} in Clearing {self.clearing_id} ---\n"

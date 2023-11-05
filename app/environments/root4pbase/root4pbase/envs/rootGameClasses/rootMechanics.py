@@ -35,6 +35,7 @@ class RootGame:
         self.n_players = N_PLAYERS
         self.board = Board(board_composition)
         self.deck = Deck(deck_composition)
+        self.quest_deck = Deck(QUEST_DECK_COMP)
 
         # self.reset_general_items()
         # self.reset_for_marquise()
@@ -65,6 +66,8 @@ class RootGame:
         self.coalition_partner = [0] * N_PLAYERS
         self.available_dominances = [0,0,0,0]
         self.available_dom_card_objs = [None,None,None,None]
+        self.active_quests = []
+        self.ruin_items = {i:None for i in range(12) if (self.board.clearings[i].num_ruins > 0)}
 
         self.phase = self.PHASE_SETUP_MARQUISE
         self.phase_steps = 0
@@ -175,6 +178,8 @@ class RootGame:
             self.alliance_seen_hands[k].pop()
     def reset_for_vagabond(self):
         # print(self.board)
+        self.refreshes_left = -1
+        self.aid_target = None
         self.persistent_used_this_turn = set()
         self.remaining_craft_power = [0]
         for k in self.vagabond_seen_hands.keys():
@@ -326,8 +331,10 @@ class RootGame:
             self.outside_turn_this_action = PIND_EYRIE
         elif self.phase in {self.PHASE_SETUP_MARQUISE,self.PHASE_BIRDSONG_MARQUISE,self.PHASE_DAYLIGHT_MARQUISE,self.PHASE_EVENING_MARQUISE}:
             self.outside_turn_this_action = PIND_MARQUISE
-        else:
+        elif self.phase in {self.PHASE_BIRDSONG_ALLIANCE,self.PHASE_DAYLIGHT_ALLIANCE,self.PHASE_EVENING_ALLIANCE}:
             self.outside_turn_this_action = PIND_ALLIANCE
+        else:
+            self.outside_turn_this_action = PIND_VAGABOND
 
         aplayer = self.players[PIND_ALLIANCE]
         resolving = False
@@ -923,6 +930,41 @@ class RootGame:
         aplayer.spend_supporter_helper(c_to_discard.suit)
         self.turn_log.change_alliance_payments(card_id)
 
+    def draw_new_quest(self):
+        """
+        Draws 1 card from the top of the quest deck to become available.
+
+        If the deck runs out, nothing happens.
+        """
+        # check in case the deck is empty
+        if self.deck.size() == 0:
+            logger.debug("--> No quests remaining to complete!")
+            return
+        draw = self.quest_deck.draw(1)
+        c_drawn = draw[0]
+        logger.debug(f"\t* New Quest Drawn: {c_drawn.name}")
+        self.active_quests.append(c_drawn)
+    
+    def complete_quest(self,vplayer:Vagabond,quest_id:int):
+        """
+        Makes the given Vagabond player complete the given quest, assuming it is currently possible.
+
+        Removes the given quest from the active list and adds it to the correct
+        list for the VB's completed quests. Then, attempts to exhaust the
+        required items. Finally, draws a new quest.
+
+        Does NOT score points or make the VB draw new cards.
+        """
+        for i,c in enumerate(self.active_quests):
+            if c.id == quest_id:
+                quest_card = self.active_quests.pop(i)
+                break
+        vplayer.completed_quests[quest_card.suit].append(quest_card)
+        for item,amount in quest_card.requirements.items():
+            for _ in range(amount):
+                vplayer.exhaust_item(item)
+        self.draw_new_quest()
+
     def change_score(self,player_index:int,amount:int):
         "Makes a player score some amount of points. Use a negative amount to lose points."
         if amount == 0:
@@ -968,7 +1010,10 @@ class RootGame:
             # we are crafting an item
             logger.debug(f"\t{ID_TO_PLAYER[player_index]} crafts: {ID_TO_ITEM[item_id]}")
             self.available_items[item_id] -= 1
-            p.crafted_items[item_id] += 1
+            if player_index != PIND_VAGABOND:
+                p.crafted_items[item_id] += 1
+            else:
+                p.add_item(item_id,0,0)
             
             # Disdain for Trade for the Eyrie (unless they have Builder leader)
             points_scored = 1 if (player_index == PIND_EYRIE and p.chosen_leader_index != LEADER_BUILDER) else card_to_craft.points
@@ -1675,7 +1720,6 @@ class RootGame:
         self.turn_log.change_plr_warrior_supply(player_index,1)
 
         self.draw_cards(player_index,1)
-        self.turn_log.change_plr_hand_size(player_index,1)
         self.turn_log.change_plr_pers_used(player_index, CID_TO_PERS_INDEX[CID_TAX_COLLECTOR])
         if player_index == PIND_MARQUISE and self.keep_is_up():
             self.field_hospitals.append((1,self.board.clearings[clearing_index].suit))
@@ -1685,8 +1729,6 @@ class RootGame:
         logger.debug(f"\t{ID_TO_PLAYER[player_index]} activates Better Burrow Bank...")
         self.draw_cards(player_index,1)
         self.draw_cards(target_index,1)
-        self.turn_log.change_plr_hand_size(player_index,1)
-        self.turn_log.change_plr_hand_size(target_index,1)
         self.turn_log.change_plr_pers_used(player_index, CID_TO_PERS_INDEX[CID_BBB],target_index)
     
     def activate_codebreakers(self,player_index:int,target_index:int):
@@ -1709,6 +1751,8 @@ class RootGame:
             self.eyrie_seen_hands[target_index][0] = target_hand
         elif player_index == PIND_ALLIANCE:
             self.alliance_seen_hands[target_index][0] = target_hand
+        elif player_index == PIND_VAGABOND:
+            self.vagabond_seen_hands[target_index][0] = target_hand
         self.turn_log.change_plr_pers_used(player_index, CID_TO_PERS_INDEX[CID_CODEBREAKERS], target_index)
 
     def can_craft(self,card:Card,player:Player):
@@ -1954,7 +1998,7 @@ class RootGame:
                 for i in range(3):
                     if remaining[i] > 0:
                         valid_suits.add(i)
-            for enemy_id,battle_aid in [(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE)]:
+            for enemy_id,battle_aid in [(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE),(PIND_VAGABOND,AID_BATTLE_VAGABOND)]:
                 possible_battle_clearings = [i for i,x in enumerate(self.board.get_possible_battles(PIND_EYRIE,enemy_id)) if x]
                 for i in possible_battle_clearings:
                     if self.board.clearings[i].suit in valid_suits:
@@ -2255,6 +2299,142 @@ class RootGame:
         aplayer.num_officers -= n_to_remove
         aplayer.change_num_warriors(n_to_remove)
         self.turn_log.change_plr_warrior_supply(PIND_ALLIANCE,n_to_remove)
+    
+    def get_vagabond_move_actions(self,vplayer:Vagabond):
+        """
+        Returns a list of AIDs for each currently valid move possible
+        for the Vagabond player. 
+        
+        Given their current position, they can only move from a clearing
+        or forest to an adjacent clearing. They must exhaust 1 boot to do so,
+        unless the target clearing has any Hostile warriors, which then
+        increases the cost to 2 boots.
+        """
+        ans = []
+
+        # check for available boots
+        if vplayer.has_exhaustable(ITEM_BOOT,2):
+            can_move_hostile = True
+        elif vplayer.has_exhaustable(ITEM_BOOT):
+            can_move_hostile = False
+        else:
+            return ans
+        
+        # get possible clearings to move to
+        start_loc = vplayer.location
+        if start_loc <= 11:
+            possible_clearings = self.board.clearings[start_loc].adjacent_clearing_ids
+        else:
+            possible_clearings = self.board.forests[start_loc - 12].adjacent_clearing_ids
+        
+        hostile_ids = {i for i,rel in vplayer.relationships.items() if rel == 0}
+        
+        for end_i in possible_clearings:
+            end_c = self.board.clearings[end_i]
+            # check if moving to hostile clearing and if we are able to
+            if (not can_move_hostile and 
+                    any(end_c.get_num_warriors(p_index) > 0 for p_index in hostile_ids)):
+                continue
+            ans.append(AID_VB_MOVE + 19*start_loc + end_i)
+
+        return ans
+    
+    def get_vagabond_clearing_actions(self,vplayer:Vagabond):
+        """
+        Given that the Vagabond is located in a clearing, returns a
+        list of all legal AIDs possible for:
+        - Battling
+        - Exploring
+        - Aiding
+        - Questing
+        - Striking
+        - Crafting
+        - Special Actions (Thief,Tinker)
+        
+        All of the above require the VB to be in a clearing.
+        """
+        ans = []
+        loc = vplayer.location
+        clearing = self.board.clearings[loc]
+        has_exhaustable = False
+
+        # Battle (must have sword to use/be in a clearing)
+        if vplayer.has_exhaustable(ITEM_SWORD):
+            has_exhaustable = True
+            for enemy_id,battle_aid in [(PIND_EYRIE,AID_BATTLE_EYRIE),(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE)]:
+                if clearing.can_start_battle(PIND_VAGABOND,enemy_id):
+                    ans.append(loc + battle_aid)
+
+        # Explore / Special Action
+        if vplayer.has_exhaustable(ITEM_TORCH):
+            has_exhaustable = True
+            if clearing.num_ruins > 0:
+                ans.append(AID_EXPLORE)
+
+            if vplayer.chosen_character == CHAR_THIEF:
+                for pid in range(3):
+                    if clearing.has_presence(pid) and len(self.players[pid].hand) > 0:
+                        ans.append(AID_THIEF_ABILITY + pid)
+            elif vplayer.chosen_character == CHAR_TINKER:
+                card_ids_in_discard = np.where(np.any(self.discard_array!=0, 1))[0]
+                for cid in card_ids_in_discard:
+                    csuit = self.deck.deck_comp[cid][0].suit
+                    if csuit == clearing.suit or csuit == SUIT_BIRD:
+                        ans.append(AID_TINKER_ABILITY + cid)
+        # Quest
+        for qcard in self.active_quests:
+            if (qcard.suit == clearing.suit and 
+                    all(vplayer.has_exhaustable(i,a) for i,a in qcard.requirements.items())):
+                has_exhaustable = True
+                ans.append(AID_COMPLETE_QUEST + 2*qcard.id)
+                ans.append(AID_COMPLETE_QUEST + 2*qcard.id + 1)
+        
+        # Strike
+        if vplayer.has_exhaustable(ITEM_CROSSBOW):
+            has_exhaustable = True
+            # Marquise
+            if clearing.get_num_warriors(PIND_MARQUISE) > 0:
+                ans.append(AID_STRIKE)
+            else:
+                for bid in range(3):
+                    if clearing.get_num_buildings(PIND_MARQUISE,bid) > 0:
+                        ans.append(AID_STRIKE + 1 + bid)
+                for tid in range(2):
+                    if clearing.get_num_tokens(PIND_MARQUISE,tid) > 0:
+                        ans.append(AID_STRIKE + 4 + tid)
+            # Eyrie
+            if clearing.get_num_warriors(PIND_EYRIE) > 0:
+                ans.append(AID_STRIKE + 6)
+            elif clearing.get_num_buildings(PIND_EYRIE) > 0:
+                ans.append(AID_STRIKE + 7)
+            # Alliance
+            if clearing.get_num_warriors(PIND_ALLIANCE) > 0:
+                ans.append(AID_STRIKE + 8)
+            else:
+                for bid in range(3):
+                    if clearing.get_num_buildings(PIND_ALLIANCE,bid) > 0:
+                        ans.append(AID_STRIKE + 9 + bid)
+                if clearing.get_num_tokens(PIND_ALLIANCE) > 0:
+                    ans.append(AID_STRIKE + 12)
+        
+        # Craft
+        self.remaining_craft_power = [0,0,0]
+        self.remaining_craft_power[clearing.suit] = vplayer.satchel_undamaged.count((ITEM_HAMMER,0))
+        logger.debug(f"\tCrafting power: {self.remaining_craft_power}")
+        ans += list({i+AID_CRAFT_CARD for i in self.get_craftable_ids(vplayer)})
+
+        if not has_exhaustable:
+            has_exhaustable = vplayer.has_any_exhaustable()
+
+        # Aid
+        # must be able to exhaust an item and have a matching card to give
+        if (has_exhaustable and
+                vplayer.has_suit_in_hand(clearing.suit)):
+            aid_targets = [player_i for player_i in range(3) if clearing.has_presence(player_i)]
+            aid_cards = [card.id for card in vplayer.hand if (card.suit == SUIT_BIRD or card.suit == clearing.suit)]
+            ans += [(AID_START_AIDING + 42*pi + ci) for pi in aid_targets for ci in aid_cards]
+        
+        return ans
 
     # GAME ADVANCEMENT
     def advance_game(self):
@@ -2283,17 +2463,27 @@ class RootGame:
                 return [x for x in range(AID_CHOOSE_LEADER,AID_CHOOSE_LEADER + 4)]
         if self.phase == self.PHASE_SETUP_EYRIE and self.phase_steps == 1:
             self.alliance_setup(self.players[PIND_ALLIANCE])
-            # START GAME - Random Starting Player?
-            logger.debug(f"--- STARTING TURN 1 ---")
+            self.phase = self.PHASE_SETUP_VAGABOND
             self.phase_steps = 0
-            first_player = self.turn_order[0]
-            self.current_player = first_player
-            if first_player == PIND_MARQUISE: # Marquise start
-                self.phase = self.PHASE_BIRDSONG_MARQUISE
-            elif first_player == PIND_EYRIE: # Eyrie start
-                self.phase = self.PHASE_BIRDSONG_EYRIE
-            elif first_player == PIND_ALLIANCE: # Alliance start
-                self.phase = self.PHASE_BIRDSONG_ALLIANCE
+            self.current_player = PIND_VAGABOND
+            return [i+AID_CHOOSE_VB_CLASS for i in range(3)]
+        if self.phase == self.PHASE_SETUP_VAGABOND:
+            if self.phase_steps == 1:
+                return [i+AID_STARTING_FOREST for i in range(7)]
+            if self.phase_steps == 2:
+                # START GAME - Random Starting Player?
+                logger.debug(f"--- STARTING TURN 1 ---")
+                self.phase_steps = 0
+                first_player = self.turn_order[0]
+                self.current_player = first_player
+                if first_player == PIND_MARQUISE: # Marquise start
+                    self.phase = self.PHASE_BIRDSONG_MARQUISE
+                elif first_player == PIND_EYRIE: # Eyrie start
+                    self.phase = self.PHASE_BIRDSONG_EYRIE
+                elif first_player == PIND_ALLIANCE: # Alliance start
+                    self.phase = self.PHASE_BIRDSONG_ALLIANCE
+                elif first_player == PIND_VAGABOND:
+                    self.phase = self.PHASE_BIRDSONG_VAGABOND
 
         if self.current_player == PIND_MARQUISE:
             return self.advance_marquise(self.players[self.current_player])
@@ -2441,6 +2631,7 @@ class RootGame:
                     if not bool(ans):
                         self.marquise_moves = 2
                         self.phase_steps = 2
+                        logger.debug("\t> No legal moves! March ended...")
                     else:
                         logger.debug("Finding 2nd move of march...")
                         return [AID_GENERIC_SKIP] + ans
@@ -2840,6 +3031,193 @@ class RootGame:
                 logger.debug("No possible daylight actions remaining...")
                 self.phase_steps = 2
             if self.phase_steps == 2: # end of daylight
+                logger.debug("--- Moving on to Evening ---")
+                self.phase_steps = 0
+                self.phase = self.PHASE_EVENING_ALLIANCE
+
+        if self.phase == self.PHASE_EVENING_ALLIANCE:
+            if self.phase_steps == 0:
+                self.evening_actions_left = current_player.num_officers
+                unused_pers = {c.id for c in current_player.persistent_cards} - self.persistent_used_this_turn
+                if CID_COBBLER in unused_pers:
+                    ans = self.board.get_legal_move_actions(PIND_ALLIANCE,{0,1,2})
+                    if bool(ans):
+                        logger.debug("Checking for use of Cobbler...")
+                        return [AID_GENERIC_SKIP] + ans
+                self.phase_steps = 1
+            # Evening Phase
+            if self.phase_steps == 1: # Military Operations
+                if self.evening_actions_left > 0:
+                    # Move
+                    ans = self.board.get_legal_move_actions(PIND_ALLIANCE,{0,1,2})
+                    # Battle
+                    for enemy_id,battle_aid in [(PIND_EYRIE,AID_BATTLE_EYRIE),(PIND_MARQUISE,AID_BATTLE_MARQUISE)]:
+                        possible_battle_clearings = [i for i,x in enumerate(self.board.get_possible_battles(PIND_ALLIANCE,enemy_id)) if x]
+                        for i in possible_battle_clearings:
+                            ans.append(i + battle_aid)
+                    # Recruit
+                    bases = self.board.get_total_building_counts(PIND_ALLIANCE)
+                    if (sum(bases) > 0) and (current_player.warrior_storage > 0):
+                        ans += [i + AID_RECRUIT_ALLIANCE for i,c in enumerate(bases) if c > 0]
+                    # Organize
+                    if current_player.get_num_tokens_in_store(TIND_SYMPATHY) > 0:
+                        for i,c in enumerate(self.board.clearings):
+                            if (c.get_num_warriors(PIND_ALLIANCE) > 0 and
+                                    not c.is_sympathetic() and
+                                    c.can_place(PIND_ALLIANCE)):
+                                ans.append(i + AID_ORGANIZE)
+                    if ans:
+                        logger.debug(f"Choosing Military Operation ({self.evening_actions_left} Remaining)...")
+                        return [AID_GENERIC_SKIP] + ans
+                    logger.debug(f"No military operations possible...")
+                    self.phase_steps = 2
+                else:
+                    logger.debug("No military operations left to use...")
+                    self.phase_steps = 2
+            if self.phase_steps == 2:
+                # if self.outrage_offender is not None:
+                #     # prevent drawing cards before someone pays outrage
+                #     return [AID_GENERIC_SKIP]
+                self.draw_cards(PIND_ALLIANCE,current_player.get_num_cards_to_draw())
+                self.phase_steps = 3
+            if self.phase_steps == 3 and len(current_player.hand) > 5:
+                ans = {c.id+AID_DISCARD_CARD for c in current_player.hand}
+                logger.debug("Alliance must discard from hand...")
+                return list(ans)
+            # turn done!
+            if max(self.victory_points) >= 30:
+                return [0]
+            logger.debug("--- End of Alliance's Turn ---\n")
+            self.phase_steps = 0
+            self.save_to_history()
+            if self.active_dominances[PIND_ALLIANCE] is not None:
+                self.adjust_reward_for_dom_turn(PIND_ALLIANCE)
+
+            self.current_player = self.next_player_index[PIND_ALLIANCE]
+            if self.current_player == PIND_EYRIE:
+                self.phase = self.PHASE_BIRDSONG_EYRIE
+                self.outside_turn_this_action = PIND_EYRIE
+                return self.advance_eyrie(self.players[PIND_EYRIE])
+            elif self.current_player == PIND_MARQUISE:
+                self.phase = self.PHASE_BIRDSONG_MARQUISE
+                self.outside_turn_this_action = PIND_MARQUISE
+                return self.advance_marquise(self.players[PIND_MARQUISE])
+    
+    def advance_vagabond(self,vplayer:Vagabond):
+        "Advances the game assuming we are in the middle of the Vagabond's turn."
+        if self.phase == self.PHASE_BIRDSONG_VAGABOND:
+            if self.phase_steps == 0: # Start of Birdsong
+                logger.debug(f"\tResetting for Vagabond's Turn...")
+                self.reset_for_vagabond()
+                # can they use BBB?
+                if CID_BBB in {c.id for c in vplayer.persistent_cards}:
+                    logger.debug("Checking for use of BBB...")
+                    return [AID_GENERIC_SKIP,AID_CARD_BBB+PIND_MARQUISE,AID_CARD_BBB+PIND_EYRIE,AID_CARD_BBB+PIND_ALLIANCE]
+                self.phase_steps = 1
+            if self.phase_steps == 1: # Refreshing items
+                ans = []
+                if self.refreshes_left == -1:
+                    # set initial refresh number
+                    self.refreshes_left = 3 + 2 * vplayer.tea_track
+                logger.debug(f"Refreshes remaining to use: {self.refreshes_left}")
+                if self.refreshes_left > 0:
+                    ans = vplayer.get_refresh_actions()
+                if not bool(ans):
+                    logger.debug("\tCannot refresh any more items...")
+                    self.phase_steps = 2
+                else:
+                    return ans
+            if self.phase_steps == 2: # slipping
+                unused_pers = {c.id for c in vplayer.persistent_cards} - self.persistent_used_this_turn
+                logger.debug("Choosing where to slip...")
+                ans = self.board.get_slip_actions(vplayer.location)
+                if CID_STAND_AND_DELIVER in unused_pers:
+                    for pid in (PIND_MARQUISE,PIND_EYRIE,PIND_ALLIANCE):
+                        if len(self.players[pid].hand) > 0:
+                            ans.append(AID_CARD_STAND_DELIVER + pid)
+                # NOTE: VB cannot craft royal claim
+                # if CID_ROYAL_CLAIM in unused_pers:
+                #     ans.append(AID_CARD_ROYAL_CLAIM)
+                return [AID_GENERIC_SKIP] + ans
+            if self.phase_steps == 3: # other birdsong cards double check
+                unused_pers = {c.id for c in vplayer.persistent_cards} - self.persistent_used_this_turn
+                ans = []
+                if CID_STAND_AND_DELIVER in unused_pers:
+                    for pid in (PIND_MARQUISE,PIND_EYRIE,PIND_ALLIANCE):
+                        if len(self.players[pid].hand) > 0:
+                            ans.append(AID_CARD_STAND_DELIVER + pid)
+                # if CID_ROYAL_CLAIM in unused_pers:
+                #     ans.append(AID_CARD_ROYAL_CLAIM)
+                if bool(ans):
+                    logger.debug("Checking for use of Birdsong Cards...")
+                    return [AID_GENERIC_SKIP] + ans
+                self.phase_steps = 4
+            if self.phase_steps == 4:
+                logger.debug("--- Moving on to Daylight ---")
+                self.phase_steps = 0
+                self.phase = self.PHASE_DAYLIGHT_VAGABOND
+
+        if self.phase == self.PHASE_DAYLIGHT_VAGABOND:
+            if self.phase_steps == 0:
+                # can they use Command Warren?
+                if CID_COMMAND_WARREN in {c.id for c in vplayer.persistent_cards}:
+                    ans = []
+                    if vplayer.location <= 11:
+                        for enemy_id,battle_aid in [(PIND_EYRIE,AID_BATTLE_EYRIE),(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE)]:
+                            if self.board.clearings[vplayer.location].can_start_battle(PIND_VAGABOND,enemy_id):
+                                ans.append(vplayer.location + battle_aid)
+                    if bool(ans):
+                        logger.debug(f"Checking for use of Command Warren...")
+                        return [AID_GENERIC_SKIP] + ans
+                self.phase_steps = 1
+            while self.phase_steps < 4:
+                if self.phase_steps == 1:
+                    # Complete any of the following in any order / number (exhausting the right item)
+                    # Use Persistent Cards
+                    unused_pers = {c.id for c in vplayer.persistent_cards} - self.persistent_used_this_turn
+                    ans = []
+                    if CID_CODEBREAKERS in unused_pers:
+                        for pid in (PIND_EYRIE,PIND_MARQUISE,PIND_ALLIANCE):
+                            ans.append(AID_CARD_CODEBREAKERS + pid)
+                    # NOTE: VB cannot craft Tax Collector...
+                    # if CID_TAX_COLLECTOR in unused_pers:
+                    #     foo = self.board.get_num_warriors(PIND_ALLIANCE)
+                    #     ans += [i+AID_CARD_TAX_COLLECTOR for i,amount in enumerate(foo) if (amount > 0)]
+                    # Move (checks for boots)
+                    ans += self.get_vagabond_move_actions(vplayer)
+                    # Actions requiring being in a clearing
+                    if vplayer.location <= 11:
+                        ans += self.get_vagabond_clearing_actions(vplayer)
+                    # Special Abilities usable at any time
+                    if vplayer.chosen_character == CHAR_RANGER and vplayer.has_exhaustable(ITEM_TORCH):
+                        ans.append(AID_RANGER_ABILITY)
+                    # Repair
+                    if vplayer.has_exhaustable(ITEM_HAMMER):
+                        repair_actions = set()
+                        for i,exh in vplayer.satchel_damaged:
+                            if exh == 1:
+                                repair_actions.add(AID_REPAIR_EXH + i)
+                            else:
+                                repair_actions.add(AID_REPAIR_UNEXH + i)
+                        ans += list(repair_actions)
+
+                    # check for dominance-related actions
+                    ans += self.get_dom_payment_actions(current_player)
+                    ans += self.get_dom_activation_actions(current_player, PIND_ALLIANCE)
+                    if ans:
+                        logger.debug("Choosing next Daylight action...")
+                        return [AID_GENERIC_SKIP] + ans
+                    logger.debug("No possible daylight actions remaining...")
+                    self.phase_steps = 4
+
+                if self.phase_steps == 2:
+                    # second half of Aid action
+                    target = self.players[self.aid_target]
+                    exhaustable_items = [i for i in range(8) if vplayer.has_exhaustable(i)]
+                    takeable_items = [7] + [i for i in range(7) if target.crafted_items[i] > 0]
+                    return [(AID_CHOOSE_AID_ITEMS + ei*8 + ti) for ei in exhaustable_items for ti in takeable_items]
+            
+            if self.phase_steps == 4: # end of daylight
                 logger.debug("--- Moving on to Evening ---")
                 self.phase_steps = 0
                 self.phase = self.PHASE_EVENING_ALLIANCE
@@ -3627,6 +4005,50 @@ class RootGame:
             self.phase_steps += 1
         elif action >= AID_DISCARD_CARD and action <= AID_DISCARD_CARD + 41: # Discard excess card
             self.discard_from_hand(PIND_ALLIANCE, action - AID_DISCARD_CARD)
+
+    def vagabond_setup(self,action:int,vplayer:Vagabond):
+        "Performs the corresponding Vagabond setup action."
+        s = self.phase_steps
+        if s == 0: # choosing which character to play as
+            if action == AID_CHOOSE_VB_CLASS: # Thief
+                logger.debug("Chosen Class: Thief")
+                logger.debug("\tStarting Items: Boot-Torch-Tea-Sword")
+                vplayer.chosen_character = CHAR_THIEF
+                vplayer.add_item(ITEM_BOOT,0,0)
+                vplayer.add_item(ITEM_TORCH,0,0)
+                vplayer.add_item(ITEM_TEA,0,0)
+                vplayer.add_item(ITEM_SWORD,0,0)
+            elif action == (AID_CHOOSE_VB_CLASS + 1): # Tinker
+                logger.debug("Chosen Class: Tinker")
+                logger.debug("\tStarting Items: Boot-Torch-Bag-Hammer")
+                vplayer.chosen_character = CHAR_TINKER
+                vplayer.add_item(ITEM_BOOT,0,0)
+                vplayer.add_item(ITEM_TORCH,0,0)
+                vplayer.add_item(ITEM_BAG,0,0)
+                vplayer.add_item(ITEM_HAMMER,0,0)
+            elif action == (AID_CHOOSE_VB_CLASS + 2): # Ranger
+                logger.debug("Chosen Class: Ranger")
+                logger.debug("\tStarting Items: Boot-Torch-Crossbow-Sword")
+                vplayer.chosen_character = CHAR_RANGER
+                vplayer.add_item(ITEM_BOOT,0,0)
+                vplayer.add_item(ITEM_TORCH,0,0)
+                vplayer.add_item(ITEM_CROSSBOW,0,0)
+                vplayer.add_item(ITEM_SWORD,0,0)
+        elif s == 1: # choosing which forest to start in
+            chosen_forest = action - AID_STARTING_FOREST
+            vplayer.location = chosen_forest + 12
+            self.board.forests[chosen_forest].vagabond_present = 1
+            logger.debug(f"Vagabond starts in Forest {chosen_forest}")
+            # finish setup
+            for i in range(3):
+                self.draw_new_quest()
+            ruin_items = [ITEM_BAG,ITEM_BOOT,ITEM_HAMMER,ITEM_SWORD]
+            random.shuffle(ruin_items)
+            for clearing in self.ruin_items.keys():
+                item = ruin_items.pop()
+                self.ruin_items[clearing] = item
+                logger.debug(f"\t{ID_TO_ITEM[item]} placed in Ruin in clearing {clearing}")
+        self.phase_steps += 1
 
     def render(self):
         if len(self.field_hospitals) > 0:
