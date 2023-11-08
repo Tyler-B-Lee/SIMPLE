@@ -225,10 +225,14 @@ AID_DISCARD_ITEM = AID_RANGER_ABILITY + 1
 AID_DAMAGE_UNEXH = AID_DISCARD_ITEM + 32
 AID_DAMAGE_EXH = AID_DAMAGE_UNEXH + 8
 AID_ACTIVATE_COALITION = AID_DAMAGE_EXH + 8
-AID_ALLY_MOVE_CHOICE = AID_ACTIVATE_COALITION + 12
-AID_ALLY_MOVE_AMOUNT = AID_ALLY_MOVE_CHOICE + 4
-AID_BATTLE_WITH_ALLY = AID_ALLY_MOVE_AMOUNT + 25
+
+AID_NO_ALLY_MOVE = AID_ACTIVATE_COALITION + 12
+AID_MARQUISE_ALLY_MOVE = AID_NO_ALLY_MOVE + 1
+AID_EYRIE_ALLY_MOVE = AID_MARQUISE_ALLY_MOVE + 25
+AID_ALLIANCE_ALLY_MOVE = AID_EYRIE_ALLY_MOVE + 20
+AID_BATTLE_WITH_ALLY = AID_ALLIANCE_ALLY_MOVE + 10
 AID_BATTLE_ALLY_HITS = AID_BATTLE_WITH_ALLY + 4
+
 
 class TurnLog():
     """
@@ -1506,6 +1510,8 @@ class Vagabond(Player):
         of undamaged AND unexhausted 'item_id' items in their inventory,
         False otherwise.
         """
+        if amount == 0:
+            return True
         if item_id in Vagabond.TRACK_IDS:
             if item_id == ITEM_TEA:
                 return self.tea_track >= amount
@@ -1602,6 +1608,10 @@ class Vagabond(Player):
             self.add_item(item_id,damaged,0)
         logger.debug(f"\t\tVagabond refreshes {'a damaged' if damaged else 'an undamaged'} {ID_TO_ITEM[item_id]}")
 
+    def is_an_ally(self,player_id:int):
+        "Returns True only if the given player is Allied on the Relationships Chart."
+        return (self.relationships[player_id] == 4)
+    
 
 class Battle:
     "Keeps track of info about the current active battle."
