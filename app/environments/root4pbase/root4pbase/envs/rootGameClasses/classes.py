@@ -1611,6 +1611,9 @@ class Vagabond(Player):
     def is_an_ally(self,player_id:int):
         "Returns True only if the given player is Allied on the Relationships Chart."
         return (self.relationships[player_id] == 4)
+    def is_hostile(self,player_id:int):
+        "Returns True only if the given player is Hostile on the Relationships Chart."
+        return (self.relationships[player_id] == 0)
     
 
 class Battle:
