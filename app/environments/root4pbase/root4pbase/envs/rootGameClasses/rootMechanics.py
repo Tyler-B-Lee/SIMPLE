@@ -58,7 +58,7 @@ class RootGame:
         self.alliance_interrupt_player = None
         self.points_scored_this_action = [0] * N_PLAYERS
         self.current_player = 0
-        self.players = [Marquise(0), Eyrie(1), Alliance(2), Vagabond(3)]
+        self.players = [Marquise(PIND_MARQUISE), Eyrie(PIND_VAGABOND), Alliance(PIND_ALLIANCE), Vagabond(PIND_VAGABOND)]
         self.victory_points = [0] * N_PLAYERS
 
         self.dominance_win = False
@@ -185,8 +185,6 @@ class RootGame:
         self.aids_this_turn = [0,0,0]
         self.vagabond_move_start = None
         self.vagabond_move_end = None
-        self.vagabond_battle_target = None
-        self.vagabond_battle_ally = None
         self.persistent_used_this_turn = set()
         self.remaining_craft_power = [0]
         for k in self.vagabond_seen_hands.keys():
@@ -207,6 +205,7 @@ class RootGame:
         and the info in the current Turn Log to the first index in
         the history.
         """
+        return
         # save all info in turn log / end of turn info
         # logger.debug(f"Current TurnLog: {vars(self.turn_log)}")
         t = self.turn_log
@@ -343,7 +342,7 @@ class RootGame:
         else:
             self.outside_turn_this_action = PIND_VAGABOND
 
-        aplayer = self.players[PIND_ALLIANCE]
+        aplayer:Alliance = self.players[PIND_ALLIANCE]
         resolving = False
         if self.outside_turn_this_action == PIND_MARQUISE:
             # first, resolve field hospitals
@@ -385,7 +384,7 @@ class RootGame:
                 # during it. Use the given action, although nothing will
                 # really happen yet. Either a choice will be made or
                 # the battle will finish by itself
-                self.saved_battle_actions = self.resolve_battle_action(action)
+                self.saved_battle_actions = self.step_battle(action)
                 self.saved_battle_player = self.current_player
                 # logger.debug(f"BATTLE ACTIONS RETURNED: {self.saved_battle_actions}")
                 battle = True
@@ -415,7 +414,7 @@ class RootGame:
                     # logger.debug("BAT,NO ACTIONS")
                     actions_to_return = self.saved_battle_actions
         elif not resolving: # we are in a battle
-            self.saved_battle_actions = self.resolve_battle_action(action)
+            self.saved_battle_actions = self.step_battle(action)
             self.saved_battle_player = self.current_player
             if self.outside_turn_this_action == PIND_MARQUISE:
                 # check for field hospitals first (best for marquise)
@@ -448,9 +447,9 @@ class RootGame:
         else:
             self.legal_actions_to_get = self.advance_game()
 
+        reward = self.points_scored_this_action
         # at this point, if a player has won by dominance, this flag
         # will be set to true in a step of the advance_game function
-        reward = self.points_scored_this_action
         if self.dominance_win:
             done = True
             for i in range(N_PLAYERS):
@@ -462,6 +461,8 @@ class RootGame:
             done = (max(self.victory_points) >= 30) and (self.battle.stage == Battle.STAGE_DONE)
             if done:
                 winlist = self.get_winner_points()
+                # TODO Adjust for coalition victory
+                # if (self.vagabond_coalition_partner is not None) and (ans[self.vagabond_coalition_partner] == 1):
                 for i,val in enumerate(winlist):
                     if val == 1:
                         reward[i] += 5 * WIN_SCALAR
@@ -469,10 +470,10 @@ class RootGame:
                         reward[i] -= (5 / (N_PLAYERS - 1)) * WIN_SCALAR
         
         self.num_actions_played += 1
-        if (not done) and (self.num_actions_played >= 750):
+        if (not done) and (self.num_actions_played >= 1500):
             done = True
             for i in range(N_PLAYERS):
-                reward[i] -= 10
+                reward[i] -= 10 * WIN_SCALAR
 
         return self.get_observation(), reward, done
 
@@ -671,12 +672,15 @@ class RootGame:
                         self.current_player = PIND_EYRIE
                     elif self.phase in {self.PHASE_SETUP_MARQUISE,self.PHASE_BIRDSONG_MARQUISE,self.PHASE_DAYLIGHT_MARQUISE,self.PHASE_EVENING_MARQUISE}:
                         self.current_player = PIND_MARQUISE
-                    else:
+                    elif self.phase in {self.PHASE_BIRDSONG_ALLIANCE,self.PHASE_DAYLIGHT_ALLIANCE,self.PHASE_EVENING_ALLIANCE}:
                         self.current_player = PIND_ALLIANCE
+                    else:
+                        self.current_player = PIND_VAGABOND
         return actions_to_return
 
 
     def get_observation(self):
+        return
         ret = np.zeros((12,3))
         for i,c in enumerate(self.board.clearings):
             ret[i][c.suit] = 1
@@ -841,8 +845,8 @@ class RootGame:
         Returns a list with 1 at the index of the winner, and a -1
         at every other index.
         """
-        ans = [-1,-1,-1]
-        winners = [i for i in range(3) if self.victory_points[i] == max(self.victory_points)]
+        ans = [-1] * N_PLAYERS
+        winners = [i for i in range(N_PLAYERS) if self.victory_points[i] == max(self.victory_points)]
         if len(winners) == 1:
             ans[winners[0]] = 1
         else:
@@ -948,8 +952,8 @@ class RootGame:
             logger.debug("--> No quests remaining to complete!")
             return
         draw = self.quest_deck.draw(1)
-        c_drawn = draw[0]
-        logger.debug(f"\t* New Quest Drawn: {c_drawn.name}")
+        c_drawn:QuestCard = draw[0]
+        logger.debug(f"\t* New Quest Drawn: {c_drawn.name} ({ID_TO_SUIT[c_drawn.suit]})")
         self.active_quests.append(c_drawn)
     
     def complete_quest(self,vplayer:Vagabond,quest_id:int):
@@ -988,7 +992,7 @@ class RootGame:
         self.victory_points[player_index] = new_points
         logger.debug(f"\t{ID_TO_PLAYER[player_index]} Points changed by {amount}")
         logger.debug(f"\t\tNew Score:")
-        for i in range(3):
+        for i in range(N_PLAYERS):
             logger.debug(f"\t\t> {ID_TO_PLAYER[i]}: {self.victory_points[i]}")
             # change the points scored for this action / balanced for other players
             if i == player_index:
@@ -997,6 +1001,8 @@ class RootGame:
                 self.points_scored_this_action[i] -= (real_change / (N_PLAYERS - 1)) * GAME_SCALAR
             if self.active_dominances[i] is not None:
                 logger.debug(f"\t\t\t- {ID_TO_SUIT[self.active_dominances[i].suit]} Dominance Active")
+                if i == PIND_VAGABOND:
+                    logger.debug(f"\t\t\t > Formed Coalition with the {ID_TO_PLAYER[self.vagabond_coalition_partner]}")
         self.turn_log.change_plr_points(player_index,real_change)
 
     def craft_card(self,player_index:int,card_id:int):
@@ -1110,25 +1116,29 @@ class RootGame:
         self.turn_log.change_clr_warriors(keep_clearing,PIND_MARQUISE,amount)
         self.discard_from_hand(PIND_MARQUISE,payment_card_id)
 
-    def score_battle_points(self,faction_index:int,is_attacker:bool,cardboard_removed:int):
+    def score_battle_points(self,damager_ind:int,damaged_ind:int,cardboard_removed:int):
         """
         Given the number of cardboard pieces removed, make the given faction
         score the right number of points. Accounts for the Eyrie Despot with
-        extra info stored in the current Battle object.
+        extra info stored in the current Battle object / the Vagabond's infamy.
         """
         points = cardboard_removed
-        if (faction_index == PIND_EYRIE) and (self.players[faction_index].chosen_leader_index == LEADER_DESPOT) and cardboard_removed:
+        attacker:Player = self.players[self.battle.attacker_id]
+        if (damager_ind == PIND_EYRIE) and (attacker.chosen_leader_index == LEADER_DESPOT) and cardboard_removed:
             # if the Eyrie with Despot are removing cardboard, score them an extra point if they haven't
             # received an extra point thus far for doing so
-            if (not self.battle.att_cardboard_removed) and is_attacker:
+            if (not self.battle.att_cardboard_removed) and attacker.id == PIND_EYRIE:
                 logger.debug("> Bonus point scored from Despot!")
                 points += 1
                 self.battle.att_cardboard_removed = True
-            elif (not self.battle.def_cardboard_removed) and (not is_attacker):
+            elif (not self.battle.def_cardboard_removed) and (not (attacker.id == PIND_EYRIE)):
                 logger.debug("> Bonus point scored from Despot!")
                 points += 1
                 self.battle.def_cardboard_removed = True
-        self.change_score(faction_index,points)
+        elif (attacker.id == damager_ind == PIND_VAGABOND) and (self.players[PIND_VAGABOND].is_hostile(damaged_ind)):
+            logger.debug("> Vagabond scores bonus points from Infamy!")
+            points *= 2
+        self.change_score(damager_ind,points)
 
     def deal_hits(self,faction_index:int,amount:int,clearing_index:int):
         """
@@ -1230,29 +1240,29 @@ class RootGame:
                     amount = 0
         return amount, warriors_removed, cardboard_removed
 
-    def resolve_battle_action(self,action):
+    def step_battle(self,action:int) -> list:
+        """
+        Given an action, performs the action for the current battle and
+        returns a list of the next required actions for the battle.
+
+        If the battle automatically finishes, self.current_player will
+        be set to the attacker and an empty list is returned.
+        """
+        if self.battle.stage is not None:
+            self.resolve_battle_action(action)
+        return self.advance_battle()
+
+    def resolve_battle_action(self,action:int):
         """
         Given an action number, performs the given action given the
         current information stored about any battles currently going on.
 
         Assumes that self.battle points to an existing Battle object.
         """
-        defender = self.players[self.battle.defender_id]
-        clearing = self.board.clearings[self.battle.clearing_id]
-        if self.battle.stage is None:
-            # the battle just started, assume a brand new Battle object was just created
-            logger.debug(f"\t--- BATTLE STARTED: {ID_TO_PLAYER[self.battle.attacker_id]} Attacks {ID_TO_PLAYER[self.battle.defender_id]} in clearing {self.battle.clearing_id}")
-            ans = defender.get_ambush_actions(clearing.suit)
-            if bool(ans):
-                # the defender chooses to ambush or not
-                self.battle.stage = Battle.STAGE_DEF_AMBUSH
-                self.current_player = (self.battle.defender_id)
-                return ans
-            # no ambush is possible, so we move straight to the dice roll
-            logger.debug(f"{ID_TO_PLAYER[self.battle.defender_id]} chose not to ambush")
-            self.battle.stage = Battle.STAGE_DICE_ROLL
+        defender:Player = self.players[self.battle.defender_id]
+        attacker:Player = self.players[self.battle.attacker_id]
+        clearing:Clearing = self.board.clearings[self.battle.clearing_id]
 
-        attacker = self.players[self.battle.attacker_id]
         if self.battle.stage == Battle.STAGE_DEF_ORDER:
             # action is what defender building/token to hit with the next hit
             if self.battle.defender_id == PIND_MARQUISE:
@@ -1266,6 +1276,7 @@ class RootGame:
                     self.turn_log.change_clr_building(self.battle.clearing_id,self.battle.defender_id,action - AID_ORDER_SAWMILL,-1)
                     defender.change_num_buildings(action - AID_ORDER_SAWMILL,1)
                     item = ID_TO_MBUILD[action - AID_ORDER_SAWMILL]
+            
             elif self.battle.defender_id == PIND_ALLIANCE:
                 if action == AID_ORDER_SYMPATHY:
                     clearing.remove_token(PIND_ALLIANCE,TIND_SYMPATHY)
@@ -1279,52 +1290,41 @@ class RootGame:
                     self.turn_log.change_clr_building(self.battle.clearing_id,self.battle.defender_id,action - AID_ORDER_BASE_MOUSE,-1)
                     self.base_removal_helper(defender,clearing.suit)
                     item = ID_TO_ABUILD[action - AID_ORDER_BASE_MOUSE]
+            
+            elif self.battle.defender_id == PIND_VAGABOND:
+                if action >= AID_DAMAGE_EXH and action <= AID_DAMAGE_EXH + 7:
+                    defender.damage_item(action - AID_DAMAGE_EXH,1)
+                else: # damage unexhausted item
+                    defender.damage_item(action - AID_DAMAGE_UNEXH,0)
+
+                if defender.has_any_damageable():
+                    self.battle.att_hits_to_deal -= 1
+                else:
+                    self.battle.att_hits_to_deal = 0
+                return
+
             logger.debug(f"{ID_TO_PLAYER[self.battle.defender_id]} chose to destroy {item}")
-            self.score_battle_points(self.battle.attacker_id,True,1)
+            self.score_battle_points(self.battle.attacker_id,self.battle.defender_id,1)
             # see if there is a choice anymore
             self.battle.att_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.defender_id, self.battle.att_hits_to_deal - 1, self.battle.clearing_id)
             if cardboard_removed:
-                self.score_battle_points(self.battle.attacker_id,True,cardboard_removed)
-            if warriors_killed and self.battle.defender_id == PIND_MARQUISE and defender.has_suit_in_hand(clearing.suit) and self.keep_is_up():
-                self.field_hospitals.append((warriors_killed,clearing.suit))
-
-            if self.battle.att_hits_to_deal > 0:
-                # defender still has a choice of what to remove
-                self.current_player = (self.battle.defender_id)
-                if self.battle.defender_id == PIND_MARQUISE:
-                    building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
-                    token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
-                elif self.battle.defender_id == PIND_ALLIANCE:
-                    building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
-                    token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
-                return building_choices + token_choices
+                self.score_battle_points(self.battle.attacker_id,self.battle.defender_id,cardboard_removed)
+            if warriors_killed:
+                if self.battle.defender_id == PIND_MARQUISE and defender.has_suit_in_hand(clearing.suit) and self.keep_is_up():
+                    self.field_hospitals.append((warriors_killed,clearing.suit))
+                # check for hostile update / infamy scoring
+                if self.battle.attacker_id == PIND_VAGABOND:
+                    if not attacker.is_hostile(defender.id):
+                        logger.debug(f"\t>> The {ID_TO_PLAYER[defender.id]} are now HOSTILE toward the Vagabond! <<")
+                        attacker.relationships[defender.id] = 0
+                        if warriors_killed > 1:
+                            logger.debug("> The Vagabond scores bonus points from infamy")
+                            self.change_score(PIND_VAGABOND,warriors_killed - 1)
+                    else:
+                        logger.debug("> The Vagabond scores bonus points from infamy")
+                        self.change_score(PIND_VAGABOND,warriors_killed)
             
-            # all hits needed have been dealt to defender
-            # it is now the attacker's turn to take hits
-            self.battle.def_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.attacker_id, self.battle.def_hits_to_deal, self.battle.clearing_id)
-            if cardboard_removed:
-                self.score_battle_points(self.battle.defender_id,False,cardboard_removed)
-            if warriors_killed and self.battle.attacker_id == PIND_MARQUISE and attacker.has_suit_in_hand(clearing.suit) and self.keep_is_up():
-                self.field_hospitals.append((warriors_killed,clearing.suit))
-            
-            self.current_player = (self.battle.attacker_id)
-            if self.battle.def_hits_to_deal > 0:
-                # attacker has a choice on what to remove
-                self.battle.stage = Battle.STAGE_ATT_ORDER
-                if self.battle.attacker_id == PIND_MARQUISE:
-                    building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
-                    token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
-                elif self.battle.attacker_id == PIND_ALLIANCE:
-                    building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
-                    token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
-                return building_choices + token_choices
-            else:
-                # the battle is over
-                logger.debug(f"--- BATTLE FINISHED")
-                self.battle.stage = Battle.STAGE_DONE
-                return []
-            
-        if self.battle.stage == Battle.STAGE_ATT_ORDER:
+        elif self.battle.stage == Battle.STAGE_ATT_ORDER:
             # action is what attacker building/token to hit with the next hit
             if self.battle.attacker_id == PIND_MARQUISE:
                 if action in {AID_ORDER_KEEP,AID_ORDER_WOOD}:
@@ -1337,6 +1337,7 @@ class RootGame:
                     self.turn_log.change_clr_building(self.battle.clearing_id,self.battle.defender_id,action - AID_ORDER_SAWMILL,-1)
                     attacker.change_num_buildings(action - AID_ORDER_SAWMILL,1)
                     item = ID_TO_MBUILD[action - AID_ORDER_SAWMILL]
+
             elif self.battle.attacker_id == PIND_ALLIANCE:
                 if action == AID_ORDER_SYMPATHY:
                     clearing.remove_token(PIND_ALLIANCE,TIND_SYMPATHY)
@@ -1350,38 +1351,39 @@ class RootGame:
                     self.turn_log.change_clr_building(self.battle.clearing_id,self.battle.defender_id,action - AID_ORDER_BASE_MOUSE,-1)
                     self.base_removal_helper(attacker,clearing.suit)
                     item = ID_TO_ABUILD[action - AID_ORDER_BASE_MOUSE]
+
+            elif self.battle.attacker_id == PIND_VAGABOND:
+                if action >= AID_DAMAGE_EXH and action <= AID_DAMAGE_EXH + 7:
+                    attacker.damage_item(action - AID_DAMAGE_EXH,1)
+                    self.battle.vagabond_hits_taken += 1
+                elif action >= AID_DAMAGE_UNEXH and action <= AID_DAMAGE_UNEXH + 7:
+                    attacker.damage_item(action - AID_DAMAGE_UNEXH,0)
+                    self.battle.vagabond_hits_taken += 1
+                else:
+                    # Vagabond makes their ally take a hit
+                    logger.debug(f"\t > The Vagabond have a warrior of their ally ({ID_TO_PLAYER[self.battle.vagabond_battle_ally]}) take a hit!")
+                    clearing.change_num_warriors(self.battle.vagabond_battle_ally,-1)
+                    self.players[self.battle.vagabond_battle_ally].change_num_warriors(1)
+                    self.battle.vagabond_ally_hits_taken += 1
+
+                if defender.has_any_damageable():
+                    self.battle.att_hits_to_deal -= 1
+                else:
+                    self.battle.att_hits_to_deal = 0
+                return
+
             logger.debug(f"{ID_TO_PLAYER[self.battle.attacker_id]} chose to destroy {item}")
-            self.score_battle_points(self.battle.defender_id,False,1)
-            # see if there is a choice anymore
-            self.battle.def_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.attacker_id, self.battle.def_hits_to_deal - 1, self.battle.clearing_id)
+            self.score_battle_points(self.battle.defender_id,self.battle.attacker_id,1)
+            # see if there is a choice in the attacker taking hits
+            self.battle.def_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.attacker_id, self.battle.def_hits_to_deal, self.battle.clearing_id)
             if cardboard_removed:
-                self.score_battle_points(self.battle.defender_id,False,cardboard_removed)
+                self.score_battle_points(self.battle.defender_id,self.battle.attacker_id,cardboard_removed)
+            # Vagabond does not score infamy here,
+            # assuming they cannot attack when it's not their turn
             if warriors_killed and self.battle.attacker_id == PIND_MARQUISE and attacker.has_suit_in_hand(clearing.suit) and self.keep_is_up():
                 self.field_hospitals.append((warriors_killed,clearing.suit))
-            
-            self.current_player = (self.battle.attacker_id)
-            if self.battle.def_hits_to_deal > 0:
-                # attacker still has a choice of what to remove
-                self.battle.stage = Battle.STAGE_ATT_ORDER
-                if self.battle.attacker_id == PIND_MARQUISE:
-                    building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
-                    token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
-                elif self.battle.attacker_id == PIND_ALLIANCE:
-                    building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
-                    token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
-                return building_choices + token_choices
-            
-            # All hits have been dealt, so we are in one of two possible situations:
-            # 1. The dice have not been rolled. If the -attacker- is choosing buildings to destroy,
-            #    then that means they attacked with 1 warrior and were ambushed, and now had to
-            #    choose one of their buildings to remove. They have no warriors and the battle is over.
-            # 2. The dice have been rolled and extra effects have been chosen. However, the attacker is
-            #    last to pick which things get hit in what order, so the battle must be over.
-            logger.debug(f"--- BATTLE FINISHED")
-            self.battle.stage = Battle.STAGE_DONE
-            return []
         
-        if self.battle.stage == Battle.STAGE_DEF_AMBUSH:
+        elif self.battle.stage == Battle.STAGE_DEF_AMBUSH:
             # action is the defender's choice to ambush or not
             if action == AID_AMBUSH_NONE:
                 logger.debug(f"{ID_TO_PLAYER[self.battle.defender_id]} chose not to ambush")
@@ -1401,83 +1403,27 @@ class RootGame:
                 # make the defender discard this card
                 self.discard_from_hand(self.battle.defender_id,self.battle.def_ambush_id)
 
-                # check if the attacker has Scouting Party (nullifies ambush cards used up)
-                if any((c.id == CID_SCOUTING_PARTY) for c in attacker.persistent_cards):
-                    logger.debug("The ambush is thwarted by a Scouting Party!")
-                    self.turn_log.change_plr_pers_used(self.battle.attacker_id, CID_TO_PERS_INDEX[CID_SCOUTING_PARTY],self.battle.defender_id)
-                    self.battle.stage = Battle.STAGE_DICE_ROLL
-                # otherwise, see if attacker can choose to counter ambush
-                else:
-                    ans = attacker.get_ambush_actions(clearing.suit)
-                    if bool(ans):
-                        self.battle.stage = Battle.STAGE_ATT_AMBUSH
-                        self.current_player = (self.battle.attacker_id)
-                        return ans
-                    # otherwise, the ambush triggers and 2 hits are dealt
-                    logger.debug(f"{ID_TO_PLAYER[self.battle.attacker_id]} chose not to counter-ambush")
-                    self.battle.def_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.attacker_id, 2, self.battle.clearing_id)
-                    if cardboard_removed:
-                        self.score_battle_points(self.battle.defender_id,False,cardboard_removed)
-                    if warriors_killed and self.battle.attacker_id == PIND_MARQUISE and attacker.has_suit_in_hand(clearing.suit) and self.keep_is_up():
-                        self.field_hospitals.append((warriors_killed,clearing.suit))
-
-                    # check if a choice must be made from hits
-                    if self.battle.def_hits_to_deal > 0:
-                        self.current_player = (self.battle.attacker_id)
-                        self.battle.stage = Battle.STAGE_ATT_ORDER
-                        if self.battle.attacker_id == PIND_MARQUISE:
-                            building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
-                            token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
-                        elif self.battle.attacker_id == PIND_ALLIANCE:
-                            building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
-                            token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
-                        return building_choices + token_choices
-                    # if the hits are all dealt, we check if a battle can still occur
-                    elif clearing.get_num_warriors(self.battle.attacker_id) > 0:
-                        logger.debug("Continuing to the dice roll...")
-                        self.battle.stage = Battle.STAGE_DICE_ROLL
-                    # otherwise, the ambush wiped out all attackers
-                    else:
-                        logger.debug("Ouch, should have brought more backup...")
-                        logger.debug(f"--- BATTLE FINISHED")
-                        self.battle.stage = Battle.STAGE_DONE
-                        self.current_player = (self.battle.attacker_id)
-                        return []
-
-        if self.battle.stage == Battle.STAGE_ATT_AMBUSH:
+        elif self.battle.stage == Battle.STAGE_ATT_AMBUSH:
             # action is the attacker's choice to counter ambush or not
             if action == AID_AMBUSH_NONE:
                 logger.debug(f"{ID_TO_PLAYER[self.battle.attacker_id]} chose not to counter-ambush")
                 # the ambush triggers and 2 hits are dealt
+                self.battle.stage = Battle.STAGE_ATT_ORDER
+
+                if self.battle.attacker_id == PIND_VAGABOND:
+                    if attacker.has_any_damageable():
+                        self.battle.def_hits_to_deal = 2
+                    else:
+                        self.battle.def_hits_to_deal = 0
+                    return
+                
                 # deal_hits returns the number of remaining hits there are; if >0, it means a choice is possible for the one getting hit
                 self.battle.def_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.attacker_id, 2, self.battle.clearing_id)
                 if cardboard_removed:
-                    self.score_battle_points(self.battle.defender_id,False,cardboard_removed)
+                    self.score_battle_points(self.battle.defender_id,self.battle.attacker_id,cardboard_removed)
+                # no VB infamy scoring not on their turn
                 if warriors_killed and self.battle.attacker_id == PIND_MARQUISE and attacker.has_suit_in_hand(clearing.suit) and self.keep_is_up():
                     self.field_hospitals.append((warriors_killed,clearing.suit))
-
-                # check if a choice must be made from hits
-                if self.battle.def_hits_to_deal > 0:
-                    self.current_player = (self.battle.attacker_id)
-                    self.battle.stage = Battle.STAGE_ATT_ORDER
-                    if self.battle.attacker_id == PIND_MARQUISE:
-                        building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
-                        token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
-                    elif self.battle.attacker_id == PIND_ALLIANCE:
-                        building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
-                        token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
-                    return building_choices + token_choices
-                # if the hits are all dealt, we check if a battle can still occur
-                elif clearing.get_num_warriors(self.battle.attacker_id) > 0:
-                    logger.debug("Continuing to the dice roll...")
-                    self.battle.stage = Battle.STAGE_DICE_ROLL
-                # otherwise, the ambush wiped out all attackers
-                else:
-                    logger.debug("Ouch, should have brought more backup...")
-                    logger.debug(f"--- BATTLE FINISHED")
-                    self.battle.stage = Battle.STAGE_DONE
-                    self.current_player = (self.battle.attacker_id)
-                    return []
             else:
                 # save which ambush card is played
                 logger.debug(f"{ID_TO_PLAYER[self.battle.attacker_id]} chooses to COUNTER-AMBUSH!")
@@ -1495,85 +1441,12 @@ class RootGame:
                 logger.debug("Continuing to the dice roll...")
                 self.battle.stage = Battle.STAGE_DICE_ROLL
 
-        if self.battle.stage == Battle.STAGE_DICE_ROLL:
-            # the dice must be rolled before continuing
-            roll = [random.randint(0,3) for i in range(2)]
-            logger.debug(f"--- DICE ROLL: {roll}")
-            if self.battle.defender_id == PIND_ALLIANCE: # Guerrilla Tactics
-                self.battle.att_rolled_hits = min(clearing.get_num_warriors(self.battle.attacker_id), min(roll))
-                self.battle.def_rolled_hits = min(clearing.get_num_warriors(self.battle.defender_id), max(roll))
-            else:
-                self.battle.att_rolled_hits = min(clearing.get_num_warriors(self.battle.attacker_id), max(roll))
-                self.battle.def_rolled_hits = min(clearing.get_num_warriors(self.battle.defender_id), min(roll))
-            # defenseless
-            if clearing.get_num_warriors(self.battle.defender_id) == 0:
-                logger.debug(f"{ID_TO_PLAYER[self.battle.defender_id]} is defenseless (+1 hit taken)")
-                self.battle.att_extra_hits += 1
-            # Eyrie Commander Leader
-            if (self.battle.attacker_id == PIND_EYRIE) and (attacker.chosen_leader_index == LEADER_COMMANDER):
-                logger.debug(f"{ID_TO_PLAYER[self.battle.attacker_id]} is led by the Commander (+1 hit dealt)")
-                self.battle.att_extra_hits += 1
-
-            # check if the attacker can choose extra effects
-            ans = attacker.get_attacker_card_actions()
-            if bool(ans):
-                self.current_player = (self.battle.attacker_id)
-                self.battle.stage = Battle.STAGE_ATT_EFFECTS
-                return ans
-            # check if the defender can choose extra effects
-            ans = defender.get_defender_card_actions()
-            if bool(ans):
-                self.current_player = (self.battle.defender_id)
-                self.battle.stage = Battle.STAGE_DEF_EFFECTS
-                return ans
-            
-            # no extra effects can be chosen, so deal the hits next
-            # next, the defender takes hits first
-            logger.debug("--- Dealing hits to defender...")
-            self.battle.def_hits_to_deal = self.battle.def_rolled_hits
-            self.battle.att_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.defender_id,self.battle.att_extra_hits+self.battle.att_rolled_hits,self.battle.clearing_id)
-            if cardboard_removed:
-                self.score_battle_points(self.battle.attacker_id,True,cardboard_removed)
-            if warriors_killed and self.battle.defender_id == PIND_MARQUISE and defender.has_suit_in_hand(clearing.suit) and self.keep_is_up():
-                self.field_hospitals.append((warriors_killed,clearing.suit))
-
-            if self.battle.att_hits_to_deal > 0:
-                # defender has a choice of what to remove
-                self.current_player = (self.battle.defender_id)
-                self.battle.stage = Battle.STAGE_DEF_ORDER
-                if self.battle.defender_id == PIND_MARQUISE:
-                    building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
-                    token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
-                elif self.battle.defender_id == PIND_ALLIANCE:
-                    building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
-                    token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
-                return building_choices + token_choices
-            # lastly, attacker takes hits
-            logger.debug("--- Dealing hits to attacker...")
-            self.battle.def_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.attacker_id,self.battle.def_hits_to_deal,self.battle.clearing_id)
-            if cardboard_removed:
-                self.score_battle_points(self.battle.defender_id,False,cardboard_removed)
-            if warriors_killed and self.battle.attacker_id == PIND_MARQUISE and attacker.has_suit_in_hand(clearing.suit) and self.keep_is_up():
-                self.field_hospitals.append((warriors_killed,clearing.suit))
-
-            if self.battle.def_hits_to_deal > 0:
-                # attacker has a choice of what to remove
-                self.current_player = (self.battle.attacker_id)
-                self.battle.stage = Battle.STAGE_ATT_ORDER
-                if self.battle.attacker_id == PIND_MARQUISE:
-                    building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
-                    token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
-                elif self.battle.attacker_id == PIND_ALLIANCE:
-                    building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
-                    token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
-                return building_choices + token_choices
-            # battle is over
-            logger.debug(f"--- BATTLE FINISHED")
-            self.battle.stage = Battle.STAGE_DONE
-            self.current_player = (self.battle.attacker_id)
-            return []
+        # this stage will never be active while we are
+        # waiting for an action from the current player
+        # if self.battle.stage == Battle.STAGE_DICE_ROLL:
+            # pass
         
-        if self.battle.stage == Battle.STAGE_ATT_EFFECTS:
+        elif self.battle.stage == Battle.STAGE_ATT_EFFECTS:
             # the attacker has chosen what extra effects to use
             if action in {AID_EFFECTS_ARMORERS,AID_EFFECTS_ARM_BT}:
                 # Armorers is used up
@@ -1587,59 +1460,8 @@ class RootGame:
                 self.battle.att_extra_hits += 1
                 self.turn_log.change_plr_pers_used(self.battle.attacker_id, CID_TO_PERS_INDEX[CID_BRUTAL_TACTICS],self.battle.defender_id)
                 self.change_score(self.battle.defender_id,1)
-            # check if the defender can choose extra effects
-            ans = defender.get_defender_card_actions()
-            if bool(ans):
-                self.current_player = (self.battle.defender_id)
-                self.battle.stage = Battle.STAGE_DEF_EFFECTS
-                return ans
-            
-            # next, the defender takes hits first
-            logger.debug("--- Dealing hits to defender...")
-            self.battle.def_hits_to_deal = self.battle.def_rolled_hits
-            self.battle.att_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.defender_id,self.battle.att_extra_hits+self.battle.att_rolled_hits,self.battle.clearing_id)
-            if cardboard_removed:
-                self.score_battle_points(self.battle.attacker_id,True,cardboard_removed)
-            if warriors_killed and self.battle.defender_id == PIND_MARQUISE and defender.has_suit_in_hand(clearing.suit) and self.keep_is_up():
-                self.field_hospitals.append((warriors_killed,clearing.suit))
-
-            if self.battle.att_hits_to_deal > 0:
-                # defender has a choice of what to remove
-                self.current_player = (self.battle.defender_id)
-                self.battle.stage = Battle.STAGE_DEF_ORDER
-                if self.battle.defender_id == PIND_MARQUISE:
-                    building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
-                    token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
-                elif self.battle.defender_id == PIND_ALLIANCE:
-                    building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
-                    token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
-                return building_choices + token_choices
-            # lastly, attacker takes hits
-            logger.debug("--- Dealing hits to attacker...")
-            self.battle.def_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.attacker_id,self.battle.def_hits_to_deal,self.battle.clearing_id)
-            if cardboard_removed:
-                self.score_battle_points(self.battle.defender_id,False,cardboard_removed)
-            if warriors_killed and self.battle.attacker_id == PIND_MARQUISE and attacker.has_suit_in_hand(clearing.suit) and self.keep_is_up():
-                self.field_hospitals.append((warriors_killed,clearing.suit))
-
-            if self.battle.def_hits_to_deal > 0:
-                # attacker has a choice of what to remove
-                self.current_player = (self.battle.attacker_id)
-                self.battle.stage = Battle.STAGE_ATT_ORDER
-                if self.battle.attacker_id == PIND_MARQUISE:
-                    building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
-                    token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
-                elif self.battle.attacker_id == PIND_ALLIANCE:
-                    building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
-                    token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
-                return building_choices + token_choices
-            # battle is over
-            logger.debug(f"--- BATTLE FINISHED")
-            self.battle.stage = Battle.STAGE_DONE
-            self.current_player = (self.battle.attacker_id)
-            return []
         
-        if self.battle.stage == Battle.STAGE_DEF_EFFECTS:
+        elif self.battle.stage == Battle.STAGE_DEF_EFFECTS:
             # the defender has chosen what extra effects to use
             if action in {AID_EFFECTS_ARMORERS,AID_EFFECTS_ARMSAP}:
                 # Armorers is used up
@@ -1653,50 +1475,276 @@ class RootGame:
                 self.battle.def_extra_hits += 1
                 self.turn_log.change_plr_pers_used(self.battle.defender_id, CID_TO_PERS_INDEX[CID_SAPPERS],self.battle.attacker_id)
                 self.discard_from_persistent(self.battle.defender_id,CID_SAPPERS)
-            # next, the defender takes hits first
-            logger.debug("--- Dealing hits to defender...")
-            self.battle.def_hits_to_deal = self.battle.def_rolled_hits + self.battle.def_extra_hits
-            self.battle.att_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.defender_id,self.battle.att_extra_hits+self.battle.att_rolled_hits,self.battle.clearing_id)
-            if cardboard_removed:
-                self.score_battle_points(self.battle.attacker_id,True,cardboard_removed)
-            if warriors_killed and self.battle.defender_id == PIND_MARQUISE and defender.has_suit_in_hand(clearing.suit) and self.keep_is_up():
-                self.field_hospitals.append((warriors_killed,clearing.suit))
+        
+        elif self.battle.stage == Battle.STAGE_VB_CHOOSE_ALLY:
+            # the VB chose whether to battle with an ally or not
+            if action == AID_BATTLE_WITH_ALLY:
+                logger.debug("\t> The Vagabond chose not to attack with an ally")
+            else:
+                self.battle.vagabond_battle_ally = action - AID_BATTLE_WITH_ALLY - 1
+                logger.debug(f"\t> The Vagabond chose to attack with their ally, the {self.battle.vagabond_battle_ally}!")
 
-            if self.battle.att_hits_to_deal > 0:
-                # defender has a choice of what to remove
-                self.current_player = (self.battle.defender_id)
+    def advance_battle(self) -> list:
+        """
+        Given the current Battle object / state, advances the current
+        battle to the next required choice. Sets the current player
+        accordingly and returns a list of the next actions to take.
+
+        Assumes that the previous battle action (if any) was just resolved.
+        """
+        defender:Player = self.players[self.battle.defender_id]
+        clearing:Clearing = self.board.clearings[self.battle.clearing_id]
+        attacker:Player = self.players[self.battle.attacker_id]
+
+        if self.battle.stage is None:
+            # the battle just started, assume a brand new Battle object was just created
+            logger.debug(f"\t--- BATTLE STARTED: {ID_TO_PLAYER[self.battle.attacker_id]} Attacks {ID_TO_PLAYER[self.battle.defender_id]} in clearing {self.battle.clearing_id}")
+
+            self.battle.stage = Battle.STAGE_VB_CHOOSE_ALLY
+            # If the attacker is a VB, they must
+            # declare if they are attacking with an ally
+            if self.battle.attacker_id == PIND_VAGABOND:
+                ans = []
+                # check for possible allies to battle with
+                for pind in range(N_PLAYERS - 1):
+                    if (attacker.is_an_ally(pind) and
+                            pind != self.battle.defender_id and
+                            clearing.get_num_warriors(pind) > 0):
+                        ans.append(AID_BATTLE_WITH_ALLY + 1 + pind)
+                if len(ans) > 0:
+                    # VB has choice of choosing ally
+                    self.current_player = PIND_VAGABOND
+                    return [AID_BATTLE_WITH_ALLY] + ans
+            # if not, we go into the loop at STAGE_VB_CHOOSE_ALLY regardless
+        
+        while self.battle.stage != Battle.STAGE_DONE:
+
+            if self.battle.stage == Battle.STAGE_VB_CHOOSE_ALLY:
+                # the VB just chose an ally to fight with (or not)
+                # check for ambush by defender
+                ans = defender.get_ambush_actions(clearing.suit)
+                if bool(ans):
+                    # the defender chooses to ambush or not
+                    self.battle.stage = Battle.STAGE_DEF_AMBUSH
+                    self.current_player = (self.battle.defender_id)
+                    return ans
+                # no ambush is possible, so we move straight to the dice roll
+                logger.debug(f"{ID_TO_PLAYER[self.battle.defender_id]} chose not to ambush")
+                self.battle.stage = Battle.STAGE_DICE_ROLL
+
+            if self.battle.stage == Battle.STAGE_DICE_ROLL:
+                # the dice must be rolled before continuing
+                roll = [random.randint(0,3) for i in range(2)]
+                logger.debug(f"--- DICE ROLL: {roll}")
+
+                if self.battle.defender_id == PIND_VAGABOND:
+                    def_power = defender.get_battle_power()
+                else:
+                    def_power = clearing.get_num_warriors(self.battle.defender_id)
+                
+                if self.battle.attacker_id == PIND_VAGABOND:
+                    att_power = attacker.get_battle_power()
+                    if self.battle.vagabond_battle_ally is not None:
+                        extras = clearing.get_num_warriors(self.battle.vagabond_battle_ally)
+                        att_power += extras
+                        logger.debug(f"\t> The Vagabond is supported by {extras} warriors of the {ID_TO_PLAYER[self.battle.vagabond_battle_ally]}!")
+                else:
+                    att_power = clearing.get_num_warriors(self.battle.attacker_id)
+                
+                # Guerrilla Tactics
+                if self.battle.defender_id == PIND_ALLIANCE:
+                    self.battle.att_rolled_hits = min(att_power, min(roll))
+                    self.battle.def_rolled_hits = min(def_power, max(roll))
+                else:
+                    self.battle.att_rolled_hits = min(att_power, max(roll))
+                    self.battle.def_rolled_hits = min(def_power, min(roll))
+                # defenseless
+                if def_power == 0:
+                    logger.debug(f"{ID_TO_PLAYER[self.battle.defender_id]} is defenseless (+1 hit taken)")
+                    self.battle.att_extra_hits += 1
+                # Eyrie Commander Leader
+                if (self.battle.attacker_id == PIND_EYRIE) and (attacker.chosen_leader_index == LEADER_COMMANDER):
+                    logger.debug(f"{ID_TO_PLAYER[self.battle.attacker_id]} is led by the Commander (+1 hit dealt)")
+                    self.battle.att_extra_hits += 1
+
+                # check if the attacker can choose extra effects
+                self.battle.stage = Battle.STAGE_ATT_EFFECTS
+
+                ans = attacker.get_attacker_card_actions()
+                if bool(ans):
+                    self.current_player = (self.battle.attacker_id)
+                    return ans
+                # the attacker defaults to choosing no effect
+            
+            if self.battle.stage == Battle.STAGE_DEF_AMBUSH:
+                # the defender just played an ambush card
+                # check if the attacker has Scouting Party (nullifies ambush cards used up)
+                if any((c.id == CID_SCOUTING_PARTY) for c in attacker.persistent_cards):
+                    logger.debug("The ambush is thwarted by a Scouting Party!")
+                    self.turn_log.change_plr_pers_used(self.battle.attacker_id, CID_TO_PERS_INDEX[CID_SCOUTING_PARTY],self.battle.defender_id)
+                    self.battle.stage = Battle.STAGE_DICE_ROLL
+                # otherwise, see if attacker can choose to counter ambush
+                else:
+                    ans = attacker.get_ambush_actions(clearing.suit)
+                    if bool(ans):
+                        self.battle.stage = Battle.STAGE_ATT_AMBUSH
+                        self.current_player = (self.battle.attacker_id)
+                        return ans
+                    
+                    # otherwise, the ambush triggers and 2 hits are dealt
+                    logger.debug(f"{ID_TO_PLAYER[self.battle.attacker_id]} chose not to counter-ambush")
+                    self.battle.stage = Battle.STAGE_ATT_ORDER
+
+                    if self.battle.attacker_id == PIND_VAGABOND:
+                        if attacker.has_any_damageable():
+                            self.battle.def_hits_to_deal = 2
+                        else:
+                            self.battle.def_hits_to_deal = 0
+                    else:
+                        self.battle.def_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.attacker_id, 2, self.battle.clearing_id)
+                        if cardboard_removed:
+                            self.score_battle_points(self.battle.defender_id,self.battle.attacker_id,cardboard_removed)
+                        if warriors_killed and self.battle.attacker_id == PIND_MARQUISE and attacker.has_suit_in_hand(clearing.suit) and self.keep_is_up():
+                            self.field_hospitals.append((warriors_killed,clearing.suit))
+            
+            # Checking for STAGE_ATT_AMBUSH is unnecessary because we will move onto another
+            # battle stage after any choice by the attacker:
+            # attacker counter-ambushes: goto dice roll
+            # attacker does not counter-ambush: goto attacker take hits (STAGE_ATT_ORDER)
+            # These are handled in resolve_battle_action
+            # if self.battle.stage == Battle.STAGE_ATT_AMBUSH:
+            #     pass
+
+            if self.battle.stage == Battle.STAGE_ATT_EFFECTS:
+                # the attacker just chose their extra effects
+                # check if the defender can choose extra effects
+                self.battle.stage = Battle.STAGE_DEF_EFFECTS
+
+                ans = defender.get_defender_card_actions()
+                if bool(ans):
+                    self.current_player = (self.battle.defender_id)
+                    return ans
+                # the defender defaults to choosing no effect
+            
+            if self.battle.stage == Battle.STAGE_DEF_EFFECTS:
+                # the defender has chosen what extra effects to use
+                # next, the defender takes hits first
+                logger.debug("--- Dealing hits to defender...")
+                self.battle.def_hits_to_deal = self.battle.def_rolled_hits + self.battle.def_extra_hits
+
+                if self.battle.defender_id == PIND_VAGABOND:
+                    if defender.has_any_damageable():
+                        self.battle.att_hits_to_deal = self.battle.att_extra_hits + self.battle.att_rolled_hits
+                    else:
+                        self.battle.att_hits_to_deal = 0
+                else:
+                    self.battle.att_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.defender_id,self.battle.att_extra_hits+self.battle.att_rolled_hits,self.battle.clearing_id)
+                    if cardboard_removed:
+                        self.score_battle_points(self.battle.attacker_id,self.battle.defender_id,cardboard_removed)
+                    if warriors_killed:
+                        if self.battle.defender_id == PIND_MARQUISE and defender.has_suit_in_hand(clearing.suit) and self.keep_is_up():
+                            self.field_hospitals.append((warriors_killed,clearing.suit))
+                        # check for hostile update / infamy scoring
+                        if self.battle.attacker_id == PIND_VAGABOND:
+                            if not attacker.is_hostile(defender.id):
+                                logger.debug(f"\t>> The {ID_TO_PLAYER[defender.id]} are now HOSTILE toward the Vagabond! <<")
+                                attacker.relationships[defender.id] = 0
+                                if warriors_killed > 1:
+                                    logger.debug("> The Vagabond scores bonus points from infamy")
+                                    self.change_score(PIND_VAGABOND,warriors_killed - 1)
+                            else:
+                                logger.debug("> The Vagabond scores bonus points from infamy")
+                                self.change_score(PIND_VAGABOND,warriors_killed)
+                
                 self.battle.stage = Battle.STAGE_DEF_ORDER
-                if self.battle.defender_id == PIND_MARQUISE:
-                    building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
-                    token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
-                elif self.battle.defender_id == PIND_ALLIANCE:
-                    building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
-                    token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
-                return building_choices + token_choices
-            # lastly, attacker takes hits
-            logger.debug("--- Dealing hits to attacker...")
-            self.battle.def_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.attacker_id,self.battle.def_hits_to_deal,self.battle.clearing_id)
-            if cardboard_removed:
-                self.score_battle_points(self.battle.defender_id,False,cardboard_removed)
-            if warriors_killed and self.battle.attacker_id == PIND_MARQUISE and attacker.has_suit_in_hand(clearing.suit) and self.keep_is_up():
-                self.field_hospitals.append((warriors_killed,clearing.suit))
 
-            if self.battle.def_hits_to_deal > 0:
-                # attacker has a choice of what to remove
-                self.current_player = (self.battle.attacker_id)
+            if self.battle.stage == Battle.STAGE_DEF_ORDER:
+                # we just tried to make the DEFENDER take some hits
+                # all automatic hits have been dealt already
+                if self.battle.att_hits_to_deal > 0:
+                    # defender still has a choice of what to remove
+                    self.current_player = (self.battle.defender_id)
+                    if self.battle.defender_id == PIND_MARQUISE:
+                        building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
+                        token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
+                    elif self.battle.defender_id == PIND_ALLIANCE:
+                        building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.defender_id,bid) > 0)]
+                        token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.defender_id,tid) > 0)]
+                    
+                    elif self.battle.defender_id == PIND_VAGABOND:
+                        # no allies when VB is defending
+                        return defender.get_damage_actions()
+                    
+                    return building_choices + token_choices
+                # all hits needed have been dealt to defender
+                # it is now the attacker's turn to take hits
+                logger.debug("--- Dealing hits to attacker...")
+                if self.battle.attacker_id == PIND_VAGABOND:
+                    if not attacker.has_any_damageable():
+                        self.battle.def_hits_to_deal = 0
+                else:
+                    self.battle.def_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.attacker_id,self.battle.def_hits_to_deal,self.battle.clearing_id)
+                    if cardboard_removed:
+                        self.score_battle_points(self.battle.defender_id,self.battle.attacker_id,cardboard_removed)
+                    if warriors_killed and self.battle.attacker_id == PIND_MARQUISE and attacker.has_suit_in_hand(clearing.suit) and self.keep_is_up():
+                        self.field_hospitals.append((warriors_killed,clearing.suit))
+                
                 self.battle.stage = Battle.STAGE_ATT_ORDER
-                if self.battle.attacker_id == PIND_MARQUISE:
-                    building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
-                    token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
-                elif self.battle.attacker_id == PIND_ALLIANCE:
-                    building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
-                    token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
-                return building_choices + token_choices
-            # battle is over
-            logger.debug(f"--- BATTLE FINISHED")
-            self.battle.stage = Battle.STAGE_DONE
-            self.current_player = (self.battle.attacker_id)
-            return []
+                
+            if self.battle.stage == Battle.STAGE_ATT_ORDER:
+                # we just tried to make the ATTACKER take some hits
+                # all automatic hits have been dealt already
+                if self.battle.def_hits_to_deal > 0:
+                    # attacker has a choice on what to remove
+                    self.current_player = (self.battle.attacker_id)
+                    if self.battle.attacker_id == PIND_MARQUISE:
+                        building_choices = [bid+AID_ORDER_SAWMILL for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
+                        token_choices = [tid+AID_ORDER_KEEP for tid in range(2) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
+                    elif self.battle.attacker_id == PIND_ALLIANCE:
+                        building_choices = [bid+AID_ORDER_BASE_MOUSE for bid in range(3) if (clearing.get_num_buildings(self.battle.attacker_id,bid) > 0)]
+                        token_choices = [AID_ORDER_SYMPATHY for tid in range(1) if (clearing.get_num_tokens(self.battle.attacker_id,tid) > 0)]
+                    
+                    elif self.battle.attacker_id == PIND_VAGABOND:
+                        ans = attacker.get_damage_actions()
+                        if (self.battle.vagabond_battle_ally is not None and
+                                clearing.get_num_warriors(self.battle.vagabond_battle_ally) > 0):
+                            ans.append(AID_BATTLE_ALLY_HITS + self.battle.vagabond_battle_ally)
+                        return ans
+                    
+                    return building_choices + token_choices
+                
+                if self.battle.att_rolled_hits is None:
+                    # we just dealt hits from an ambush, the
+                    # dice haven't been rolled yet
+                    if (clearing.get_num_warriors(self.battle.attacker_id) > 0 or 
+                            (self.battle.attacker_id == PIND_VAGABOND and attacker.get_battle_power() > 0)):
+                        logger.debug("Continuing to the dice roll...")
+                        self.battle.stage = Battle.STAGE_DICE_ROLL
+                    else:
+                        logger.debug("Ouch, should have been more prepared...")
+                        self.battle.stage = Battle.STAGE_DONE
+                # the battle is over
+                else:
+                    self.battle.stage = Battle.STAGE_DONE
+
+        # the battle is over
+        logger.debug(f"--- BATTLE FINISHED ---")
+
+        if self.battle.vagabond_battle_ally is not None:
+            # check if the ally becomes hostile from unfair hit distribution
+            if self.battle.vagabond_ally_hits_taken > self.battle.vagabond_hits_taken:
+                logger.debug(f"\t>> The Vagabond let the {ID_TO_PLAYER[self.battle.vagabond_battle_ally]} take too many hits! They have become hostile!")
+                attacker.relationships[self.battle.vagabond_battle_ally] = 0
+            else:
+                logger.debug(f"\t> The Vagabond and the {ID_TO_PLAYER[self.battle.vagabond_battle_ally]} remain allies!")
+            # field hospitals
+            if self.battle.vagabond_battle_ally == PIND_MARQUISE and self.battle.vagabond_ally_hits_taken > 0:
+                self.field_hospitals.append((self.battle.vagabond_ally_hits_taken, clearing.suit))
+
+        self.battle = Battle(-1,-1,-1)
+        self.battle.stage = Battle.STAGE_DONE
+        self.current_player = self.battle.attacker_id
+        return []
 
 
     # Activating Card Effects
@@ -2010,7 +2058,8 @@ class RootGame:
                 for i in range(3):
                     if remaining[i] > 0:
                         valid_suits.add(i)
-            for enemy_id,battle_aid in [(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE),(PIND_VAGABOND,AID_BATTLE_VAGABOND)]:
+            for enemy_id,battle_aid in [(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE)]:
+            # for enemy_id,battle_aid in [(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE),(PIND_VAGABOND,AID_BATTLE_VAGABOND)]:
                 possible_battle_clearings = [i for i,x in enumerate(self.board.get_possible_battles(PIND_EYRIE,enemy_id)) if x]
                 for i in possible_battle_clearings:
                     if self.board.clearings[i].suit in valid_suits:
@@ -2392,11 +2441,11 @@ class RootGame:
         has_exhaustable = False
 
         # Battle (must have sword to use/be in a clearing)
-        if vplayer.has_exhaustable(ITEM_SWORD):
-            has_exhaustable = True
-            for enemy_id,battle_aid in [(PIND_EYRIE,AID_BATTLE_EYRIE),(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE)]:
-                if (not self.vagabond_coalition_partner == enemy_id) and clearing.can_start_battle(PIND_VAGABOND,enemy_id):
-                    ans.append(loc + battle_aid)
+        # if vplayer.has_exhaustable(ITEM_SWORD):
+        #     has_exhaustable = True
+        #     for enemy_id,battle_aid in [(PIND_EYRIE,AID_BATTLE_EYRIE),(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE)]:
+        #         if (not self.vagabond_coalition_partner == enemy_id) and clearing.can_start_battle(PIND_VAGABOND,enemy_id):
+        #             ans.append(loc + battle_aid)
 
         # Explore / Special Action
         if vplayer.has_exhaustable(ITEM_TORCH):
@@ -2466,7 +2515,7 @@ class RootGame:
         if (has_exhaustable and
                 vplayer.has_suit_in_hand(clearing.suit)):
             aid_targets = [player_i for player_i in range(3) if clearing.has_presence(player_i)]
-            aid_cards = [card.id for card in vplayer.hand if (card.suit == SUIT_BIRD or card.suit == clearing.suit)]
+            aid_cards = {card.id for card in vplayer.hand if (card.suit == SUIT_BIRD or card.suit == clearing.suit)}
             ans += [(AID_START_AIDING + 42*pi + ci) for pi in aid_targets for ci in aid_cards]
         
         return ans
@@ -2580,7 +2629,7 @@ class RootGame:
                 # can they use BBB?
                 if CID_BBB in {c.id for c in current_player.persistent_cards}:
                     logger.debug("Checking for use of BBB...")
-                    return [AID_GENERIC_SKIP,AID_CARD_BBB+PIND_EYRIE,AID_CARD_BBB+PIND_ALLIANCE]
+                    return [AID_GENERIC_SKIP,AID_CARD_BBB+PIND_EYRIE,AID_CARD_BBB+PIND_ALLIANCE,AID_CARD_BBB+PIND_VAGABOND]
                 self.phase_steps = 1
             if self.phase_steps == 1:
                 if not self.wood_placement_started:
@@ -2602,7 +2651,7 @@ class RootGame:
                 unused_pers = {c.id for c in current_player.persistent_cards} - self.persistent_used_this_turn
                 ans = []
                 if CID_STAND_AND_DELIVER in unused_pers:
-                    for pid in (PIND_EYRIE,PIND_ALLIANCE):
+                    for pid in (PIND_EYRIE,PIND_ALLIANCE,PIND_VAGABOND):
                         if len(self.players[pid].hand) > 0:
                             ans.append(AID_CARD_STAND_DELIVER + pid)
                 if CID_ROYAL_CLAIM in unused_pers:
@@ -2643,7 +2692,7 @@ class RootGame:
                     # also allow use of daylight cards
                     unused_pers = {c.id for c in current_player.persistent_cards} - self.persistent_used_this_turn
                     if CID_CODEBREAKERS in unused_pers:
-                        for pid in (PIND_EYRIE,PIND_ALLIANCE):
+                        for pid in (PIND_EYRIE,PIND_ALLIANCE,PIND_VAGABOND):
                                 ans.append(AID_CARD_CODEBREAKERS + pid)
                     if CID_TAX_COLLECTOR in unused_pers:
                         foo = self.board.get_num_warriors(PIND_MARQUISE)
@@ -2663,7 +2712,7 @@ class RootGame:
                     # check for persistent cards to use
                     unused_pers = {c.id for c in current_player.persistent_cards} - self.persistent_used_this_turn
                     if CID_CODEBREAKERS in unused_pers:
-                        for pid in (PIND_EYRIE,PIND_ALLIANCE):
+                        for pid in (PIND_EYRIE,PIND_ALLIANCE,PIND_VAGABOND):
                             ans.append(AID_CARD_CODEBREAKERS + pid)
                     if CID_TAX_COLLECTOR in unused_pers:
                         foo = self.board.get_num_warriors(PIND_MARQUISE)
@@ -2757,6 +2806,10 @@ class RootGame:
                 self.phase = self.PHASE_BIRDSONG_ALLIANCE
                 self.outside_turn_this_action = PIND_ALLIANCE
                 return self.advance_alliance(self.players[PIND_ALLIANCE])
+            elif self.current_player == PIND_VAGABOND:
+                self.phase = self.PHASE_BIRDSONG_VAGABOND
+                self.outside_turn_this_action = PIND_VAGABOND
+                return self.advance_vagabond(self.players[PIND_VAGABOND])
     
     def advance_eyrie(self,current_player:Eyrie):
         "Advances the game assuming we are in the middle of the Eyrie's turn."
@@ -2772,7 +2825,7 @@ class RootGame:
                 # can they use BBB?
                 if CID_BBB in {c.id for c in current_player.persistent_cards}:
                     logger.debug("Checking for use of BBB...")
-                    return [AID_GENERIC_SKIP,AID_CARD_BBB+PIND_MARQUISE,AID_CARD_BBB+PIND_ALLIANCE]
+                    return [AID_GENERIC_SKIP,AID_CARD_BBB+PIND_MARQUISE,AID_CARD_BBB+PIND_ALLIANCE,AID_CARD_BBB+PIND_VAGABOND]
                 self.phase_steps = 1
             if self.phase_steps == 1: # drawing emergency card
                 if len(current_player.hand) == 0:
@@ -2783,7 +2836,7 @@ class RootGame:
                 unused_pers = {c.id for c in current_player.persistent_cards} - self.persistent_used_this_turn
                 ans = []
                 if CID_STAND_AND_DELIVER in unused_pers:
-                    for pid in (PIND_MARQUISE,PIND_ALLIANCE):
+                    for pid in (PIND_MARQUISE,PIND_ALLIANCE,PIND_VAGABOND):
                         if len(self.players[pid].hand) > 0:
                             ans.append(AID_CARD_STAND_DELIVER + pid)
                 if CID_ROYAL_CLAIM in unused_pers:
@@ -2806,7 +2859,7 @@ class RootGame:
                     logger.debug("Activating 'A New Roost'...")
                     # find the clearing(s) with the fewest warriors where a building can be placed
                     ans = []
-                    total_warriors = sorted([(sum(self.board.get_num_warriors(fac_i)[i] for fac_i in range(N_PLAYERS)), i) for i in range(12)])
+                    total_warriors = sorted([(sum(self.board.get_num_warriors(fac_i)[i] for fac_i in range(N_PLAYERS - 1)), i) for i in range(12)])
                     empty_slot_counts = self.board.get_empty_building_slot_counts()
                     last_seen = total_warriors[0][0]
                     for count,i in total_warriors:
@@ -2837,7 +2890,7 @@ class RootGame:
                 unused_pers = {c.id for c in current_player.persistent_cards} - self.persistent_used_this_turn
                 ans = []
                 if CID_STAND_AND_DELIVER in unused_pers:
-                    for pid in (PIND_MARQUISE,PIND_ALLIANCE):
+                    for pid in (PIND_MARQUISE,PIND_ALLIANCE,PIND_VAGABOND):
                         if len(self.players[pid].hand) > 0:
                             ans.append(AID_CARD_STAND_DELIVER + pid)
                 if CID_ROYAL_CLAIM in unused_pers:
@@ -2875,7 +2928,7 @@ class RootGame:
                 if bool(ans):
                     unused_pers = {c.id for c in current_player.persistent_cards} - self.persistent_used_this_turn
                     if CID_CODEBREAKERS in unused_pers:
-                        for pid in (PIND_MARQUISE,PIND_ALLIANCE):
+                        for pid in (PIND_MARQUISE,PIND_ALLIANCE,PIND_VAGABOND):
                             ans.append(AID_CARD_CODEBREAKERS + pid)
                     if CID_TAX_COLLECTOR in unused_pers:
                         foo = self.board.get_num_warriors(PIND_EYRIE)
@@ -2895,7 +2948,7 @@ class RootGame:
                 # check for persistent cards to use
                 unused_pers = {c.id for c in current_player.persistent_cards} - self.persistent_used_this_turn
                 if CID_CODEBREAKERS in unused_pers:
-                    for pid in (PIND_MARQUISE,PIND_ALLIANCE):
+                    for pid in (PIND_MARQUISE,PIND_ALLIANCE,PIND_VAGABOND):
                         ans.append(AID_CARD_CODEBREAKERS + pid)
                 if CID_TAX_COLLECTOR in unused_pers:
                     foo = self.board.get_num_warriors(PIND_EYRIE)
@@ -2978,6 +3031,10 @@ class RootGame:
                 self.phase = self.PHASE_BIRDSONG_ALLIANCE
                 self.outside_turn_this_action = PIND_ALLIANCE
                 return self.advance_alliance(self.players[PIND_ALLIANCE])
+            elif self.current_player == PIND_VAGABOND:
+                self.phase = self.PHASE_BIRDSONG_VAGABOND
+                self.outside_turn_this_action = PIND_VAGABOND
+                return self.advance_vagabond(self.players[PIND_VAGABOND])
         
     def advance_alliance(self,current_player:Alliance):
         "Advances the game assuming we are in the middle of the Alliance's turn."
@@ -2993,7 +3050,7 @@ class RootGame:
                 # can they use BBB?
                 if CID_BBB in {c.id for c in current_player.persistent_cards}:
                     logger.debug("Checking for use of BBB...")
-                    return [AID_GENERIC_SKIP,AID_CARD_BBB+PIND_MARQUISE,AID_CARD_BBB+PIND_EYRIE]
+                    return [AID_GENERIC_SKIP,AID_CARD_BBB+PIND_MARQUISE,AID_CARD_BBB+PIND_EYRIE,AID_CARD_BBB+PIND_VAGABOND]
                 self.phase_steps = 1
             while self.phase_steps < 3:
                 if self.phase_steps == 1: # Starting Revolts 
@@ -3004,7 +3061,7 @@ class RootGame:
                     else:
                         unused_pers = {c.id for c in current_player.persistent_cards} - self.persistent_used_this_turn
                         if CID_STAND_AND_DELIVER in unused_pers:
-                            for pid in (PIND_EYRIE,PIND_MARQUISE):
+                            for pid in (PIND_EYRIE,PIND_MARQUISE,PIND_VAGABOND):
                                 if len(self.players[pid].hand) > 0:
                                     ans.append(AID_CARD_STAND_DELIVER + pid)
                         if CID_ROYAL_CLAIM in unused_pers:
@@ -3027,7 +3084,7 @@ class RootGame:
                     else:
                         unused_pers = {c.id for c in current_player.persistent_cards} - self.persistent_used_this_turn
                         if CID_STAND_AND_DELIVER in unused_pers:
-                            for pid in (PIND_EYRIE,PIND_MARQUISE):
+                            for pid in (PIND_EYRIE,PIND_MARQUISE,PIND_VAGABOND):
                                 if len(self.players[pid].hand) > 0:
                                     ans.append(AID_CARD_STAND_DELIVER + pid)
                         if CID_ROYAL_CLAIM in unused_pers:
@@ -3045,7 +3102,7 @@ class RootGame:
                 unused_pers = {c.id for c in current_player.persistent_cards} - self.persistent_used_this_turn
                 ans = []
                 if CID_STAND_AND_DELIVER in unused_pers:
-                    for pid in (PIND_EYRIE,PIND_MARQUISE):
+                    for pid in (PIND_EYRIE,PIND_MARQUISE,PIND_VAGABOND):
                         if len(self.players[pid].hand) > 0:
                             ans.append(AID_CARD_STAND_DELIVER + pid)
                 if CID_ROYAL_CLAIM in unused_pers:
@@ -3086,7 +3143,7 @@ class RootGame:
                 # Use Persistent Cards
                 unused_pers = {c.id for c in current_player.persistent_cards} - self.persistent_used_this_turn
                 if CID_CODEBREAKERS in unused_pers:
-                    for pid in (PIND_EYRIE,PIND_MARQUISE):
+                    for pid in (PIND_EYRIE,PIND_MARQUISE,PIND_VAGABOND):
                         ans.append(AID_CARD_CODEBREAKERS + pid)
                 if CID_TAX_COLLECTOR in unused_pers:
                     foo = self.board.get_num_warriors(PIND_ALLIANCE)
@@ -3176,6 +3233,10 @@ class RootGame:
                 self.phase = self.PHASE_BIRDSONG_MARQUISE
                 self.outside_turn_this_action = PIND_MARQUISE
                 return self.advance_marquise(self.players[PIND_MARQUISE])
+            elif self.current_player == PIND_VAGABOND:
+                self.phase = self.PHASE_BIRDSONG_VAGABOND
+                self.outside_turn_this_action = PIND_VAGABOND
+                return self.advance_vagabond(self.players[PIND_VAGABOND])
     
     def advance_vagabond(self,vplayer:Vagabond):
         "Advances the game assuming we are in the middle of the Vagabond's turn."
@@ -3183,6 +3244,11 @@ class RootGame:
             if self.phase_steps == 0: # Start of Birdsong
                 logger.debug(f"\tResetting for Vagabond's Turn...")
                 self.reset_for_vagabond()
+
+                logger.debug(f"VB Tracks: {vplayer.tea_track} / {vplayer.coins_track} / {vplayer.bag_track}")
+                logger.debug(f"VB Undamaged: {[(ID_TO_ITEM[i],exh) for i,exh in vplayer.satchel_undamaged]}")
+                logger.debug(f"VB Damaged: {[(ID_TO_ITEM[i],exh) for i,exh in vplayer.satchel_damaged]}")
+
                 # can they use BBB?
                 if CID_BBB in {c.id for c in vplayer.persistent_cards}:
                     logger.debug("Checking for use of BBB...")
@@ -3347,7 +3413,7 @@ class RootGame:
                     if bool(ans):
                         logger.debug("Checking for use of Cobbler...")
                         return [AID_GENERIC_SKIP] + ans
-                self.phase_steps = 1
+                self.phase_steps = 2
             
             if self.phase_steps == 1: # checking for moving with ally
                 # checking how many ally warriors to move with (if any)
@@ -3357,7 +3423,7 @@ class RootGame:
                         return ans
                     self.vagabond_move_start = None
                     self.vagabond_move_end = None
-                    self.phase_steps = 4
+                    self.phase_steps = 2
 
             if self.phase_steps == 2:
                 # Rest
@@ -3397,6 +3463,10 @@ class RootGame:
                 for i,exh in vplayer.satchel_damaged:
                     ans.add(AID_DISCARD_ITEM + 4*i + 2 + exh)
                 return list(ans)
+
+            logger.debug(f"VB Tracks: {vplayer.tea_track} / {vplayer.coins_track} / {vplayer.bag_track}")
+            logger.debug(f"VB Undamaged: {[(ID_TO_ITEM[i],exh) for i,exh in vplayer.satchel_undamaged]}")
+            logger.debug(f"VB Damaged: {[(ID_TO_ITEM[i],exh) for i,exh in vplayer.satchel_damaged]}")
 
             # turn done!
             if max(self.victory_points) >= 30:
@@ -3443,6 +3513,8 @@ class RootGame:
             self.eyrie_daylight(action,current_player)
         elif self.phase == self.PHASE_DAYLIGHT_ALLIANCE:
             self.alliance_daylight(action,current_player)
+        elif self.phase == self.PHASE_DAYLIGHT_VAGABOND:
+            self.vagabond_daylight(action,current_player)
 
         elif self.phase == self.PHASE_BIRDSONG_MARQUISE:
             self.marquise_birdsong(action,current_player)
@@ -3450,6 +3522,8 @@ class RootGame:
             self.eyrie_birdsong(action,current_player)
         elif self.phase == self.PHASE_BIRDSONG_ALLIANCE:
             self.alliance_birdsong(action,current_player)
+        elif self.phase == self.PHASE_BIRDSONG_VAGABOND:
+            self.vagabond_birdsong(action,current_player)
 
         elif self.phase == self.PHASE_EVENING_MARQUISE:
             self.marquise_evening(action)
@@ -3457,11 +3531,15 @@ class RootGame:
             self.eyrie_evening(action)
         elif self.phase == self.PHASE_EVENING_ALLIANCE:
             self.alliance_evening(action,current_player)
+        elif self.phase == self.PHASE_EVENING_VAGABOND:
+            self.vagabond_evening(action,current_player)
         ### INITIAL SETUP
         elif self.phase == self.PHASE_SETUP_MARQUISE:
             self.marquise_setup(action,current_player)
         elif self.phase == self.PHASE_SETUP_EYRIE:
             self.eyrie_setup(action,current_player)
+        elif self.phase == self.PHASE_SETUP_VAGABOND:
+            self.vagabond_setup(action,current_player)
 
     def marquise_setup(self,action:int,current_player:Marquise):
         "Performs the corresponding Marquise setup action."
@@ -3527,14 +3605,14 @@ class RootGame:
             # if neither of the two conditions above are
             # satisfied, then we still have a choice and
             # do not move on to phase_steps 2
-        elif action >= AID_CARD_BBB and action <= AID_CARD_BBB + 2:
+        elif action >= AID_CARD_BBB and action <= AID_CARD_BBB + N_PLAYERS - 1:
             self.activate_better_burrow(PIND_MARQUISE,action - AID_CARD_BBB)
             self.persistent_used_this_turn.add(CID_BBB)
             self.phase_steps = 1
         elif action == AID_GENERIC_SKIP:
             logger.debug("- Chose to Skip")
             self.phase_steps = 3
-        elif action >= AID_CARD_STAND_DELIVER and action <= AID_CARD_STAND_DELIVER + 2:
+        elif action >= AID_CARD_STAND_DELIVER and action <= AID_CARD_STAND_DELIVER + N_PLAYERS - 1:
             self.activate_stand_and_deliver(PIND_MARQUISE,action - AID_CARD_STAND_DELIVER)
             self.persistent_used_this_turn.add(CID_STAND_AND_DELIVER)
         elif action == AID_CARD_ROYAL_CLAIM:
@@ -3708,7 +3786,7 @@ class RootGame:
             self.victory_points[PIND_MARQUISE] = -1
             self.adjust_reward_for_dom_activation(PIND_MARQUISE)
 
-        elif action >= AID_CARD_CODEBREAKERS and action <= AID_CARD_CODEBREAKERS + 2:
+        elif action >= AID_CARD_CODEBREAKERS and action <= AID_CARD_CODEBREAKERS + N_PLAYERS - 1:
             self.persistent_used_this_turn.add(CID_CODEBREAKERS)
             self.activate_codebreakers(PIND_MARQUISE,action - AID_CARD_CODEBREAKERS)
         elif action >= AID_CARD_TAX_COLLECTOR and action <= AID_CARD_TAX_COLLECTOR + 11: # activate tax collector
@@ -3761,7 +3839,7 @@ class RootGame:
     
     def eyrie_birdsong(self,action:int,current_player:Eyrie):
         "Performs the action during the Eyrie's birdsong / changes the turn stage."
-        if action >= AID_CARD_BBB and action <= AID_CARD_BBB + 2:
+        if action >= AID_CARD_BBB and action <= AID_CARD_BBB + N_PLAYERS - 1:
             self.activate_better_burrow(PIND_EYRIE,action - AID_CARD_BBB)
             self.persistent_used_this_turn.add(CID_BBB)
             self.phase_steps = 1
@@ -3806,7 +3884,7 @@ class RootGame:
             if self.eyrie_cards_added == 2:
                 self.phase_steps = 3
 
-        elif action >= AID_CARD_STAND_DELIVER and action <= AID_CARD_STAND_DELIVER + 2:
+        elif action >= AID_CARD_STAND_DELIVER and action <= AID_CARD_STAND_DELIVER + N_PLAYERS - 1:
             self.activate_stand_and_deliver(PIND_EYRIE,action - AID_CARD_STAND_DELIVER)
             self.persistent_used_this_turn.add(CID_STAND_AND_DELIVER)
         elif action == AID_CARD_ROYAL_CLAIM:
@@ -3922,7 +4000,7 @@ class RootGame:
             self.victory_points[PIND_EYRIE] = -1
             self.adjust_reward_for_dom_activation(PIND_EYRIE)
 
-        elif action >= AID_CARD_CODEBREAKERS and action <= AID_CARD_CODEBREAKERS + 2:
+        elif action >= AID_CARD_CODEBREAKERS and action <= AID_CARD_CODEBREAKERS + N_PLAYERS - 1:
             self.persistent_used_this_turn.add(CID_CODEBREAKERS)
             self.activate_codebreakers(PIND_EYRIE,action - AID_CARD_CODEBREAKERS)
         elif action >= AID_CARD_TAX_COLLECTOR and action <= AID_CARD_TAX_COLLECTOR + 11: # activate tax collector
@@ -3964,7 +4042,7 @@ class RootGame:
     
     def alliance_birdsong(self,action:int,current_player:Alliance):
         "Performs the action during the Alliance's birdsong / changes the turn stage."
-        if action >= AID_CARD_BBB and action <= AID_CARD_BBB + 2:
+        if action >= AID_CARD_BBB and action <= AID_CARD_BBB + N_PLAYERS - 1:
             self.activate_better_burrow(PIND_ALLIANCE,action - AID_CARD_BBB)
             self.persistent_used_this_turn.add(CID_BBB)
             self.phase_steps = 1
@@ -4014,7 +4092,7 @@ class RootGame:
             self.alliance_action_clearing = None
             self.required_supporter_suit = None
 
-        elif action >= AID_CARD_STAND_DELIVER and action <= AID_CARD_STAND_DELIVER + 2:
+        elif action >= AID_CARD_STAND_DELIVER and action <= AID_CARD_STAND_DELIVER + N_PLAYERS - 1:
             self.activate_stand_and_deliver(PIND_ALLIANCE,action - AID_CARD_STAND_DELIVER)
             self.persistent_used_this_turn.add(CID_STAND_AND_DELIVER)
         elif action == AID_CARD_ROYAL_CLAIM:
@@ -4041,7 +4119,7 @@ class RootGame:
             self.turn_log.change_plr_warrior_supply(PIND_ALLIANCE,-1)
             logger.debug(f"> Train: Added an Officer to box ({current_player.num_officers} Total)")
         
-        elif action >= AID_CARD_CODEBREAKERS and action <= AID_CARD_CODEBREAKERS + 2:
+        elif action >= AID_CARD_CODEBREAKERS and action <= AID_CARD_CODEBREAKERS + N_PLAYERS - 1:
             self.persistent_used_this_turn.add(CID_CODEBREAKERS)
             self.activate_codebreakers(PIND_ALLIANCE,action - AID_CARD_CODEBREAKERS)
         elif action >= AID_CARD_TAX_COLLECTOR and action <= AID_CARD_TAX_COLLECTOR + 11: # activate tax collector
@@ -4150,7 +4228,7 @@ class RootGame:
                 vplayer.chosen_character = CHAR_THIEF
                 vplayer.add_item(ITEM_BOOT,0,0)
                 vplayer.add_item(ITEM_TORCH,0,0)
-                vplayer.add_item(ITEM_TEA,0,0)
+                vplayer.tea_track += 1
                 vplayer.add_item(ITEM_SWORD,0,0)
             elif action == (AID_CHOOSE_VB_CLASS + 1): # Tinker
                 logger.debug("Chosen Class: Tinker")
@@ -4158,7 +4236,7 @@ class RootGame:
                 vplayer.chosen_character = CHAR_TINKER
                 vplayer.add_item(ITEM_BOOT,0,0)
                 vplayer.add_item(ITEM_TORCH,0,0)
-                vplayer.add_item(ITEM_BAG,0,0)
+                vplayer.bag_track += 1
                 vplayer.add_item(ITEM_HAMMER,0,0)
             elif action == (AID_CHOOSE_VB_CLASS + 2): # Ranger
                 logger.debug("Chosen Class: Ranger")
@@ -4207,6 +4285,7 @@ class RootGame:
         elif action >= AID_VB_MOVE and action <= AID_VB_MOVE + 360:
             start,end = divmod(action - AID_VB_MOVE,19)
             self.board.move_vagabond(start,end)
+            vplayer.location = end
 
             start_text = f"Forest {start-12}" if start > 11 else f"Clearing {start}"
             end_text = f"Forest {end-12}" if end > 11 else f"Clearing {end}"
@@ -4219,6 +4298,32 @@ class RootGame:
                 self.phase_steps = 3
             else:
                 self.phase_steps = 4
+        
+        elif self.phase_steps == 3:
+            # choosing to move with ally or not
+            if action == AID_NO_ALLY_MOVE:
+                logger.debug("\tVagabond does not move with any ally warriors")
+            else:
+                if action >= AID_MARQUISE_ALLY_MOVE and action <= AID_MARQUISE_ALLY_MOVE + 24:
+                    amount = action - AID_MARQUISE_ALLY_MOVE + 1
+                    ally = PIND_MARQUISE
+                elif action >= AID_EYRIE_ALLY_MOVE and action <= AID_EYRIE_ALLY_MOVE + 19:
+                    amount = action - AID_EYRIE_ALLY_MOVE + 1
+                    ally = PIND_EYRIE
+                else:
+                    amount = action - AID_ALLIANCE_ALLY_MOVE + 1
+                    ally = PIND_ALLIANCE
+                
+                logger.debug(f"\t> The Vagabond made some warriors of the {ID_TO_PLAYER[ally]} move with them!")
+                self.board.move_warriors(ally,amount,self.vagabond_move_start,self.vagabond_move_end)
+                dest:Clearing = self.board.clearings[self.vagabond_move_end]
+                if (ally != PIND_ALLIANCE) and (dest.is_sympathetic()):
+                    self.outrage_offender = ally
+                    self.outrage_suits.append(dest.suit)
+            
+            self.vagabond_move_start = None
+            self.vagabond_move_end = None
+            self.phase_steps = 4
 
         elif action >= AID_CARD_STAND_DELIVER and action <= AID_CARD_STAND_DELIVER + N_PLAYERS-1:
             self.activate_stand_and_deliver(PIND_VAGABOND,action - AID_CARD_STAND_DELIVER)
@@ -4274,6 +4379,7 @@ class RootGame:
                 vplayer.exhaust_item(ITEM_BOOT)
 
             self.board.move_vagabond(start,end)
+            vplayer.location = end
             start_text = f"Forest {start-12}" if start > 11 else f"Clearing {start}"
             end_text = f"Forest {end-12}" if end > 11 else f"Clearing {end}"
             logger.debug(f"> Vagabond Moves from {start_text} to {end_text}")
@@ -4292,6 +4398,8 @@ class RootGame:
             aid_card = self.get_card(PIND_VAGABOND,card_id,"hand")
             self.players[target_id].hand.append(aid_card)
             logger.debug(f"\t{aid_card.name} given (secretly)")
+
+            self.phase_steps = 2
             # score points / improve relationship
             if vplayer.is_hostile(target_id): # hostile
                 logger.debug(f"\tThe {ID_TO_PLAYER[target_id]} is Hostile with the VB, relationship unchanged!")
@@ -4315,13 +4423,39 @@ class RootGame:
                 if new_rel == 4:
                     logger.debug(f"\t\t>> The Vagabond is now Allied with the {ID_TO_PLAYER[target_id]}! <<")
 
+        elif action >= AID_CHOOSE_AID_ITEMS and action <= AID_CHOOSE_AID_ITEMS + 63:
+            exh_item,take_item = divmod(action - AID_CHOOSE_AID_ITEMS,8)
+            vplayer.exhaust_item(exh_item)
+            
+            if take_item == 7:
+                logger.debug("> The Vagabond does not take an item for Aiding")
+            else:
+                logger.debug(f"> The Vagabond takes a {ID_TO_ITEM[take_item]} from the {ID_TO_PLAYER[self.aid_target]}!")
+                aided_player:Player = self.players[self.aid_target]
+                aided_player.crafted_items[take_item] -= 1
+                if take_item in Vagabond.TRACK_IDS:
+                    if take_item == ITEM_BAG and vplayer.bag_track == 3:
+                        vplayer.add_item(ITEM_BAG,0,0)
+                    else:
+                        vplayer.change_track_amount(take_item,1)
+                else:
+                    vplayer.add_item(take_item,0,0)
+            self.phase_steps = 1
+
         elif action == AID_EXPLORE:
             clearing = self.board.clearings[vplayer.location]
             logger.debug(f"> The Vagabond Explores the Ruins in Clearing {vplayer.location}")
             vplayer.exhaust_item(ITEM_TORCH)
 
             item = self.ruin_items[vplayer.location]
-            vplayer.add_item(item,0,0)
+            if item == ITEM_BAG:
+                if vplayer.bag_track == 3:
+                    vplayer.add_item(ITEM_BAG,0,0)
+                else:
+                    vplayer.change_track_amount(ITEM_BAG,1)
+            else:
+                vplayer.add_item(item,0,0)
+
             logger.debug(f"\tThe Vagabond found a {ID_TO_ITEM[item]}!")
             self.change_score(PIND_VAGABOND,1)
             clearing.num_building_slots += 1
@@ -4522,6 +4656,7 @@ class RootGame:
             self.persistent_used_this_turn.add(CID_COBBLER)
             start,end = divmod(action - AID_VB_MOVE,19)
             self.board.move_vagabond(start,end)
+            vplayer.location = end
 
             start_text = f"Forest {start-12}" if start > 11 else f"Clearing {start}"
             end_text = f"Forest {end-12}" if end > 11 else f"Clearing {end}"
@@ -4540,13 +4675,39 @@ class RootGame:
             self.phase_steps = 2
 
         elif action >= AID_DISCARD_CARD and action <= AID_DISCARD_CARD + 41: # Discard excess card
-            self.discard_from_hand(PIND_EYRIE, action - AID_DISCARD_CARD)
+            self.discard_from_hand(PIND_VAGABOND, action - AID_DISCARD_CARD)
 
         elif action >= AID_DISCARD_ITEM and action <= AID_DISCARD_ITEM + 31:
             item_id,foo = divmod(action - AID_DISCARD_ITEM,4)
             damaged,exh = divmod(foo,2)
             vplayer.remove_item(item_id,damaged,exh)
             logger.debug(f"\t\tVagabond removes an {'exhausted' if exh else 'unexhausted'}, {'damaged' if damaged else 'undamaged'} {ID_TO_ITEM[item_id]} from their bag...")
+        
+        elif self.phase_steps == 1:
+            # choosing to move with ally or not
+            if action == AID_NO_ALLY_MOVE:
+                logger.debug("\tVagabond does not move with any ally warriors")
+            else:
+                if action >= AID_MARQUISE_ALLY_MOVE and action <= AID_MARQUISE_ALLY_MOVE + 24:
+                    amount = action - AID_MARQUISE_ALLY_MOVE + 1
+                    ally = PIND_MARQUISE
+                elif action >= AID_EYRIE_ALLY_MOVE and action <= AID_EYRIE_ALLY_MOVE + 19:
+                    amount = action - AID_EYRIE_ALLY_MOVE + 1
+                    ally = PIND_EYRIE
+                else:
+                    amount = action - AID_ALLIANCE_ALLY_MOVE + 1
+                    ally = PIND_ALLIANCE
+                
+                logger.debug(f"\t> The Vagabond made some warriors of the {ID_TO_PLAYER[ally]} move with them!")
+                self.board.move_warriors(ally,amount,self.vagabond_move_start,self.vagabond_move_end)
+                dest:Clearing = self.board.clearings[self.vagabond_move_end]
+                if (ally != PIND_ALLIANCE) and (dest.is_sympathetic()):
+                    self.outrage_offender = ally
+                    self.outrage_suits.append(dest.suit)
+            
+            self.vagabond_move_start = None
+            self.vagabond_move_end = None
+            self.phase_steps = 2
 
 
     def render(self):
@@ -4569,75 +4730,77 @@ if __name__ == "__main__":
     np.set_printoptions(threshold=np.inf)
     env.reset()
 
-    # total_rewards = np.zeros(N_PLAYERS)
-    # # while action_count < 100:
+    total_rewards = np.zeros(N_PLAYERS)
+    while action_count < 200:
     # while not done:
-    #     legal_actions = env.legal_actions()
-    #     logger.debug(f"> Action {action_count} - Player: {ID_TO_PLAYER[env.current_player]}")
-    #     logger.info(f"Legal Actions: {legal_actions}")
-    #     # print(f"Player: {ID_TO_PLAYER[env.current_player]}")
-    #     # print(f"> Action {action_count} - Legal Actions: {legal_actions}")
+        legal_actions = env.legal_actions()
+        logger.debug(f"> Action {action_count} - Player: {ID_TO_PLAYER[env.current_player]}")
+        logger.info(f"Legal Actions: {legal_actions}")
+        # print(f"Player: {ID_TO_PLAYER[env.current_player]}")
+        # print(f"> Action {action_count} - Legal Actions: {legal_actions}")
 
-    #     # action = -1
-    #     # while action not in legal_actions:
-    #     #     action = int(input("Choose a valid action: "))
-    #     action = random.choice(legal_actions)
-    #     # print(f"\tAction Chosen: {action}")
-    #     logger.info(f"\t> Action Chosen: {action}")
-    #     obs,reward,done = env.step(action)
+        # action = -1
+        # while action not in legal_actions:
+        #     action = int(input("Choose a valid action: "))
+        action = random.choice(legal_actions)
+        # print(f"\tAction Chosen: {action}")
+        logger.info(f"\t> Action Chosen: {action}")
+        obs,reward,done = env.step(action)
 
-    #     logger.debug(f"- Reward for this action: {reward}")
-    #     total_rewards += reward
-    #     logger.debug(f"\t> New reward total: {total_rewards}")
+        logger.debug(f"- Reward for this action: {reward}")
+        total_rewards += reward
+        logger.debug(f"\t> New reward total: {total_rewards}")
 
-    #     # logger.debug(f"Observation length: {len(obs)}")
-    #     # if action_count % 10 == 0:
-    #     #     logger.debug(f"{obs}")
-    #     # if env.battle.stage != Battle.STAGE_DONE:
-    #     #     for i,sq in enumerate(obs.reshape((139,5,5))):
-    #     #         logger.debug(f"- Observation Square {i}:\n{sq}\n")
-    #     # if done:
-    #     #     env.render()
+        # logger.debug(f"Observation length: {len(obs)}")
+        # if action_count % 10 == 0:
+        #     logger.debug(f"{obs}")
+        # if env.battle.stage != Battle.STAGE_DONE:
+        #     for i,sq in enumerate(obs.reshape((139,5,5))):
+        #         logger.debug(f"- Observation Square {i}:\n{sq}\n")
+        # if done:
+        #     env.render()
 
-    #     action_count += 1
+        action_count += 1
+
+
 
     # obs = env.get_observation()
     # logger.debug(f"Length: {len(obs)}\n{obs}")
     # for i,sq in enumerate(obs.reshape((139,5,5))):
     #     logger.debug(f"- Observation Square {i}:\n{sq}\n")
 
-    glens = []
-    # obs = env.get_observation()
-    # logger.debug(f"Length: {len(obs)}\n{obs}")
-    for _ in range(25):
-        done = False
-        action_count = 0
-        total_rewards = np.zeros(N_PLAYERS)
-        while not done:
-            legal_actions = env.legal_actions()
-            logger.info(f"Player: {ID_TO_PLAYER[env.current_player]}")
-            logger.info(f"> Action {action_count} - Legal Actions: {legal_actions}")
-            # print(f"Player: {ID_TO_PLAYER[env.current_player]}")
-            # print(f"> Action {action_count} - Legal Actions: {legal_actions}")
+    # glens = []
+    # # obs = env.get_observation()
+    # # logger.debug(f"Length: {len(obs)}\n{obs}")
+    # for _ in range(25):
+    #     done = False
+    #     action_count = 0
+    #     total_rewards = np.zeros(N_PLAYERS)
+    #     while not done:
+    #         legal_actions = env.legal_actions()
+    #         logger.info(f"Player: {ID_TO_PLAYER[env.current_player]}")
+    #         logger.info(f"> Action {action_count} - Legal Actions: {legal_actions}")
+    #         # print(f"Player: {ID_TO_PLAYER[env.current_player]}")
+    #         # print(f"> Action {action_count} - Legal Actions: {legal_actions}")
 
-            # action = -1
-            # while action not in legal_actions:
-            #     action = int(input("Choose a valid action: "))
-            action = random.choice(legal_actions)
-            # print(f"\tAction Chosen: {action}")
-            logger.info(f"\t> Action Chosen: {action}")
-            obs,reward,done = env.step(action)
+    #         # action = -1
+    #         # while action not in legal_actions:
+    #         #     action = int(input("Choose a valid action: "))
+    #         action = random.choice(legal_actions)
+    #         # print(f"\tAction Chosen: {action}")
+    #         logger.info(f"\t> Action Chosen: {action}")
+    #         obs,reward,done = env.step(action)
             
-            logger.debug(f"- Reward for this action: {reward}")
-            total_rewards += reward
-            logger.debug(f"\t> New reward total: {total_rewards}")
+    #         logger.debug(f"- Reward for this action: {reward}")
+    #         total_rewards += reward
+    #         logger.debug(f"\t> New reward total: {total_rewards}")
             
-            action_count += 1
-        glens.append(action_count)
-        print(f"{total_rewards} from {action_count} actions")
-        env.reset()
+    #         action_count += 1
+    #     glens.append(action_count)
+    #     print(f"{total_rewards} from {action_count} actions")
+    #     env.reset()
 
-    print(f"\nGames: {glens}")
-    print(f"\nLongest Length: {max(glens)}")
-    print(f"Shortest Length: {min(glens)}")
-    print(f"Average Length: {sum(glens)/25}")
+    # print(f"\nGames: {glens}")
+    # print(f"\nLongest Length: {max(glens)}")
+    # print(f"Shortest Length: {min(glens)}")
+    # print(f"Average Length: {sum(glens)/25}")

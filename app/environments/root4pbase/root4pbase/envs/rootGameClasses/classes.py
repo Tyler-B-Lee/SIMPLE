@@ -249,7 +249,8 @@ class TurnLog():
             'dp_reset': False,
             'marq_supp_additions': np.zeros((42,3)),
             'eyrie_supp_additions': np.zeros((42,3)),
-            'alliance_supp_payments': np.zeros((42,3))
+            'alliance_supp_payments': np.zeros((42,3)),
+            'vagabond_supp_payments': np.zeros((42,3))
         }
         for i in range(N_PLAYERS):
             self.current_turn[i] = {
@@ -258,11 +259,11 @@ class TurnLog():
                 'point_change': 0,
                 'cards_lost': np.zeros((42,3)),
                 'cards_gained': np.zeros((42,3)),
-                'persistent_used': np.zeros((11,3)),
+                'persistent_used': np.zeros((11,N_PLAYERS)),
                 'cards_crafted': np.zeros(38)
             }
         for i in range(12):
-            clr = {'battles': np.zeros((3,3))}
+            clr = {'battles': np.zeros((N_PLAYERS,N_PLAYERS))}
             for j in range(N_PLAYERS):
                 clr[j] = {
                     'warrior_change': 0,
@@ -281,7 +282,7 @@ class TurnLog():
         ret = np.append(np.array([int(t['dp_reset'])]), t['alliance_supp_payments'])
         for player_i in range(N_PLAYERS):
             p_info = t[player_i]
-            max_warriors = [25,20,10][player_i]
+            max_warriors = [25,20,10,1][player_i]
             foo = np.zeros(3)
             foo[0] = p_info['hand_size_change'] / 8
             foo[1] = p_info['warrior_supply_change'] / max_warriors
@@ -294,7 +295,7 @@ class TurnLog():
             c_info = t[f'c{clearing_i}']
             foo = c_info['battles']
             for player_i in range(N_PLAYERS):
-                max_warriors = [25,20,10][player_i]
+                max_warriors = [25,20,10,1][player_i]
                 foo = np.append(foo,c_info[player_i]['warrior_change'] / max_warriors)
                 foo = np.append(foo,c_info[player_i]['buildings_change'] / 3)
                 bar = c_info[player_i]['tokens_change'].copy()
@@ -1493,6 +1494,14 @@ class Vagabond(Player):
                 foo[i][a - 1] = 1
         return np.append(ret,foo)
     
+    def get_battle_power(self):
+        "Returns the total number of undamaged swords in the VB's satchel."
+        count = 0
+        for i,exh in self.satchel_undamaged:
+            if i == ITEM_SWORD:
+                count += 1
+        return count
+    
     def get_refresh_actions(self):
         "Returns a list of AIDs for actions related to refreshing items."
         ans = set()
@@ -1502,6 +1511,24 @@ class Vagabond(Player):
         for i,exh in self.satchel_damaged:
             if exh == 1:
                 ans.add(i+AID_REFRESH_DAM)
+        return list(ans)
+    
+    def get_damage_actions(self):
+        "Returns list of AIDs for choosing what item to damage."
+        ans = set()
+        # track items
+        if self.tea_track > 0:
+            ans.add(AID_DAMAGE_UNEXH + ITEM_TEA)
+        if self.coins_track > 0:
+            ans.add(AID_DAMAGE_UNEXH + ITEM_COINS)
+        if self.bag_track > 0:
+            ans.add(AID_DAMAGE_UNEXH + ITEM_BAG)
+        # satchel items
+        for i,exh in self.satchel_undamaged:
+            if exh == 1:
+                ans.add(AID_DAMAGE_EXH + i)
+            else:
+                ans.add(AID_DAMAGE_UNEXH + i)
         return list(ans)
     
     def has_exhaustable(self,item_id:int,amount:int=1):
@@ -1526,6 +1553,10 @@ class Vagabond(Player):
                 if count >= amount:
                     return True
         return False
+    
+    def has_any_damageable(self):
+        "Returns True if the VB has ANY damageable item."
+        return (self.tea_track + self.coins_track + self.bag_track + len(self.satchel_undamaged)) > 0
     
     def has_any_exhaustable(self):
         "Returns True if the VB has ANY exhaustable item."
@@ -1633,6 +1664,8 @@ class Battle:
     STAGE_DICE_ROLL = 7
     # battle is done
     STAGE_DONE = 8
+    # Vagabond is picking their ally
+    STAGE_VB_CHOOSE_ALLY = 9
 
     def __init__(self,att_id:int,def_id:int,clearing_id:int) -> None:
         self.attacker_id = att_id
@@ -1649,7 +1682,10 @@ class Battle:
         self.def_ambush_id = None
         self.att_cardboard_removed = False
         self.def_cardboard_removed = False
-        self.vagabond_ally_hits = 0
+
+        self.vagabond_battle_ally = None
+        self.vagabond_ally_hits_taken = 0
+        self.vagabond_hits_taken = 0
     
     def __str__(self) -> str:
         ret = f"--- BATTLE: {ID_TO_PLAYER[self.attacker_id]} attacking {ID_TO_PLAYER[self.defender_id]} in Clearing {self.clearing_id} ---\n"
@@ -1809,28 +1845,28 @@ MAP_AUTUMN = ([ # board clearings
     Forest(6,{6,7,11},{2,5})
 ])
 
-MAP_WINTER = [
-    #        id, suit,         num_building_slots, num_ruins, opposite_corner_id, set of adj clearings
-    Clearing(0,  SUIT_FOX,     1,                 0,         11,                  {1,4,5}),
-    Clearing(1,  SUIT_RABBIT,  2,                 0,         -1,                  {0,2}),
-    Clearing(2,  SUIT_MOUSE,   2,                 0,         -1,                  {1,3}),
-    Clearing(3,  SUIT_RABBIT,  1,                 0,         8,                   {2,6,7}),
-    Clearing(4,  SUIT_MOUSE,   1,                 0,         -1,                  {0,8}),
-    Clearing(5,  SUIT_FOX,     2,                 1,         -1,                  {0,8,9}),
-    Clearing(6,  SUIT_MOUSE,   2,                 1,         -1,                  {3,10,11}),
-    Clearing(7,  SUIT_FOX,     1,                 0,         -1,                  {3,11}),
-    Clearing(8,  SUIT_RABBIT,  2,                 0,         3,                   {4,5,9}),
-    Clearing(9,  SUIT_FOX,     1,                 1,         -1,                  {5,8,10}),
-    Clearing(10, SUIT_MOUSE,   1,                 1,         -1,                  {6,9,11}),
-    Clearing(11, SUIT_RABBIT,  2,                 0,         0,                   {6,7,10})
-]
+# MAP_WINTER = [
+#     #        id, suit,         num_building_slots, num_ruins, opposite_corner_id, set of adj clearings
+#     Clearing(0,  SUIT_FOX,     1,                 0,         11,                  {1,4,5}),
+#     Clearing(1,  SUIT_RABBIT,  2,                 0,         -1,                  {0,2}),
+#     Clearing(2,  SUIT_MOUSE,   2,                 0,         -1,                  {1,3}),
+#     Clearing(3,  SUIT_RABBIT,  1,                 0,         8,                   {2,6,7}),
+#     Clearing(4,  SUIT_MOUSE,   1,                 0,         -1,                  {0,8}),
+#     Clearing(5,  SUIT_FOX,     2,                 1,         -1,                  {0,8,9}),
+#     Clearing(6,  SUIT_MOUSE,   2,                 1,         -1,                  {3,10,11}),
+#     Clearing(7,  SUIT_FOX,     1,                 0,         -1,                  {3,11}),
+#     Clearing(8,  SUIT_RABBIT,  2,                 0,         3,                   {4,5,9}),
+#     Clearing(9,  SUIT_FOX,     1,                 1,         -1,                  {5,8,10}),
+#     Clearing(10, SUIT_MOUSE,   1,                 1,         -1,                  {6,9,11}),
+#     Clearing(11, SUIT_RABBIT,  2,                 0,         0,                   {6,7,10})
+# ]
 
 CHOSEN_MAP = MAP_AUTUMN
 
 CLEARING_SUITS = {
-    SUIT_FOX: [c.id for c in CHOSEN_MAP if c.suit == SUIT_FOX],
-    SUIT_MOUSE: [c.id for c in CHOSEN_MAP if c.suit == SUIT_MOUSE],
-    SUIT_RABBIT: [c.id for c in CHOSEN_MAP if c.suit == SUIT_RABBIT]
+    SUIT_FOX: [c.id for c in CHOSEN_MAP[0] if c.suit == SUIT_FOX],
+    SUIT_MOUSE: [c.id for c in CHOSEN_MAP[0] if c.suit == SUIT_MOUSE],
+    SUIT_RABBIT: [c.id for c in CHOSEN_MAP[0] if c.suit == SUIT_RABBIT]
 }
 
 QUEST_DECK_COMP = [
