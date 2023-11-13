@@ -58,7 +58,7 @@ class RootGame:
         self.alliance_interrupt_player = None
         self.points_scored_this_action = [0] * N_PLAYERS
         self.current_player = 0
-        self.players = [Marquise(PIND_MARQUISE), Eyrie(PIND_VAGABOND), Alliance(PIND_ALLIANCE), Vagabond(PIND_VAGABOND)]
+        self.players = [Marquise(PIND_MARQUISE), Eyrie(PIND_EYRIE), Alliance(PIND_ALLIANCE), Vagabond(PIND_VAGABOND)]
         self.victory_points = [0] * N_PLAYERS
 
         self.dominance_win = False
@@ -343,6 +343,7 @@ class RootGame:
             self.outside_turn_this_action = PIND_VAGABOND
 
         aplayer:Alliance = self.players[PIND_ALLIANCE]
+        vplayer:Vagabond = self.players[PIND_VAGABOND]
         resolving = False
         if self.outside_turn_this_action == PIND_MARQUISE:
             # first, resolve field hospitals
@@ -358,6 +359,10 @@ class RootGame:
                     len(aplayer.supporters) > 5):
                 resolving = True
                 actions_to_return = self.handle_discard_supporter(aplayer,action)
+            # check vagabond extra damaging hits
+            elif self.vagabond_hits_to_take > 0:
+                resolving = True
+                actions_to_return = self.handle_extra_vb_damage(vplayer,action)
         else:
             # first, check for outrage payment
             if self.outrage_offender is not None:
@@ -372,76 +377,98 @@ class RootGame:
             elif len(self.field_hospitals) > 0:
                 resolving = True
                 actions_to_return = self.handle_field_hospitals(aplayer,action)
+            # check vagabond extra damaging hits
+            elif self.vagabond_hits_to_take > 0:
+                resolving = True
+                actions_to_return = self.handle_extra_vb_damage(vplayer,action)
 
         if not resolving and self.battle.stage == Battle.STAGE_DONE:
-            # logger.debug("ACTION GIVEN,NO BATTLE")
+            logger.debug("ACTION GIVEN,NO BATTLE")
             self.resolve_action(action)
             battle = False
             # battle could have been started
             if self.battle.stage is None:
-                # logger.debug("BATTLE WAS STARTED")
+                logger.debug("BATTLE WAS STARTED")
                 # kick start the battle to see if a choice must be made
                 # during it. Use the given action, although nothing will
                 # really happen yet. Either a choice will be made or
                 # the battle will finish by itself
                 self.saved_battle_actions = self.step_battle(action)
                 self.saved_battle_player = self.current_player
-                # logger.debug(f"BATTLE ACTIONS RETURNED: {self.saved_battle_actions}")
+                logger.debug(f"BATTLE ACTIONS RETURNED: {self.saved_battle_actions}")
                 battle = True
             if self.outside_turn_this_action == PIND_MARQUISE:
                 # check for field hospitals first (best for marquise)
                 actions_to_return = self.field_hospitals_check()
                 if not bool(actions_to_return) and self.outrage_offender is not None:
-                    # logger.debug("OUTRAGE CHECK")
+                    logger.debug("OUTRAGE CHECK")
                     actions_to_return = self.outrage_step_check()
                 if not bool(actions_to_return):
-                    # logger.debug("NO BASE CHECK")
+                    logger.debug("NO BASE CHECK")
                     actions_to_return = self.alliance_no_base_check(aplayer)
+                if not bool(actions_to_return) and self.vagabond_hits_to_take > 0:
+                    logger.debug("VB Damage check")
+                    if vplayer.has_any_damageable():
+                        self.current_player = PIND_VAGABOND
+                        actions_to_return = vplayer.get_damage_actions()
+                    else:
+                        logger.debug("\tVagabond has no more items left to damage...")
+                        self.vagabond_hits_to_take = 0
                 if battle and not bool(actions_to_return):
-                    # logger.debug("BAT,NO ACTIONS")
+                    logger.debug("BAT,NO ACTIONS")
                     actions_to_return = self.saved_battle_actions
             else:
                 # check for field hospitals last (worst for Marquise)
                 if self.outrage_offender is not None:
-                    # logger.debug("OUTRAGE CHECK")
+                    logger.debug("OUTRAGE CHECK")
                     actions_to_return = self.outrage_step_check()
                 if not bool(actions_to_return):
-                    # logger.debug("NO BASE CHECK")
+                    logger.debug("NO BASE CHECK")
                     actions_to_return = self.alliance_no_base_check(aplayer)
                 if not bool(actions_to_return):
                     actions_to_return = self.field_hospitals_check()
+                if not bool(actions_to_return) and self.vagabond_hits_to_take > 0:
+                    logger.debug("VB Damage check")
+                    if vplayer.has_any_damageable():
+                        self.current_player = PIND_VAGABOND
+                        actions_to_return = vplayer.get_damage_actions()
+                    else:
+                        logger.debug("\tVagabond has no more items left to damage...")
+                        self.vagabond_hits_to_take = 0
                 if battle and not bool(actions_to_return):
-                    # logger.debug("BAT,NO ACTIONS")
+                    logger.debug("BAT,NO ACTIONS")
                     actions_to_return = self.saved_battle_actions
         elif not resolving: # we are in a battle
             self.saved_battle_actions = self.step_battle(action)
             self.saved_battle_player = self.current_player
+            logger.debug(f"Mid-battle action taken, BATTLE ACTIONS RETURNED: {self.saved_battle_actions}")
             if self.outside_turn_this_action == PIND_MARQUISE:
                 # check for field hospitals first (best for marquise)
                 actions_to_return = self.field_hospitals_check()
                 if not bool(actions_to_return) and self.outrage_offender is not None:
-                    # logger.debug("OUTRAGE CHECK")
+                    logger.debug("OUTRAGE CHECK")
                     actions_to_return = self.outrage_step_check()
                 if not bool(actions_to_return):
-                    # logger.debug("NO BASE CHECK")
+                    logger.debug("NO BASE CHECK")
                     actions_to_return = self.alliance_no_base_check(aplayer)
                 if not bool(actions_to_return):
-                    # logger.debug("BAT,NO ACTIONS")
+                    logger.debug("BAT,NO ACTIONS")
                     actions_to_return = self.saved_battle_actions
             else:
                 # check for field hospitals last (worst for Marquise)
                 if self.outrage_offender is not None:
-                    # logger.debug("OUTRAGE CHECK")
+                    logger.debug("OUTRAGE CHECK")
                     actions_to_return = self.outrage_step_check()
                 if not bool(actions_to_return):
-                    # logger.debug("NO BASE CHECK")
+                    logger.debug("NO BASE CHECK")
                     actions_to_return = self.alliance_no_base_check(aplayer)
                 if not bool(actions_to_return):
                     actions_to_return = self.field_hospitals_check()
                 if not bool(actions_to_return):
-                    # logger.debug("BAT,NO ACTIONS")
+                    logger.debug("BAT,NO ACTIONS")
                     actions_to_return = self.saved_battle_actions
 
+        logger.debug(f"<> Current player: {self.current_player} / actions_to_return: {actions_to_return}")
         if bool(actions_to_return):
             self.legal_actions_to_get = actions_to_return
         else:
@@ -612,13 +639,23 @@ class RootGame:
                 # alliance draws 1 card to add to supporters
                 self.outrage_no_suit_helper(offender)
                 self.outrage_suits.pop()
+
         if not bool(actions_to_return):
             # we are finished paying for outrage
             self.outrage_offender = None
             self.current_player = self.alliance_interrupt_player
             actions_to_return = self.alliance_no_base_check(aplayer)
+
         if not bool(actions_to_return):
             actions_to_return = self.field_hospitals_check()
+
+        if not bool(actions_to_return) and self.vagabond_hits_to_take > 0:
+            if self.players[PIND_VAGABOND].has_any_damageable():
+                self.current_player = PIND_VAGABOND
+                actions_to_return = self.players[PIND_VAGABOND].get_damage_actions()
+            else:
+                logger.debug("\tVagabond has no more items left to damage...")
+                self.vagabond_hits_to_take = 0
         if not bool(actions_to_return):
             if self.battle.stage != Battle.STAGE_DONE:
                 actions_to_return = self.saved_battle_actions
@@ -635,6 +672,13 @@ class RootGame:
         # we are done discarding
         if not bool(actions_to_return):
             actions_to_return = self.field_hospitals_check()
+        if not bool(actions_to_return) and self.vagabond_hits_to_take > 0:
+            if self.players[PIND_VAGABOND].has_any_damageable():
+                self.current_player = PIND_VAGABOND
+                actions_to_return = self.players[PIND_VAGABOND].get_damage_actions()
+            else:
+                logger.debug("\tVagabond has no more items left to damage...")
+                self.vagabond_hits_to_take = 0
         if not bool(actions_to_return):
             if self.battle.stage != Battle.STAGE_DONE:
                 actions_to_return = self.saved_battle_actions
@@ -663,19 +707,68 @@ class RootGame:
                 actions_to_return = self.outrage_step_check()
             if not bool(actions_to_return):
                 actions_to_return = self.alliance_no_base_check(aplayer)
+            if not bool(actions_to_return) and self.vagabond_hits_to_take > 0:
+                if self.players[PIND_VAGABOND].has_any_damageable():
+                    self.current_player = PIND_VAGABOND
+                    actions_to_return = self.players[PIND_VAGABOND].get_damage_actions()
+                else:
+                    logger.debug("\tVagabond has no more items left to damage...")
+                    self.vagabond_hits_to_take = 0
             if not bool(actions_to_return):
                 if self.battle.stage != Battle.STAGE_DONE:
                     actions_to_return = self.saved_battle_actions
                     self.current_player = self.saved_battle_player
+                
+                elif self.phase in {self.PHASE_SETUP_EYRIE,self.PHASE_BIRDSONG_EYRIE,self.PHASE_DAYLIGHT_EYRIE,self.PHASE_EVENING_EYRIE}:
+                    self.current_player = PIND_EYRIE
+                elif self.phase in {self.PHASE_SETUP_MARQUISE,self.PHASE_BIRDSONG_MARQUISE,self.PHASE_DAYLIGHT_MARQUISE,self.PHASE_EVENING_MARQUISE}:
+                    self.current_player = PIND_MARQUISE
+                elif self.phase in {self.PHASE_BIRDSONG_ALLIANCE,self.PHASE_DAYLIGHT_ALLIANCE,self.PHASE_EVENING_ALLIANCE}:
+                    self.current_player = PIND_ALLIANCE
                 else:
-                    if self.phase in {self.PHASE_SETUP_EYRIE,self.PHASE_BIRDSONG_EYRIE,self.PHASE_DAYLIGHT_EYRIE,self.PHASE_EVENING_EYRIE}:
-                        self.current_player = PIND_EYRIE
-                    elif self.phase in {self.PHASE_SETUP_MARQUISE,self.PHASE_BIRDSONG_MARQUISE,self.PHASE_DAYLIGHT_MARQUISE,self.PHASE_EVENING_MARQUISE}:
-                        self.current_player = PIND_MARQUISE
-                    elif self.phase in {self.PHASE_BIRDSONG_ALLIANCE,self.PHASE_DAYLIGHT_ALLIANCE,self.PHASE_EVENING_ALLIANCE}:
-                        self.current_player = PIND_ALLIANCE
-                    else:
-                        self.current_player = PIND_VAGABOND
+                    self.current_player = PIND_VAGABOND
+        return actions_to_return
+    
+    def handle_extra_vb_damage(self,vplayer:Vagabond,action:int):
+        """
+        Given an action, makes the Vagabond damage one of their items.
+        Specifically used when the VB has to take 'extra' hits outside
+        of battle, such as from Revolts or Favors.
+
+        Returns a list of the next legal actions: AIDs for damaging
+        more items if needed, or other actions that need to be fulfilled.
+        """
+        actions_to_return = []
+        if action >= AID_DAMAGE_EXH and action <= AID_DAMAGE_EXH + 7:
+            vplayer.damage_item(action - AID_DAMAGE_EXH,1)
+        else: # damage unexhausted item
+            vplayer.damage_item(action - AID_DAMAGE_UNEXH,0)
+        self.vagabond_hits_to_take -= 1
+        logger.debug(f"The Vagabond has to damage {self.vagabond_hits_to_take} more items")
+
+        if self.vagabond_hits_to_take > 0:
+            if vplayer.has_any_damageable():
+                self.current_player = PIND_VAGABOND
+                return vplayer.get_damage_actions()
+            logger.debug("\tNo more items left to damage...")
+            self.vagabond_hits_to_take = 0
+            
+        # we are done damaging
+        if not bool(actions_to_return):
+            actions_to_return = self.field_hospitals_check()
+        if not bool(actions_to_return):
+            if self.battle.stage != Battle.STAGE_DONE:
+                actions_to_return = self.saved_battle_actions
+                self.current_player = self.saved_battle_player
+            
+            elif self.phase in {self.PHASE_SETUP_EYRIE,self.PHASE_BIRDSONG_EYRIE,self.PHASE_DAYLIGHT_EYRIE,self.PHASE_EVENING_EYRIE}:
+                self.current_player = PIND_EYRIE
+            elif self.phase in {self.PHASE_SETUP_MARQUISE,self.PHASE_BIRDSONG_MARQUISE,self.PHASE_DAYLIGHT_MARQUISE,self.PHASE_EVENING_MARQUISE}:
+                self.current_player = PIND_MARQUISE
+            elif self.phase in {self.PHASE_BIRDSONG_ALLIANCE,self.PHASE_DAYLIGHT_ALLIANCE,self.PHASE_EVENING_ALLIANCE}:
+                self.current_player = PIND_ALLIANCE
+            else:
+                self.current_player = PIND_VAGABOND
         return actions_to_return
 
 
@@ -1026,6 +1119,12 @@ class RootGame:
             self.available_items[item_id] -= 1
             if player_index != PIND_VAGABOND:
                 p.crafted_items[item_id] += 1
+            # vagabond crafting item
+            elif item_id in Vagabond.TRACK_IDS:
+                if item_id == ITEM_BAG and p.bag_track == 3:
+                    p.add_item(ITEM_BAG,0,0)
+                else:
+                    p.change_track_amount(item_id,1)
             else:
                 p.add_item(item_id,0,0)
             
@@ -1045,15 +1144,35 @@ class RootGame:
             points_scored,fh_list = self.board.resolve_favor(player_index,CLEARING_SUITS[card_to_craft.suit])
             # clear out each clearing
             for cid in CLEARING_SUITS[card_to_craft.suit]:
-                clearing = self.board.clearings[cid]
+                clearing:Clearing = self.board.clearings[cid]
                 for faction_i in {j for j in range(N_PLAYERS) if j != player_index}:
-                    player = self.players[faction_i]
+                    player:Player = self.players[faction_i]
+
+                    if (faction_i == PIND_VAGABOND):
+                        if (clearing.vagabond_present == 1):
+                            if (self.vagabond_coalition_partner == player_index):
+                                logger.debug("\t> The Attackers do not hurt their Coalition partner, the Vagabond!")
+                            else:
+                                logger.debug(f"\t> The Vagabond is caught in the chaos in clearing {cid}! They will have to damage 3 items...")
+                                self.vagabond_hits_to_take += 3
+                        continue
+                    # the VB won't remove coalition ally pieces
+                    elif (player_index == PIND_VAGABOND) and (self.vagabond_coalition_partner == faction_i):
+                        logger.debug(f"\t>> The Attackers do not hurt the {ID_TO_PLAYER[faction_i]}, the Vagabond's Coalition partner!")
+                        continue
+
                     foo = clearing.get_num_warriors(faction_i)
-                    logger.debug(f"\t\tRemoving {foo} {ID_TO_PLAYER[faction_i]} warriors in clearing {cid}")
-                    clearing.change_num_warriors(faction_i,-foo)
-                    self.turn_log.change_clr_warriors(cid,faction_i,-foo)
-                    player.change_num_warriors(foo)
-                    self.turn_log.change_plr_warrior_supply(faction_i,foo)
+                    if foo > 0:
+                        logger.debug(f"\t\tRemoving {foo} {ID_TO_PLAYER[faction_i]} warriors in clearing {cid}")
+                        clearing.change_num_warriors(faction_i,-foo)
+                        self.turn_log.change_clr_warriors(cid,faction_i,-foo)
+                        player.change_num_warriors(foo)
+                        self.turn_log.change_plr_warrior_supply(faction_i,foo)
+                        # make VB hostile (assuming non-coalition at this point)
+                        vplayer = self.players[PIND_VAGABOND]
+                        if player_index == PIND_VAGABOND and (not vplayer.is_hostile(faction_i)):
+                            logger.debug(f"\t>> The {ID_TO_PLAYER[faction_i]} are now HOSTILE toward the Vagabond! <<")
+                            vplayer.relationships[faction_i] = 0
 
                     while len(clearing.buildings[faction_i]) > 0:
                         foo = clearing.buildings[faction_i].pop()
@@ -1076,6 +1195,7 @@ class RootGame:
             if bool(fh_list) and self.keep_is_up():
                 self.field_hospitals += sorted(fh_list)
             self.discard_from_hand(player_index, card_id)
+        # exhaust crafting cost
         for i in range(3):
             suit_cost = card_to_craft.crafting_recipe[i]
             if player_index == PIND_VAGABOND:
@@ -1124,7 +1244,7 @@ class RootGame:
         """
         points = cardboard_removed
         attacker:Player = self.players[self.battle.attacker_id]
-        if (damager_ind == PIND_EYRIE) and (attacker.chosen_leader_index == LEADER_DESPOT) and cardboard_removed:
+        if (damager_ind == PIND_EYRIE) and (self.players[PIND_EYRIE].chosen_leader_index == LEADER_DESPOT) and cardboard_removed:
             # if the Eyrie with Despot are removing cardboard, score them an extra point if they haven't
             # received an extra point thus far for doing so
             if (not self.battle.att_cardboard_removed) and attacker.id == PIND_EYRIE:
@@ -1366,10 +1486,10 @@ class RootGame:
                     self.players[self.battle.vagabond_battle_ally].change_num_warriors(1)
                     self.battle.vagabond_ally_hits_taken += 1
 
-                if defender.has_any_damageable():
-                    self.battle.att_hits_to_deal -= 1
+                if attacker.has_any_damageable():
+                    self.battle.def_hits_to_deal -= 1
                 else:
-                    self.battle.att_hits_to_deal = 0
+                    self.battle.def_hits_to_deal = 0
                 return
 
             logger.debug(f"{ID_TO_PLAYER[self.battle.attacker_id]} chose to destroy {item}")
@@ -1380,8 +1500,13 @@ class RootGame:
                 self.score_battle_points(self.battle.defender_id,self.battle.attacker_id,cardboard_removed)
             # Vagabond does not score infamy here,
             # assuming they cannot attack when it's not their turn
-            if warriors_killed and self.battle.attacker_id == PIND_MARQUISE and attacker.has_suit_in_hand(clearing.suit) and self.keep_is_up():
-                self.field_hospitals.append((warriors_killed,clearing.suit))
+            if warriors_killed:
+                if self.battle.defender_id == PIND_VAGABOND:
+                    if not defender.is_hostile(attacker.id):
+                        logger.debug(f"\t>> The {ID_TO_PLAYER[attacker.id]} are now HOSTILE toward the Vagabond! <<")
+                        defender.relationships[attacker.id] = 0
+                if self.battle.attacker_id == PIND_MARQUISE and attacker.has_suit_in_hand(clearing.suit) and self.keep_is_up():
+                    self.field_hospitals.append((warriors_killed,clearing.suit))
         
         elif self.battle.stage == Battle.STAGE_DEF_AMBUSH:
             # action is the defender's choice to ambush or not
@@ -1422,8 +1547,13 @@ class RootGame:
                 if cardboard_removed:
                     self.score_battle_points(self.battle.defender_id,self.battle.attacker_id,cardboard_removed)
                 # no VB infamy scoring not on their turn
-                if warriors_killed and self.battle.attacker_id == PIND_MARQUISE and attacker.has_suit_in_hand(clearing.suit) and self.keep_is_up():
-                    self.field_hospitals.append((warriors_killed,clearing.suit))
+                if warriors_killed:
+                    if self.battle.defender_id == PIND_VAGABOND:
+                        if not defender.is_hostile(attacker.id):
+                            logger.debug(f"\t>> The {ID_TO_PLAYER[attacker.id]} are now HOSTILE toward the Vagabond! <<")
+                            defender.relationships[attacker.id] = 0
+                    if self.battle.attacker_id == PIND_MARQUISE and attacker.has_suit_in_hand(clearing.suit) and self.keep_is_up():
+                        self.field_hospitals.append((warriors_killed,clearing.suit))
             else:
                 # save which ambush card is played
                 logger.debug(f"{ID_TO_PLAYER[self.battle.attacker_id]} chooses to COUNTER-AMBUSH!")
@@ -1604,8 +1734,13 @@ class RootGame:
                         self.battle.def_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.attacker_id, 2, self.battle.clearing_id)
                         if cardboard_removed:
                             self.score_battle_points(self.battle.defender_id,self.battle.attacker_id,cardboard_removed)
-                        if warriors_killed and self.battle.attacker_id == PIND_MARQUISE and attacker.has_suit_in_hand(clearing.suit) and self.keep_is_up():
-                            self.field_hospitals.append((warriors_killed,clearing.suit))
+                        if warriors_killed:
+                            if self.battle.defender_id == PIND_VAGABOND:
+                                if not defender.is_hostile(attacker.id):
+                                    logger.debug(f"\t>> The {ID_TO_PLAYER[attacker.id]} are now HOSTILE toward the Vagabond! <<")
+                                    defender.relationships[attacker.id] = 0
+                            if self.battle.attacker_id == PIND_MARQUISE and attacker.has_suit_in_hand(clearing.suit) and self.keep_is_up():
+                                self.field_hospitals.append((warriors_killed,clearing.suit))
             
             # Checking for STAGE_ATT_AMBUSH is unnecessary because we will move onto another
             # battle stage after any choice by the attacker:
@@ -1686,8 +1821,13 @@ class RootGame:
                     self.battle.def_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.attacker_id,self.battle.def_hits_to_deal,self.battle.clearing_id)
                     if cardboard_removed:
                         self.score_battle_points(self.battle.defender_id,self.battle.attacker_id,cardboard_removed)
-                    if warriors_killed and self.battle.attacker_id == PIND_MARQUISE and attacker.has_suit_in_hand(clearing.suit) and self.keep_is_up():
-                        self.field_hospitals.append((warriors_killed,clearing.suit))
+                    if warriors_killed:
+                        if self.battle.defender_id == PIND_VAGABOND:
+                            if not defender.is_hostile(attacker.id):
+                                logger.debug(f"\t>> The {ID_TO_PLAYER[attacker.id]} are now HOSTILE toward the Vagabond! <<")
+                                defender.relationships[attacker.id] = 0
+                        if self.battle.attacker_id == PIND_MARQUISE and attacker.has_suit_in_hand(clearing.suit) and self.keep_is_up():
+                            self.field_hospitals.append((warriors_killed,clearing.suit))
                 
                 self.battle.stage = Battle.STAGE_ATT_ORDER
                 
@@ -1741,9 +1881,9 @@ class RootGame:
             if self.battle.vagabond_battle_ally == PIND_MARQUISE and self.battle.vagabond_ally_hits_taken > 0:
                 self.field_hospitals.append((self.battle.vagabond_ally_hits_taken, clearing.suit))
 
+        self.current_player = self.battle.attacker_id
         self.battle = Battle(-1,-1,-1)
         self.battle.stage = Battle.STAGE_DONE
-        self.current_player = self.battle.attacker_id
         return []
 
 
@@ -2058,8 +2198,9 @@ class RootGame:
                 for i in range(3):
                     if remaining[i] > 0:
                         valid_suits.add(i)
-            for enemy_id,battle_aid in [(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE)]:
-            # for enemy_id,battle_aid in [(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE),(PIND_VAGABOND,AID_BATTLE_VAGABOND)]:
+            for enemy_id,battle_aid in [(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE),(PIND_VAGABOND,AID_BATTLE_VAGABOND)]:
+                if enemy_id == PIND_VAGABOND and self.vagabond_coalition_partner == PIND_EYRIE:
+                    continue
                 possible_battle_clearings = [i for i,x in enumerate(self.board.get_possible_battles(PIND_EYRIE,enemy_id)) if x]
                 for i in possible_battle_clearings:
                     if self.board.clearings[i].suit in valid_suits:
@@ -2321,20 +2462,30 @@ class RootGame:
         """
         logger.debug(f"\tREVOLT started by the Woodland Alliance in clearing {clearing_index}!")
         # Remove all enemy pieces
-        clearing = self.board.clearings[clearing_index]
+        clearing:Clearing = self.board.clearings[clearing_index]
         for faction_i in {j for j in range(N_PLAYERS) if j != PIND_ALLIANCE}:
-            player = self.players[faction_i]
-            foo = clearing.get_num_warriors(faction_i)
-            logger.debug(f"\t\tRemoving {foo} {ID_TO_PLAYER[faction_i]} warriors in clearing {clearing_index}")
-            clearing.change_num_warriors(faction_i,-foo)
-            self.turn_log.change_clr_warriors(clearing_index,faction_i,-foo)
-            player.change_num_warriors(foo)
-            self.turn_log.change_plr_warrior_supply(faction_i,foo)
+            player:Player = self.players[faction_i]
 
-            if (faction_i == PIND_MARQUISE and
-                    foo > 0 and
-                    self.keep_is_up()):
-                self.field_hospitals.append((foo,clearing.suit))
+            if (faction_i == PIND_VAGABOND):
+                if (clearing.vagabond_present == 1):
+                    if (self.vagabond_coalition_partner == PIND_ALLIANCE):
+                        logger.debug("\t> The Revolting Alliance do not hurt their Coalition partner, the Vagabond!")
+                    else:
+                        logger.debug("\t> The Vagabond is caught in the revolt! They will have to damage 3 items...")
+                        self.vagabond_hits_to_take += 3
+                continue
+
+            foo = clearing.get_num_warriors(faction_i)
+            if foo > 0:
+                logger.debug(f"\t\tRemoving {foo} {ID_TO_PLAYER[faction_i]} warriors in clearing {clearing_index}")
+                clearing.change_num_warriors(faction_i,-foo)
+                self.turn_log.change_clr_warriors(clearing_index,faction_i,-foo)
+                player.change_num_warriors(foo)
+                self.turn_log.change_plr_warrior_supply(faction_i,foo)
+                if (faction_i == PIND_MARQUISE and
+                        self.keep_is_up()):
+                    self.field_hospitals.append((foo,clearing.suit))
+
             while len(clearing.buildings[faction_i]) > 0:
                 foo = clearing.buildings[faction_i].pop()
                 player.change_num_buildings(foo,1)
@@ -2438,18 +2589,18 @@ class RootGame:
         ans = []
         loc = vplayer.location
         clearing:Clearing = self.board.clearings[loc]
-        has_exhaustable = False
+        can_exhaust = False
 
         # Battle (must have sword to use/be in a clearing)
-        # if vplayer.has_exhaustable(ITEM_SWORD):
-        #     has_exhaustable = True
-        #     for enemy_id,battle_aid in [(PIND_EYRIE,AID_BATTLE_EYRIE),(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE)]:
-        #         if (not self.vagabond_coalition_partner == enemy_id) and clearing.can_start_battle(PIND_VAGABOND,enemy_id):
-        #             ans.append(loc + battle_aid)
+        if vplayer.has_exhaustable(ITEM_SWORD):
+            can_exhaust = True
+            for enemy_id,battle_aid in [(PIND_EYRIE,AID_BATTLE_EYRIE),(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE)]:
+                if (not self.vagabond_coalition_partner == enemy_id) and clearing.can_start_battle(PIND_VAGABOND,enemy_id):
+                    ans.append(loc + battle_aid)
 
         # Explore / Special Action
         if vplayer.has_exhaustable(ITEM_TORCH):
-            has_exhaustable = True
+            can_exhaust = True
             if clearing.num_ruins > 0:
                 ans.append(AID_EXPLORE)
 
@@ -2458,7 +2609,7 @@ class RootGame:
                     if clearing.has_presence(pid) and len(self.players[pid].hand) > 0:
                         ans.append(AID_THIEF_ABILITY + pid)
             elif vplayer.chosen_character == CHAR_TINKER:
-                card_ids_in_discard = np.where(np.any(self.discard_array!=0, 1))[0]
+                card_ids_in_discard = {c.id for c in self.discard_pile}
                 for cid in card_ids_in_discard:
                     csuit = self.deck.deck_comp[cid][0].suit
                     if csuit == clearing.suit or csuit == SUIT_BIRD:
@@ -2467,13 +2618,13 @@ class RootGame:
         for qcard in self.active_quests:
             if (qcard.suit == clearing.suit and 
                     all(vplayer.has_exhaustable(i,a) for i,a in qcard.requirements.items())):
-                has_exhaustable = True
+                can_exhaust = True
                 ans.append(AID_COMPLETE_QUEST + 2*qcard.id)
                 ans.append(AID_COMPLETE_QUEST + 2*qcard.id + 1)
         
         # Strike
         if vplayer.has_exhaustable(ITEM_CROSSBOW):
-            has_exhaustable = True
+            can_exhaust = True
             # Marquise
             if self.vagabond_coalition_partner != PIND_MARQUISE:
                 if clearing.get_num_warriors(PIND_MARQUISE) > 0:
@@ -2508,11 +2659,16 @@ class RootGame:
         logger.debug(f"\tCrafting power: {self.remaining_craft_power}")
         ans += list({i+AID_CRAFT_CARD for i in self.get_craftable_ids(vplayer)})
 
-        if not has_exhaustable:
-            has_exhaustable = vplayer.has_any_exhaustable()
+        if not can_exhaust:
+            logger.debug("Checking for any exhaustable items:")
+            logger.debug(f"VB Tracks: {vplayer.tea_track} / {vplayer.coins_track} / {vplayer.bag_track}")
+            logger.debug(f"VB Undamaged: {[(ID_TO_ITEM[i],exh) for i,exh in vplayer.satchel_undamaged]}")
+            logger.debug(f"VB Damaged: {[(ID_TO_ITEM[i],exh) for i,exh in vplayer.satchel_damaged]}")
+            
+            can_exhaust = vplayer.has_any_exhaustable()
         # Aid
         # must be able to exhaust an item and have a matching card to give
-        if (has_exhaustable and
+        if (can_exhaust and
                 vplayer.has_suit_in_hand(clearing.suit)):
             aid_targets = [player_i for player_i in range(3) if clearing.has_presence(player_i)]
             aid_cards = {card.id for card in vplayer.hand if (card.suit == SUIT_BIRD or card.suit == clearing.suit)}
@@ -2670,7 +2826,9 @@ class RootGame:
                 # can they use Command Warren?
                 if CID_COMMAND_WARREN in {c.id for c in current_player.persistent_cards}:
                     ans = []
-                    for enemy_id,battle_aid in [(PIND_EYRIE,AID_BATTLE_EYRIE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE)]:
+                    for enemy_id,battle_aid in [(PIND_EYRIE,AID_BATTLE_EYRIE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE),(PIND_VAGABOND,AID_BATTLE_VAGABOND)]:
+                        if enemy_id == PIND_VAGABOND and self.vagabond_coalition_partner == PIND_MARQUISE:
+                            continue
                         possible_battle_clearings = [i for i,x in enumerate(self.board.get_possible_battles(PIND_MARQUISE,enemy_id)) if x]
                         for i in possible_battle_clearings:
                             ans.append(i + battle_aid)
@@ -2729,7 +2887,9 @@ class RootGame:
                     # standard actions
                     if self.marquise_actions > 0:
                         # starting a battle
-                        for enemy_id,battle_aid in [(PIND_EYRIE,AID_BATTLE_EYRIE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE)]:
+                        for enemy_id,battle_aid in [(PIND_EYRIE,AID_BATTLE_EYRIE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE),(PIND_VAGABOND,AID_BATTLE_VAGABOND)]:
+                            if enemy_id == PIND_VAGABOND and self.vagabond_coalition_partner == PIND_MARQUISE:
+                                continue
                             possible_battle_clearings = [i for i,x in enumerate(self.board.get_possible_battles(PIND_MARQUISE,enemy_id)) if x]
                             for i in possible_battle_clearings:
                                 ans.append(i + battle_aid)
@@ -2908,7 +3068,9 @@ class RootGame:
                 # can they use Command Warren?
                 if CID_COMMAND_WARREN in {c.id for c in current_player.persistent_cards}:
                     ans = []
-                    for enemy_id,battle_aid in [(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE)]:
+                    for enemy_id,battle_aid in [(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE),(PIND_VAGABOND,AID_BATTLE_VAGABOND)]:
+                        if enemy_id == PIND_VAGABOND and self.vagabond_coalition_partner == PIND_EYRIE:
+                            continue
                         possible_battle_clearings = [i for i,x in enumerate(self.board.get_possible_battles(PIND_EYRIE,enemy_id)) if x]
                         for i in possible_battle_clearings:
                             ans.append(i + battle_aid)
@@ -2942,6 +3104,7 @@ class RootGame:
                     # no crafting possible, so move onto resolving the decree
                     logger.debug(f"> Moving onto step 2 of Daylight...")
                     self.phase_steps = 2
+
             if self.phase_steps == 2:
                 # RESOLVING THE DECREE
                 ans = []
@@ -2956,6 +3119,7 @@ class RootGame:
                 # check for dominance-related actions
                 ans += self.get_dom_payment_actions(current_player)
                 ans += self.get_dom_activation_actions(current_player, PIND_EYRIE)
+                
                 if any(any(x) for x in self.remaining_decree.values()):
                     # an action must be taken if possible!
                     # some of decree still remains to resolve
@@ -2977,6 +3141,7 @@ class RootGame:
                         return [AID_GENERIC_SKIP] + ans
                     logger.debug(">>> DECREE COMPLETED")
                     self.phase_steps = 4
+
             if self.phase_steps == 3: # we are turmoiling
                 if max(self.victory_points) >= 30: # make sure we don't take away a win
                     return [0]
@@ -3122,7 +3287,9 @@ class RootGame:
                 # can they use Command Warren?
                 if CID_COMMAND_WARREN in {c.id for c in current_player.persistent_cards}:
                     ans = []
-                    for enemy_id,battle_aid in [(PIND_EYRIE,AID_BATTLE_EYRIE),(PIND_MARQUISE,AID_BATTLE_MARQUISE)]:
+                    for enemy_id,battle_aid in [(PIND_EYRIE,AID_BATTLE_EYRIE),(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_VAGABOND,AID_BATTLE_VAGABOND)]:
+                        if enemy_id == PIND_VAGABOND and self.vagabond_coalition_partner == PIND_ALLIANCE:
+                            continue
                         possible_battle_clearings = [i for i,x in enumerate(self.board.get_possible_battles(PIND_ALLIANCE,enemy_id)) if x]
                         for i in possible_battle_clearings:
                             ans.append(i + battle_aid)
@@ -3182,7 +3349,9 @@ class RootGame:
                     # Move
                     ans = self.board.get_legal_move_actions(PIND_ALLIANCE,{0,1,2})
                     # Battle
-                    for enemy_id,battle_aid in [(PIND_EYRIE,AID_BATTLE_EYRIE),(PIND_MARQUISE,AID_BATTLE_MARQUISE)]:
+                    for enemy_id,battle_aid in [(PIND_EYRIE,AID_BATTLE_EYRIE),(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_VAGABOND,AID_BATTLE_VAGABOND)]:
+                        if enemy_id == PIND_VAGABOND and self.vagabond_coalition_partner == PIND_ALLIANCE:
+                            continue
                         possible_battle_clearings = [i for i,x in enumerate(self.board.get_possible_battles(PIND_ALLIANCE,enemy_id)) if x]
                         for i in possible_battle_clearings:
                             ans.append(i + battle_aid)
@@ -3318,7 +3487,7 @@ class RootGame:
                     ans = []
                     if vplayer.location <= 11:
                         for enemy_id,battle_aid in [(PIND_EYRIE,AID_BATTLE_EYRIE),(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE)]:
-                            if self.board.clearings[vplayer.location].can_start_battle(PIND_VAGABOND,enemy_id):
+                            if (self.board.clearings[vplayer.location].can_start_battle(PIND_VAGABOND,enemy_id)) and (self.vagabond_coalition_partner != enemy_id):
                                 ans.append(vplayer.location + battle_aid)
                     if bool(ans):
                         logger.debug(f"Checking for use of Command Warren...")
@@ -3639,6 +3808,7 @@ class RootGame:
             logger.debug("Spending a bird card to gain an action:")
             self.discard_from_hand(PIND_MARQUISE, ACTION_TO_BIRD_ID[action])
             self.marquise_actions += 1
+
         elif action >= AID_BATTLE_EYRIE and action <= AID_BATTLE_EYRIE + 11:
             self.battle = Battle(PIND_MARQUISE,PIND_EYRIE,action - AID_BATTLE_EYRIE)
             self.turn_log.record_battle(action - AID_BATTLE_EYRIE,PIND_MARQUISE,PIND_EYRIE)
@@ -3657,6 +3827,16 @@ class RootGame:
                 self.persistent_used_this_turn.add(CID_COMMAND_WARREN)
             else:
                 self.marquise_actions -= 1
+        elif action >= AID_BATTLE_VAGABOND and action <= AID_BATTLE_VAGABOND + 11:
+            self.battle = Battle(PIND_MARQUISE,PIND_VAGABOND,action - AID_BATTLE_VAGABOND)
+            self.turn_log.record_battle(action - AID_BATTLE_VAGABOND,PIND_MARQUISE,PIND_VAGABOND)
+            if self.phase_steps == 0:
+                logger.debug("Command Warren Activated:")
+                self.phase_steps = 1
+                self.persistent_used_this_turn.add(CID_COMMAND_WARREN)
+            else:
+                self.marquise_actions -= 1
+
         elif action >= AID_MOVE and action <= AID_MOVE + 3599:
             start,foo = divmod(action - AID_MOVE,300)
             end,amount = divmod(foo,25)
@@ -3935,6 +4115,16 @@ class RootGame:
             else:
                 logger.debug(">> Decree: BATTLE")
                 self.reduce_decree_count(DECREE_BATTLE, self.board.clearings[action - AID_BATTLE_ALLIANCE].suit)
+        elif action >= AID_BATTLE_VAGABOND and action <= AID_BATTLE_VAGABOND + 11:
+            self.battle = Battle(PIND_EYRIE,PIND_VAGABOND,action - AID_BATTLE_VAGABOND)
+            self.turn_log.record_battle(action - AID_BATTLE_VAGABOND,PIND_EYRIE,PIND_VAGABOND)
+            if self.phase_steps == 0:
+                logger.debug("Command Warren Activated:")
+                self.phase_steps = 1
+                self.persistent_used_this_turn.add(CID_COMMAND_WARREN)
+            else:
+                logger.debug(">> Decree: BATTLE")
+                self.reduce_decree_count(DECREE_BATTLE, self.board.clearings[action - AID_BATTLE_VAGABOND].suit)
         
         elif action >= AID_MOVE and action <= AID_MOVE + 3599:
             logger.debug(">> Decree: MOVE")
@@ -3950,6 +4140,7 @@ class RootGame:
                 self.outrage_suits.append(dest.suit)
 
             self.reduce_decree_count(DECREE_MOVE, self.board.clearings[start].suit)
+        
         elif action >= AID_CHOOSE_CLEARING and action <= AID_CHOOSE_CLEARING + 11:
             # choosing where to recruit (assuming we have the warriors to place ALL (even charismatic))
             logger.debug(">> Decree: RECRUIT")
@@ -3968,6 +4159,7 @@ class RootGame:
             self.reduce_decree_count(DECREE_RECRUIT, self.board.clearings[action - AID_CHOOSE_CLEARING].suit)
             if turmoil:
                 self.phase_steps = 3
+
         elif action >= AID_BUILD1 and action <= AID_BUILD1 + 11:
             # building a Roost
             logger.debug(">> Decree: BUILD")
@@ -3975,6 +4167,7 @@ class RootGame:
             self.turn_log.change_clr_building(action - AID_BUILD1,PIND_EYRIE,BIND_ROOST,1)
             current_player.place_roost()
             self.reduce_decree_count(DECREE_BUILD, self.board.clearings[action - AID_BUILD1].suit)
+        
         elif self.phase_steps == 3:
             # we are turmoiling and choosing a new leader
             current_player.choose_new_leader(action - AID_CHOOSE_LEADER)
@@ -4125,6 +4318,7 @@ class RootGame:
         elif action >= AID_CARD_TAX_COLLECTOR and action <= AID_CARD_TAX_COLLECTOR + 11: # activate tax collector
             self.persistent_used_this_turn.add(CID_TAX_COLLECTOR)
             self.activate_tax_collector(PIND_ALLIANCE,action - AID_CARD_TAX_COLLECTOR)
+        
         elif action >= AID_BATTLE_EYRIE and action <= AID_BATTLE_EYRIE + 11:
             self.battle = Battle(PIND_ALLIANCE,PIND_EYRIE,action - AID_BATTLE_EYRIE)
             self.turn_log.record_battle(action - AID_BATTLE_EYRIE,PIND_ALLIANCE,PIND_EYRIE)
@@ -4134,6 +4328,12 @@ class RootGame:
         elif action >= AID_BATTLE_MARQUISE and action <= AID_BATTLE_MARQUISE + 11:
             self.battle = Battle(PIND_ALLIANCE,PIND_MARQUISE,action - AID_BATTLE_MARQUISE)
             self.turn_log.record_battle(action - AID_BATTLE_MARQUISE,PIND_ALLIANCE,PIND_MARQUISE)
+            logger.debug("Command Warren Activated:")
+            self.phase_steps = 1
+            self.persistent_used_this_turn.add(CID_COMMAND_WARREN)
+        elif action >= AID_BATTLE_VAGABOND and action <= AID_BATTLE_VAGABOND + 11:
+            self.battle = Battle(PIND_ALLIANCE,PIND_VAGABOND,action - AID_BATTLE_VAGABOND)
+            self.turn_log.record_battle(action - AID_BATTLE_VAGABOND,PIND_ALLIANCE,PIND_VAGABOND)
             logger.debug("Command Warren Activated:")
             self.phase_steps = 1
             self.persistent_used_this_turn.add(CID_COMMAND_WARREN)
@@ -4185,6 +4385,11 @@ class RootGame:
         elif action >= AID_BATTLE_MARQUISE and action <= AID_BATTLE_MARQUISE + 11:
             self.battle = Battle(PIND_ALLIANCE,PIND_MARQUISE,action - AID_BATTLE_MARQUISE)
             self.turn_log.record_battle(action - AID_BATTLE_MARQUISE,PIND_ALLIANCE,PIND_MARQUISE)
+            logger.debug("> Operation: Battle")
+            self.evening_actions_left -= 1
+        elif action >= AID_BATTLE_VAGABOND and action <= AID_BATTLE_VAGABOND + 11:
+            self.battle = Battle(PIND_ALLIANCE,PIND_VAGABOND,action - AID_BATTLE_VAGABOND)
+            self.turn_log.record_battle(action - AID_BATTLE_VAGABOND,PIND_ALLIANCE,PIND_VAGABOND)
             logger.debug("> Operation: Battle")
             self.evening_actions_left -= 1
 
@@ -4347,25 +4552,32 @@ class RootGame:
                 self.phase_steps = 5
 
         elif action >= AID_BATTLE_MARQUISE and action <= AID_BATTLE_MARQUISE + 11:
-            self.battle = Battle(PIND_EYRIE,PIND_MARQUISE,action - AID_BATTLE_MARQUISE)
-            self.turn_log.record_battle(action - AID_BATTLE_MARQUISE,PIND_EYRIE,PIND_MARQUISE)
+            self.battle = Battle(PIND_VAGABOND,PIND_MARQUISE,action - AID_BATTLE_MARQUISE)
+            self.turn_log.record_battle(action - AID_BATTLE_MARQUISE,PIND_VAGABOND,PIND_MARQUISE)
             if self.phase_steps == 0:
                 logger.debug("Command Warren Activated:")
                 self.phase_steps = 1
                 self.persistent_used_this_turn.add(CID_COMMAND_WARREN)
             else:
-                logger.debug(">> Decree: BATTLE")
-                self.reduce_decree_count(DECREE_BATTLE, self.board.clearings[action - AID_BATTLE_MARQUISE].suit)
+                vplayer.exhaust_item(ITEM_SWORD)
+        elif action >= AID_BATTLE_EYRIE and action <= AID_BATTLE_EYRIE + 11:
+            self.battle = Battle(PIND_VAGABOND,PIND_EYRIE,action - AID_BATTLE_EYRIE)
+            self.turn_log.record_battle(action - AID_BATTLE_EYRIE,PIND_VAGABOND,PIND_EYRIE)
+            if self.phase_steps == 0:
+                logger.debug("Command Warren Activated:")
+                self.phase_steps = 1
+                self.persistent_used_this_turn.add(CID_COMMAND_WARREN)
+            else:
+                vplayer.exhaust_item(ITEM_SWORD)
         elif action >= AID_BATTLE_ALLIANCE and action <= AID_BATTLE_ALLIANCE + 11:
-            self.battle = Battle(PIND_EYRIE,PIND_ALLIANCE,action - AID_BATTLE_ALLIANCE)
-            self.turn_log.record_battle(action - AID_BATTLE_ALLIANCE,PIND_EYRIE,PIND_ALLIANCE)
+            self.battle = Battle(PIND_VAGABOND,PIND_ALLIANCE,action - AID_BATTLE_ALLIANCE)
+            self.turn_log.record_battle(action - AID_BATTLE_ALLIANCE,PIND_VAGABOND,PIND_ALLIANCE)
             if self.phase_steps == 0:
                 logger.debug("Command Warren Activated:")
                 self.phase_steps = 1
                 self.persistent_used_this_turn.add(CID_COMMAND_WARREN)
             else:
-                logger.debug(">> Decree: BATTLE")
-                self.reduce_decree_count(DECREE_BATTLE, self.board.clearings[action - AID_BATTLE_ALLIANCE].suit)
+                vplayer.exhaust_item(ITEM_SWORD)
         
         elif action >= AID_VB_MOVE and action <= AID_VB_MOVE + 360:
             start,end = divmod(action - AID_VB_MOVE,19)
@@ -4731,8 +4943,8 @@ if __name__ == "__main__":
     env.reset()
 
     total_rewards = np.zeros(N_PLAYERS)
-    while action_count < 200:
-    # while not done:
+    # while action_count < 200:
+    while not done:
         legal_actions = env.legal_actions()
         logger.debug(f"> Action {action_count} - Player: {ID_TO_PLAYER[env.current_player]}")
         logger.info(f"Legal Actions: {legal_actions}")
