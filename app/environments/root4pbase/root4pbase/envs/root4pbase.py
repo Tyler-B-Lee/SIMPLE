@@ -7,6 +7,7 @@ from stable_baselines import logger
 from .rootGameClasses.classes import *
 from .rootGameClasses.rootMechanics import *
 
+# Game Obs length: 4392
 # start (base), avg games around 150 actions per player
 # docker-compose exec app mpirun -np 2 python3 train.py -e root4pbase -ne 30 -t -0.15 -ent 0.01 -os 0.0001
 
@@ -16,13 +17,14 @@ class rootEnv(gym.Env):
     def __init__(self, verbose = False, manual = False):
         super(rootEnv, self).__init__()
         self.name = 'root4pbase'
-        self.n_players = 3
+        self.n_players = 4
         self.manual = manual
 
-        self.action_space = gym.spaces.Discrete(4858)
+        self.action_space = gym.spaces.Discrete(5679)
         self.observation_space = gym.spaces.Box(-1, 1, (
             # 47_315 (15 memory)
-            21_674
+            # 21_674 (3 memory)
+            4392
             + self.action_space.n
             , )
         )  

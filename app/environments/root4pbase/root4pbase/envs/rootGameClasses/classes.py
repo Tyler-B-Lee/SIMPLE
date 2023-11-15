@@ -1,15 +1,15 @@
 import copy
 import random
-from typing import Tuple,List
-import logging
-# from stable_baselines import logger
+from typing import Tuple
+# import logging
+from stable_baselines import logger
 import numpy as np
 
 Recipe = Tuple[int]
 
-logging.basicConfig(filename='file.log',format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",filemode='w')
-logger = logging.getLogger("classes")
-logger.setLevel(logging.DEBUG)
+# logging.basicConfig(filename='file.log',format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",filemode='w')
+# logger = logging.getLogger("classes")
+# logger.setLevel(logging.DEBUG)
 
 ### Named Constants
 SUIT_MOUSE = 0
@@ -76,8 +76,11 @@ AID_CRAFT_RC_MAPPING = {
 
 N_PLAYERS = 4
 TURN_MEMORY = 3
-WIN_SCALAR = 1
-GAME_SCALAR = 1
+WIN_SCALAR = 0.025
+GAME_SCALAR = WIN_SCALAR
+POINT_WIN_REWARD = 8
+DOM_WIN_REWARD = 12
+MAX_ACTIONS = 1100
 
 PIND_MARQUISE = 0
 PIND_EYRIE = 1
@@ -469,13 +472,16 @@ class Clearing:
             foo[10] = 1
         ret = np.append(ret,foo)
 
-        foo = np.zeros(3)
+        foo = np.zeros(4)
         if self.get_num_buildings(PIND_ALLIANCE,BIND_MOUSE_BASE) > 0:
             foo[BIND_MOUSE_BASE] = 1
         elif self.get_num_buildings(PIND_ALLIANCE,BIND_RABBIT_BASE) > 0:
             foo[BIND_RABBIT_BASE] = 1
         elif self.get_num_buildings(PIND_ALLIANCE,BIND_FOX_BASE) > 0:
             foo[BIND_FOX_BASE] = 1
+
+        foo[3] = self.vagabond_present
+
         return np.append(ret,foo)
     
     def get_num_empty_slots(self) -> int:
@@ -653,8 +659,14 @@ class Board:
         return s
     
     def get_obs_array(self):
-        "Returns a 12-long array of the current board's state."
-        return np.asarray([c.get_obs_array() for c in self.clearings])
+        "Returns an array of the current board's state."
+        ret = np.asarray([c.get_obs_array() for c in self.clearings])
+
+        foo = np.zeros(7)
+        for i in range(7):
+            foo[i] = self.forests[i].vagabond_present
+
+        return np.append(ret,foo)
     
     def randomize_suits(self):
         "Randomizes the suits of each clearing in self.clearings, NOT the board_comp given on creation."
@@ -1454,29 +1466,55 @@ class Vagabond(Player):
         return "--- Vagabond ---\n" + super().__str__() + f"\ntodo (if ever)"
 
     def get_obs_array(self):
-        ret = np.zeros(10)
-        if self.warrior_storage > 0:
-            ret[self.warrior_storage - 1] = 1
+        ret = np.zeros((3,3))
+        if self.tea_track > 0:
+            ret[0][self.tea_track - 1] = 1
+        if self.coins_track > 0:
+            ret[1][self.coins_track - 1] = 1
+        if self.bag_track > 0:
+            ret[2][self.bag_track - 1] = 1
         
-        foo = np.zeros(3)
-        for i,a in self.buildings.items():
-            if a > 0:
-                foo[i]= 1
-        ret = np.append(ret,foo)
-        
-        foo = np.zeros(10)
-        if self.tokens[TIND_SYMPATHY] > 0:
-            foo[self.get_num_tokens_in_store(TIND_SYMPATHY) - 1] = 1
+        foo = np.zeros((4,8,4))
+        for dam,sat_section in [(0,self.satchel_undamaged),(2,self.satchel_damaged)]:
+            exh_counts = {i:0 for i in range(8)}
+            unexh_counts = {i:0 for i in range(8)}
+            for i,exh in sat_section:
+                if exh:
+                    exh_counts[i] += 1
+                else:
+                    unexh_counts[i] += 1
+            for item_id,amount in unexh_counts.items():
+                if amount > 0:
+                    foo[dam][item_id][amount - 1] = 1
+            for item_id,amount in exh_counts.items():
+                if amount > 0:
+                    foo[dam + 1][item_id][amount - 1] = 1
         ret = np.append(ret,foo)
 
-        foo = np.zeros(54)
-        if len(self.supporters) > 0:
-            foo[len(self.supporters) - 1] = 1
+        foo = np.zeros((3,5))
+        for i in range(3):
+            foo[i][self.relationships[i]] = 1
         ret = np.append(ret,foo)
+        
+        foo = np.zeros(18)
+        bar = np.zeros((3,6))
+        try:
+            foo[self.chosen_character] = 1
+        except:
+            pass
 
-        foo = np.zeros(10)
-        if self.num_officers > 0:
-            foo[self.num_officers - 1] = 1
+        for suit,qlist in self.completed_quests.items():
+            for qcard in qlist:
+                foo[qcard.id + 3] = 1
+            bar[suit][len(qlist)] = 1
+        foo = np.append(foo,bar)
+        ret = np.append(ret,foo)
+        
+        foo = np.zeros(19)
+        try:
+            foo[self.location] = 1
+        except:
+            pass
         ret = np.append(ret,foo)
 
         foo = np.zeros(14)
@@ -1486,12 +1524,7 @@ class Vagabond(Player):
         
         foo = np.zeros(11)
         foo.put([CID_TO_PERS_INDEX[c.id] for c in self.persistent_cards], 1)
-        ret = np.append(ret,foo)
-        
-        foo = np.zeros((7,2))
-        for i,a in self.crafted_items.items():
-            if a > 0:
-                foo[i][a - 1] = 1
+
         return np.append(ret,foo)
     
     def get_battle_power(self):
@@ -1693,18 +1726,24 @@ class Battle:
         return ret
     
     def get_obs_array(self):
-        ret = np.zeros(11)
+        ret = np.zeros(10)
         if self.stage is not None:
             ret[self.stage] = 1
         if self.stage == self.STAGE_DONE:
-            return np.append(ret,np.zeros(56))
-        foo = np.zeros(6)
-        foo[self.attacker_id] = 1
-        foo[self.defender_id + 3] = 1
+            return np.append(ret,np.zeros(75))
+        
+        foo = np.zeros(11)
+        if self.attacker_id >= 0:
+            foo[self.attacker_id] = 1
+        if self.defender_id >= 0:
+            foo[self.defender_id + 4] = 1
+        if self.vagabond_battle_ally is not None:
+            foo[self.vagabond_battle_ally + 8] = 1
         ret = np.append(ret,foo)
 
         foo = np.zeros(12)
-        foo[self.clearing_id] = 1
+        if self.clearing_id >= 0:
+            foo[self.clearing_id] = 1
         ret = np.append(ret,foo)
 
         foo = np.zeros((6,4))
@@ -1720,9 +1759,12 @@ class Battle:
             foo[5][self.def_ambush_id] = 1
         ret = np.append(ret,foo)
 
-        foo = np.zeros((2,7))
+        foo = np.zeros((4,7))
         foo[0][self.att_hits_to_deal] = 1
         foo[1][self.def_hits_to_deal] = 1
+        foo[2][self.vagabond_ally_hits_taken] = 1
+        foo[3][self.vagabond_hits_taken] = 1
+        
         return np.append(ret,foo)
 
 
