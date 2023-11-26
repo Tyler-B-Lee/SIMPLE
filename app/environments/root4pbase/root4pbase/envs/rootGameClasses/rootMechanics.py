@@ -5,15 +5,6 @@ from .classes import *
 
 # python -m tensorboard.main --logdir="C:\Users\tyler\Desktop\Desktop Work\SIMPLE\app\logs"
 
-# notes:
-# - os (optimizer stepsize) I think is the 'learning rate' parameter
-#        - Should be decreased linearly over training to 0 or very small
-#        - Some papers have it as small as 1e-6 at the end
-# start (base), avg games around 150 actions per player
-# avg score of +9 ~ 60% win rate? "wins" seem to give +23 avg, losses half that, negated (-11 ish)
-# docker-compose exec app mpirun -np 2 python3 train.py -e root3pdomACE -ne 12 -t 9 -ent 0.01 -os 0.0003
-
-
 class RootGame:
     PHASE_SETUP_MARQUISE = 0
     PHASE_SETUP_EYRIE = 1
@@ -56,6 +47,7 @@ class RootGame:
         self.battle.stage = Battle.STAGE_DONE
         self.phase = self.PHASE_SETUP_MARQUISE
         self.phase_steps = 0
+        self.most_cards_seen = 0
 
         self.num_actions_played = 0
         self.acting_player = 0
@@ -106,8 +98,8 @@ class RootGame:
             next_index = (place + 1) % N_PLAYERS
             self.next_player_index[i] = self.turn_order[next_index]
         
-        self.public_history = [None] * TURN_MEMORY
-        self.private_history = [None] * TURN_MEMORY
+        # self.public_history = [None] * TURN_MEMORY
+        # self.private_history = [None] * TURN_MEMORY
         # self.turn_log = TurnLog()
 
         self.draw_cards(PIND_MARQUISE,3)
@@ -469,11 +461,16 @@ class RootGame:
                     # logger.debug("BAT,NO ACTIONS")
                     actions_to_return = self.saved_battle_actions
 
-        # logger.debug(f"<> Current player: {self.current_player} / actions_to_return: {actions_to_return}")
         if bool(actions_to_return):
             self.legal_actions_to_get = actions_to_return
         else:
             self.legal_actions_to_get = self.advance_game()
+        
+        curr_hand = self.players[self.current_player].hand
+        hand_len = len(curr_hand)
+        logger.debug(f"<> Current player: {self.current_player} / hand (size {hand_len}): {[c.name for c in curr_hand]}")
+        if hand_len > self.most_cards_seen:
+            self.most_cards_seen = hand_len
 
         reward = self.points_scored_this_action
         # at this point, if a player has won by dominance, this flag
@@ -536,10 +533,13 @@ class RootGame:
                             reward[i] -= (POINT_WIN_REWARD / (N_PLAYERS - 1)) * WIN_SCALAR
         
         self.num_actions_played += 1
+        logger.debug(f"> Action # {self.num_actions_played} Played")
         if (not done) and (self.num_actions_played >= MAX_ACTIONS):
             done = True
             for i in range(N_PLAYERS):
                 reward[i] -= 15 * WIN_SCALAR
+        elif done:
+            print(f"Longest Hand Seen: {self.most_cards_seen}")
 
         return self.get_observation(), reward, done
 
@@ -2793,10 +2793,10 @@ class RootGame:
         ans += list({i+AID_CRAFT_CARD for i in self.get_craftable_ids(vplayer)})
 
         if not can_exhaust:
-            logger.debug("Checking for any exhaustable items:")
-            logger.debug(f"VB Tracks: {vplayer.tea_track} / {vplayer.coins_track} / {vplayer.bag_track}")
-            logger.debug(f"VB Undamaged: {[(ID_TO_ITEM[i],exh) for i,exh in vplayer.satchel_undamaged]}")
-            logger.debug(f"VB Damaged: {[(ID_TO_ITEM[i],exh) for i,exh in vplayer.satchel_damaged]}")
+            # logger.debug("Checking for any exhaustable items:")
+            # logger.debug(f"VB Tracks: {vplayer.tea_track} / {vplayer.coins_track} / {vplayer.bag_track}")
+            # logger.debug(f"VB Undamaged: {[(ID_TO_ITEM[i],exh) for i,exh in vplayer.satchel_undamaged]}")
+            # logger.debug(f"VB Damaged: {[(ID_TO_ITEM[i],exh) for i,exh in vplayer.satchel_damaged]}")
             
             can_exhaust = vplayer.has_any_exhaustable()
         # Aid
@@ -3550,6 +3550,8 @@ class RootGame:
                 logger.debug(f"VB Tracks: {vplayer.tea_track} / {vplayer.coins_track} / {vplayer.bag_track}")
                 logger.debug(f"VB Undamaged: {[(ID_TO_ITEM[i],exh) for i,exh in vplayer.satchel_undamaged]}")
                 logger.debug(f"VB Damaged: {[(ID_TO_ITEM[i],exh) for i,exh in vplayer.satchel_damaged]}")
+                vloc = f"Forest {vplayer.location-12}" if vplayer.location > 11 else f"Clearing {vplayer.location}"
+                logger.debug(f"\n> Vagabond is in {vloc}")
 
                 # can they use BBB?
                 if CID_BBB in {c.id for c in vplayer.persistent_cards}:
@@ -4670,7 +4672,6 @@ class RootGame:
         # elif action == AID_CARD_ROYAL_CLAIM:
         #     self.activate_royal_claim(PIND_EYRIE)
         #     self.persistent_used_this_turn.add(CID_ROYAL_CLAIM)
-        
     
     def vagabond_daylight(self,action:int,vplayer:Vagabond):
         "Performs the given daylight action for the Vagabond."
@@ -4755,7 +4756,7 @@ class RootGame:
                 self.change_score(PIND_VAGABOND,2)
                 return
             self.aids_this_turn[target_id] += 1
-            logger.debug(f"\tThe Vagabond has aided the {ID_TO_PLAYER[target_id]} {self.aids_this_turn[target_id]} time(s) this turn")
+            logger.debug(f"\tThe Vagabond has aided the {ID_TO_PLAYER[target_id]} {self.aids_this_turn[target_id]}/{vplayer.relationships[target_id]} time(s) this turn")
             if self.aids_this_turn[target_id] == vplayer.relationships[target_id]:
                 # relationship improves
                 logger.debug("\t> Relationship improved!")
@@ -4973,7 +4974,7 @@ class RootGame:
             # self.turn_log.change_plr_hand_size(PIND_VAGABOND,1)
             # self.turn_log.change_plr_cards_gained(PIND_VAGABOND,dom_card.id)
 
-        elif action >= AID_ACTIVATE_COALITION and action <= AID_ACTIVATE_COALITION + 3:
+        elif action >= AID_ACTIVATE_COALITION and action <= AID_ACTIVATE_COALITION + 11:
             suit,coal_partner = divmod(action - AID_ACTIVATE_COALITION,3)
             target_id = suit + 38
             logger.debug(f">>> The Vagabond activates the {ID_TO_SUIT[suit]} Dominance Card,")

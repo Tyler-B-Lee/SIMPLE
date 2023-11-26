@@ -8,8 +8,19 @@ from .rootGameClasses.classes import *
 from .rootGameClasses.rootMechanics import *
 
 # Game Obs length: 4392
-# start (base), avg games around 150 actions per player
-# docker-compose exec app mpirun -np 2 python3 train.py -e root4pbase -ne 30 -t -0.15 -ent 0.01 -os 0.0001
+# docker-compose exec app tensorboard --logdir ./logs
+# notes:
+# - os (optimizer stepsize) I think is the 'learning rate' parameter
+#        - Should be decreased linearly over training to 0 or very small
+#        - Some papers have it as small as 1e-6 at the end
+
+# start (base), avg games around 150-160 actions per player, similar to random play
+# docker-compose exec app mpirun -np 2 python3 train.py -e root4pbase -ne 30 -t 0.1 -ent 0.05 -os 0.0003
+# gen 2, games 130 actions/player, ~285-300 games played (40,000 steps here)
+#       Commander 50% pick 1st, Tinker 63% lol, Ranger 29%, Thief 8%
+# docker-compose exec app mpirun -np 2 python3 train.py -e root4pbase -ne 24 -t 0.2 -ent 0.05 -os 0.0003
+
+
 
 class rootEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -24,7 +35,7 @@ class rootEnv(gym.Env):
         self.observation_space = gym.spaces.Box(-1, 1, (
             # 47_315 (15 memory)
             # 21_674 (3 memory)
-            4392
+            4474
             + self.action_space.n
             , )
         )  

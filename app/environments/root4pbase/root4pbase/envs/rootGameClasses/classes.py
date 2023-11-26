@@ -449,13 +449,13 @@ class Clearing:
             foo[8] = 1
         ret = np.append(ret,foo)
 
-        foo = np.zeros(6)
+        foo = np.zeros(9)
         if self.get_num_buildings(PIND_MARQUISE,BIND_SAWMILL) > 0:
             foo[self.get_num_buildings(PIND_MARQUISE,BIND_SAWMILL) - 1] = 1
         if self.get_num_buildings(PIND_MARQUISE,BIND_WORKSHOP) > 0:
-            foo[self.get_num_buildings(PIND_MARQUISE,BIND_WORKSHOP) + 1] = 1
+            foo[self.get_num_buildings(PIND_MARQUISE,BIND_WORKSHOP) - 1 + 3] = 1
         if self.get_num_buildings(PIND_MARQUISE,BIND_RECRUITER) > 0:
-            foo[self.get_num_buildings(PIND_MARQUISE,BIND_RECRUITER) + 3] = 1
+            foo[self.get_num_buildings(PIND_MARQUISE,BIND_RECRUITER) - 1 + 6] = 1
         ret = np.append(ret,foo)
 
         foo = np.zeros(21)
@@ -472,7 +472,7 @@ class Clearing:
             foo[10] = 1
         ret = np.append(ret,foo)
 
-        foo = np.zeros(4)
+        foo = np.zeros(5)
         if self.get_num_buildings(PIND_ALLIANCE,BIND_MOUSE_BASE) > 0:
             foo[BIND_MOUSE_BASE] = 1
         elif self.get_num_buildings(PIND_ALLIANCE,BIND_RABBIT_BASE) > 0:
@@ -481,6 +481,8 @@ class Clearing:
             foo[BIND_FOX_BASE] = 1
 
         foo[3] = self.vagabond_present
+        if self.num_ruins > 0:
+            foo[4] = 1
 
         return np.append(ret,foo)
     
@@ -1152,7 +1154,7 @@ class Marquise(Player):
             foo[8] = 1
         ret = np.append(ret,foo)
 
-        foo = np.zeros(14)
+        foo = np.zeros(20)
         if len(self.hand) > 0:
             foo[len(self.hand) - 1] = 1
         ret = np.append(ret,foo)
@@ -1227,7 +1229,7 @@ class Eyrie(Player):
             foo[self.buildings[BIND_ROOST] - 1] = 1
         ret = np.append(ret,foo)
 
-        foo = np.zeros(14)
+        foo = np.zeros(20)
         if len(self.hand) > 0:
             foo[len(self.hand) - 1] = 1
         ret = np.append(ret,foo)
@@ -1388,7 +1390,7 @@ class Alliance(Player):
             foo[self.num_officers - 1] = 1
         ret = np.append(ret,foo)
 
-        foo = np.zeros(14)
+        foo = np.zeros(20)
         if len(self.hand) > 0:
             foo[len(self.hand) - 1] = 1
         ret = np.append(ret,foo)
@@ -1517,7 +1519,7 @@ class Vagabond(Player):
             pass
         ret = np.append(ret,foo)
 
-        foo = np.zeros(14)
+        foo = np.zeros(30)
         if len(self.hand) > 0:
             foo[len(self.hand) - 1] = 1
         ret = np.append(ret,foo)
