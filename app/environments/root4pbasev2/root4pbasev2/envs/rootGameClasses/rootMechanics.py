@@ -1,7 +1,7 @@
 import random
 import numpy as np
-# from .classes import *
-from classes import *
+from .classes import *
+# from classes import *
 
 # python -m tensorboard.main --logdir="C:\Users\tyler\Desktop\Desktop Work\SIMPLE\app\logs"
 
@@ -537,7 +537,7 @@ class RootGame:
         if (not done) and (self.num_actions_played >= MAX_ACTIONS):
             done = True
             for i in range(N_PLAYERS):
-                reward[i] -= 15 * WIN_SCALAR
+                reward[i] -= 30 * WIN_SCALAR
         # elif done:
         #     print(f"Longest Hand Seen: {self.most_cards_seen}")
 
@@ -818,9 +818,10 @@ class RootGame:
         # ret = np.append(ret,foo)
         
         ret[1] = sum(self.discard_array) / 54 # total discard pile size
-
-        ret = np.append(ret,self.discard_array)
-        ret = np.append(ret,np.array(self.available_dominances))
+        
+        ret = np.append(ret, self.num_actions_played / 300)
+        ret = np.append(ret, self.discard_array)
+        ret = np.append(ret, np.array(self.available_dominances))
 
         foo = np.zeros(7)
         for i,a in self.available_items.items():
@@ -5031,75 +5032,75 @@ if __name__ == "__main__":
     np.set_printoptions(threshold=np.inf)
     env.reset()
 
-    # total_rewards = np.zeros(N_PLAYERS)
-    # while action_count < 200:
+    total_rewards = np.zeros(N_PLAYERS)
+    while action_count < 200:
     # while not done:
-    #     legal_actions = env.legal_actions()
-    #     logger.debug(f"> Action {action_count} - Player: {ID_TO_PLAYER[env.current_player]}")
-    #     logger.info(f"Legal Actions: {legal_actions}")
-    #     # print(f"Player: {ID_TO_PLAYER[env.current_player]}")
-    #     # print(f"> Action {action_count} - Legal Actions: {legal_actions}")
+        legal_actions = env.legal_actions()
+        logger.debug(f"> Action {action_count} - Player: {ID_TO_PLAYER[env.current_player]}")
+        logger.info(f"Legal Actions: {legal_actions}")
+        # print(f"Player: {ID_TO_PLAYER[env.current_player]}")
+        # print(f"> Action {action_count} - Legal Actions: {legal_actions}")
 
-    #     # action = -1
-    #     # while action not in legal_actions:
-    #     #     action = int(input("Choose a valid action: "))
-    #     action = random.choice(legal_actions)
-    #     # print(f"\tAction Chosen: {action}")
-    #     logger.info(f"\t> Action Chosen: {action}")
-    #     obs,reward,done = env.step(action)
+        # action = -1
+        # while action not in legal_actions:
+        #     action = int(input("Choose a valid action: "))
+        action = random.choice(legal_actions)
+        # print(f"\tAction Chosen: {action}")
+        logger.info(f"\t> Action Chosen: {action}")
+        obs,reward,done = env.step(action)
 
-    #     logger.debug(f"- Reward for this action: {reward}")
-    #     total_rewards += reward
-    #     logger.debug(f"\t> New reward total: {total_rewards}")
+        logger.debug(f"- Reward for this action: {reward}")
+        total_rewards += reward
+        logger.debug(f"\t> New reward total: {total_rewards}")
 
-    #     logger.debug(f"Observation length: {len(obs)}")
-    #     if action_count % 10 == 0:
-    #         logger.debug(f"{obs}")
-    #     # if env.battle.stage != Battle.STAGE_DONE:
-    #     #     for i,sq in enumerate(obs.reshape((139,5,5))):
-    #     #         logger.debug(f"- Observation Square {i}:\n{sq}\n")
-    #     # if done:
-    #     #     env.render()
+        logger.debug(f"Observation length: {len(obs)}")
+        if action_count % 10 == 0:
+            logger.debug(f"{obs}")
+        # if env.battle.stage != Battle.STAGE_DONE:
+        #     for i,sq in enumerate(obs.reshape((139,5,5))):
+        #         logger.debug(f"- Observation Square {i}:\n{sq}\n")
+        # if done:
+        #     env.render()
 
-    #     action_count += 1
+        action_count += 1
 
-    # logger.debug(f"Length: {len(obs)}\n{obs}")
+    logger.debug(f"Length: {len(obs)}\n{obs}")
     # for i,sq in enumerate(obs.reshape((139,5,5))):
     #     logger.debug(f"- Observation Square {i}:\n{sq}\n")
 
-    glens = []
-    for _ in range(25):
-        done = False
-        action_count = 0
-        total_rewards = np.zeros(N_PLAYERS)
-        while not done:
-            legal_actions = env.legal_actions()
-            logger.info(f"Player: {ID_TO_PLAYER[env.current_player]}")
-            logger.info(f"> Action {action_count} - Legal Actions: {legal_actions}")
-            # print(f"Player: {ID_TO_PLAYER[env.current_player]}")
-            # print(f"> Action {action_count} - Legal Actions: {legal_actions}")
+    # glens = []
+    # for _ in range(25):
+    #     done = False
+    #     action_count = 0
+    #     total_rewards = np.zeros(N_PLAYERS)
+    #     while not done:
+    #         legal_actions = env.legal_actions()
+    #         logger.info(f"Player: {ID_TO_PLAYER[env.current_player]}")
+    #         logger.info(f"> Action {action_count} - Legal Actions: {legal_actions}")
+    #         # print(f"Player: {ID_TO_PLAYER[env.current_player]}")
+    #         # print(f"> Action {action_count} - Legal Actions: {legal_actions}")
 
-            # action = -1
-            # while action not in legal_actions:
-            #     action = int(input("Choose a valid action: "))
-            action = random.choice(legal_actions)
-            # print(f"\tAction Chosen: {action}")
-            logger.info(f"\t> Action Chosen: {action}")
-            obs,reward,done = env.step(action)
+    #         # action = -1
+    #         # while action not in legal_actions:
+    #         #     action = int(input("Choose a valid action: "))
+    #         action = random.choice(legal_actions)
+    #         # print(f"\tAction Chosen: {action}")
+    #         logger.info(f"\t> Action Chosen: {action}")
+    #         obs,reward,done = env.step(action)
             
-            logger.debug(f"- Reward for this action: {reward}")
-            total_rewards += reward
-            logger.debug(f"\t> New reward total: {total_rewards}")
+    #         logger.debug(f"- Reward for this action: {reward}")
+    #         total_rewards += reward
+    #         logger.debug(f"\t> New reward total: {total_rewards}")
             
-            action_count += 1
+    #         action_count += 1
 
-        glens.append(action_count)
-        print(f"{total_rewards} from {action_count} actions")
-        logger.debug(f"Length: {len(obs)}")
+    #     glens.append(action_count)
+    #     print(f"{total_rewards} from {action_count} actions")
+    #     logger.debug(f"Length: {len(obs)}")
 
-        env.reset()
+    #     env.reset()
 
-    print(f"\nGames: {glens}")
-    print(f"\nLongest Length: {max(glens)}")
-    print(f"Shortest Length: {min(glens)}")
-    print(f"Average Length: {sum(glens)/25}")
+    # print(f"\nGames: {glens}")
+    # print(f"\nLongest Length: {max(glens)}")
+    # print(f"Shortest Length: {min(glens)}")
+    # print(f"Average Length: {sum(glens)/25}")

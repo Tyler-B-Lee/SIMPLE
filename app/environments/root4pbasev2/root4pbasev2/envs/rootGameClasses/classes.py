@@ -1,15 +1,15 @@
 import copy
 import random
 from typing import Tuple
-import logging
-# from stable_baselines import logger
+# import logging
+from stable_baselines import logger
 import numpy as np
 
 Recipe = Tuple[int]
 
-logging.basicConfig(filename='file.log',format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",filemode='w')
-logger = logging.getLogger("classes")
-logger.setLevel(logging.DEBUG)
+# logging.basicConfig(filename='file.log',format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",filemode='w')
+# logger = logging.getLogger("classes")
+# logger.setLevel(logging.DEBUG)
 
 ### Named Constants
 SUIT_MOUSE = 0
@@ -466,17 +466,22 @@ class Clearing:
             foo[1] = 1
         ret = np.append(ret,foo)
 
-        foo = np.zeros(5)
+        foo = np.zeros(9)
         if self.get_num_buildings(PIND_ALLIANCE,BIND_MOUSE_BASE) > 0:
-            foo[BIND_MOUSE_BASE] = 1
+            foo[0] = 1
         elif self.get_num_buildings(PIND_ALLIANCE,BIND_RABBIT_BASE) > 0:
-            foo[BIND_RABBIT_BASE] = 1
+            foo[1] = 1
         elif self.get_num_buildings(PIND_ALLIANCE,BIND_FOX_BASE) > 0:
-            foo[BIND_FOX_BASE] = 1
+            foo[2] = 1
 
         foo[3] = self.vagabond_present
         if self.num_ruins > 0:
             foo[4] = 1
+        foo[5] = self.get_num_empty_slots()
+
+        ruler = self.get_ruler()
+        if ruler != -1:
+            foo[ruler + 6] = 1
 
         return np.append(ret,foo)
     
