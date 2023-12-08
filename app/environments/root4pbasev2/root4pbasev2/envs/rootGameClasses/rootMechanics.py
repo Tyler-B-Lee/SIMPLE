@@ -68,6 +68,7 @@ class RootGame:
         self.available_dom_card_objs = [None,None,None,None]
         self.active_quests = []
         self.ruin_items = {i:None for i in range(12) if (self.board.clearings[i].num_ruins > 0)}
+        self.ruin_items_found = [0,0,0,0]
 
         self.field_hospitals = []
         self.outrage_offender = None
@@ -475,14 +476,22 @@ class RootGame:
         reward = self.points_scored_this_action
         # at this point, if a player has won by dominance, this flag
         # will be set to true in a step of the advance_game function
+        vplayer = self.players[PIND_VAGABOND]
         if self.dominance_win:
             done = True
+            print(f"> Dominance Victory by {ID_TO_PLAYER[self.current_player]} - {ID_TO_SUIT[self.active_dominances[self.current_player].suit]}")
+            print(f"\tScore: {self.victory_points} - Actions: {self.num_actions_played}")
             # Account for coalition victory
             if self.vagabond_coalition_partner != None:
                 # a coalition has been formed
                 if self.vagabond_coalition_partner == self.current_player:
                     # the coalition wins
                     logger.debug(">>> Coalition Victory!")
+                    print(f">>> Coalition Dominance Victory!")
+                    print(f"VB Tracks: {vplayer.tea_track} / {vplayer.coins_track} / {vplayer.bag_track}")
+                    print(f"VB Undamaged: {[(ID_TO_ITEM[i],exh) for i,exh in vplayer.satchel_undamaged]}")
+                    print(f"VB Damaged: {[(ID_TO_ITEM[i],exh) for i,exh in vplayer.satchel_damaged]}")
+
                     for i in range(N_PLAYERS):
                         if i == self.current_player or i == PIND_VAGABOND:
                             reward[i] += DOM_WIN_REWARD * WIN_SCALAR
@@ -507,11 +516,27 @@ class RootGame:
             done = (max(self.victory_points) >= 30) and (self.battle.stage == Battle.STAGE_DONE)
             if done:
                 winlist = self.get_winner_points()
+
+                if winlist[PIND_EYRIE] == 1:
+                    eplayer = self.players[PIND_EYRIE]
+                    print(f"> Eyrie Victory! Score: {self.victory_points} - Actions: {self.num_actions_played}")
+                    print(f"\tLeader: {ID_TO_LEADER[eplayer.chosen_leader_index]} - Roosts Left: {eplayer.buildings[BIND_ROOST]}")
+                if winlist[PIND_VAGABOND] == 1:
+                    print(f"> Vagabond Victory! Class: {vplayer.chosen_character} Score: {self.victory_points} - Actions: {self.num_actions_played}")
+                    print(f"VB Tracks: {vplayer.tea_track} / {vplayer.coins_track} / {vplayer.bag_track}")
+                    print(f"VB Undamaged: {[(ID_TO_ITEM[i],exh) for i,exh in vplayer.satchel_undamaged]}")
+                    print(f"VB Damaged: {[(ID_TO_ITEM[i],exh) for i,exh in vplayer.satchel_damaged]}")
+
                 if self.vagabond_coalition_partner != None:
                     # a coalition has been formed
                     if winlist[self.vagabond_coalition_partner] == 1:
                         # the coalition wins
                         logger.debug(">>> Coalition Victory!")
+                        print(f">>> Coalition Victory! (with {ID_TO_PLAYER[self.vagabond_coalition_partner]})")
+                        print(f"VB Tracks: {vplayer.tea_track} / {vplayer.coins_track} / {vplayer.bag_track}")
+                        print(f"VB Undamaged: {[(ID_TO_ITEM[i],exh) for i,exh in vplayer.satchel_undamaged]}")
+                        print(f"VB Damaged: {[(ID_TO_ITEM[i],exh) for i,exh in vplayer.satchel_damaged]}")
+                        
                         for i,val in enumerate(winlist):
                             if val == 1 or i == PIND_VAGABOND:
                                 reward[i] += POINT_WIN_REWARD * WIN_SCALAR
@@ -537,7 +562,7 @@ class RootGame:
         if (not done) and (self.num_actions_played >= MAX_ACTIONS):
             done = True
             for i in range(N_PLAYERS):
-                reward[i] -= 30 * WIN_SCALAR
+                reward[i] -= 15 * WIN_SCALAR
         # elif done:
         #     print(f"Longest Hand Seen: {self.most_cards_seen}")
 
@@ -611,7 +636,7 @@ class RootGame:
         logger.debug("\tOffender has no cards to give, so they show their hand to the Alliance...")
         target_hand = np.zeros(42)
         for c in offender.hand:
-            target_hand[c.id] += 1
+            target_hand[c.id] += 1/3
         self.alliance_seen_hands[self.outrage_offender][0] = target_hand
         
         # alliance draws 1 card for supporters
@@ -819,13 +844,13 @@ class RootGame:
         
         ret[1] = sum(self.discard_array) / 54 # total discard pile size
         
-        ret = np.append(ret, self.num_actions_played / 300)
-        ret = np.append(ret, self.discard_array)
+        ret = np.append(ret, self.num_actions_played / MAX_ACTIONS)
+        ret = np.append(ret, self.discard_array / 3)
         ret = np.append(ret, np.array(self.available_dominances))
 
         foo = np.zeros(7)
         for i,a in self.available_items.items():
-            foo[i] = a
+            foo[i] = a / 2
         ret = np.append(ret,foo)
         
         foo = np.zeros((N_PLAYERS,32))
@@ -850,8 +875,10 @@ class RootGame:
         foo = np.zeros(16)
         for qcard in self.active_quests:
             foo[qcard.id] = 1
-        foo[15] = self.vagabond_hits_to_take
+        foo[15] = self.vagabond_hits_to_take / 3
         ret = np.append(ret,foo)
+
+        ret = np.append(ret, np.array(self.ruin_items_found))
 
         foo = np.zeros((3 + N_PLAYERS, N_PLAYERS))
         foo[0][self.outside_turn_this_action] = 1
@@ -868,7 +895,7 @@ class RootGame:
         curr_player = self.players[self.current_player]
         foo = np.zeros(42)
         for c in curr_player.hand:
-            foo[c.id] += 1
+            foo[c.id] += 1/3
         ret = np.append(ret,foo)
 
         foo = np.zeros((3,6))
@@ -892,13 +919,13 @@ class RootGame:
 
         foo = np.zeros(4)
         for i,a in enumerate(self.field_hospitals):
-            foo[i] = min(4, a[0])
+            foo[i] = min(4, a[0]) / 4
         ret = np.append(ret,foo)
 
         if self.current_player == PIND_MARQUISE or self.outside_turn_this_action == PIND_MARQUISE:
             foo = np.zeros(2)
-            foo[0] = min(4, self.marquise_actions)
-            foo[1] = min(4, self.remaining_wood_cost)
+            foo[0] = min(4, self.marquise_actions) / 4
+            foo[1] = min(4, self.remaining_wood_cost) / 4
         else:
             foo = np.zeros(2)
         ret = np.append(ret,foo)
@@ -926,10 +953,10 @@ class RootGame:
             if self.current_player == PIND_ALLIANCE:
                 bar = np.zeros(3)
                 for i in range(3):
-                    bar[i] = min(4, curr_player.supporter_suit_counts[i])
+                    bar[i] = min(4, curr_player.supporter_suit_counts[i]) / 4
                 ump = np.zeros(42)
                 for c in curr_player.supporters:
-                    ump[c.id]+= 1
+                    ump[c.id] += 1/3
                 bar = np.append(bar,ump)
             else:
                 bar = np.zeros(45)
@@ -941,7 +968,7 @@ class RootGame:
         if self.current_player == PIND_VAGABOND or self.outside_turn_this_action == PIND_VAGABOND:
             foo = np.zeros(5)
             foo[0] = self.refreshes_left / 10 # a little weird for discrete amounts but fine?
-            foo[1] = self.repairs_left
+            foo[1] = self.repairs_left / 3
             if self.aid_target is not None:
                 foo[self.aid_target + 2] = 1
 
@@ -2001,7 +2028,7 @@ class RootGame:
         logger.debug(f"\t{ID_TO_PLAYER[player_index]} activates Codebreakers on {ID_TO_PLAYER[target_index]}")
         target_hand = np.zeros(42)
         for c in self.players[target_index].hand:
-            target_hand[c.id] += 1
+            target_hand[c.id] += 1/3
 
         if player_index == PIND_MARQUISE:
             self.marquise_seen_hands[target_index][0] = target_hand
@@ -2257,7 +2284,7 @@ class RootGame:
                     if remaining[i] > 0:
                         valid_suits.add(i)
             for enemy_id,battle_aid in [(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE),(PIND_VAGABOND,AID_BATTLE_VAGABOND)]:
-                if enemy_id == PIND_VAGABOND and self.vagabond_coalition_partner == PIND_EYRIE:
+                if enemy_id == PIND_VAGABOND and ((not self.players[PIND_VAGABOND].has_any_damageable()) or self.vagabond_coalition_partner == PIND_EYRIE):
                     continue
                 possible_battle_clearings = [i for i,x in enumerate(self.board.get_possible_battles(PIND_EYRIE,enemy_id)) if x]
                 for i in possible_battle_clearings:
@@ -2919,7 +2946,7 @@ class RootGame:
                 if CID_COMMAND_WARREN in {c.id for c in current_player.persistent_cards}:
                     ans = []
                     for enemy_id,battle_aid in [(PIND_EYRIE,AID_BATTLE_EYRIE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE),(PIND_VAGABOND,AID_BATTLE_VAGABOND)]:
-                        if enemy_id == PIND_VAGABOND and self.vagabond_coalition_partner == PIND_MARQUISE:
+                        if enemy_id == PIND_VAGABOND and ((not self.players[PIND_VAGABOND].has_any_damageable()) or self.vagabond_coalition_partner == PIND_MARQUISE):
                             continue
                         possible_battle_clearings = [i for i,x in enumerate(self.board.get_possible_battles(PIND_MARQUISE,enemy_id)) if x]
                         for i in possible_battle_clearings:
@@ -2980,7 +3007,7 @@ class RootGame:
                     if self.marquise_actions > 0:
                         # starting a battle
                         for enemy_id,battle_aid in [(PIND_EYRIE,AID_BATTLE_EYRIE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE),(PIND_VAGABOND,AID_BATTLE_VAGABOND)]:
-                            if enemy_id == PIND_VAGABOND and self.vagabond_coalition_partner == PIND_MARQUISE:
+                            if enemy_id == PIND_VAGABOND and ((not self.players[PIND_VAGABOND].has_any_damageable()) or self.vagabond_coalition_partner == PIND_MARQUISE):
                                 continue
                             possible_battle_clearings = [i for i,x in enumerate(self.board.get_possible_battles(PIND_MARQUISE,enemy_id)) if x]
                             for i in possible_battle_clearings:
@@ -3161,7 +3188,7 @@ class RootGame:
                 if CID_COMMAND_WARREN in {c.id for c in current_player.persistent_cards}:
                     ans = []
                     for enemy_id,battle_aid in [(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_ALLIANCE,AID_BATTLE_ALLIANCE),(PIND_VAGABOND,AID_BATTLE_VAGABOND)]:
-                        if enemy_id == PIND_VAGABOND and self.vagabond_coalition_partner == PIND_EYRIE:
+                        if enemy_id == PIND_VAGABOND and ((not self.players[PIND_VAGABOND].has_any_damageable()) or self.vagabond_coalition_partner == PIND_EYRIE):
                             continue
                         possible_battle_clearings = [i for i,x in enumerate(self.board.get_possible_battles(PIND_EYRIE,enemy_id)) if x]
                         for i in possible_battle_clearings:
@@ -3380,7 +3407,7 @@ class RootGame:
                 if CID_COMMAND_WARREN in {c.id for c in current_player.persistent_cards}:
                     ans = []
                     for enemy_id,battle_aid in [(PIND_EYRIE,AID_BATTLE_EYRIE),(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_VAGABOND,AID_BATTLE_VAGABOND)]:
-                        if enemy_id == PIND_VAGABOND and self.vagabond_coalition_partner == PIND_ALLIANCE:
+                        if enemy_id == PIND_VAGABOND and ((not self.players[PIND_VAGABOND].has_any_damageable()) or self.vagabond_coalition_partner == PIND_ALLIANCE):
                             continue
                         possible_battle_clearings = [i for i,x in enumerate(self.board.get_possible_battles(PIND_ALLIANCE,enemy_id)) if x]
                         for i in possible_battle_clearings:
@@ -3442,7 +3469,7 @@ class RootGame:
                     ans = self.board.get_legal_move_actions(PIND_ALLIANCE,{0,1,2})
                     # Battle
                     for enemy_id,battle_aid in [(PIND_EYRIE,AID_BATTLE_EYRIE),(PIND_MARQUISE,AID_BATTLE_MARQUISE),(PIND_VAGABOND,AID_BATTLE_VAGABOND)]:
-                        if enemy_id == PIND_VAGABOND and self.vagabond_coalition_partner == PIND_ALLIANCE:
+                        if enemy_id == PIND_VAGABOND and ((not self.players[PIND_VAGABOND].has_any_damageable()) or self.vagabond_coalition_partner == PIND_ALLIANCE):
                             continue
                         possible_battle_clearings = [i for i,x in enumerate(self.board.get_possible_battles(PIND_ALLIANCE,enemy_id)) if x]
                         for i in possible_battle_clearings:
@@ -4760,8 +4787,11 @@ class RootGame:
                     vplayer.add_item(ITEM_BAG,0,0)
                 else:
                     vplayer.change_track_amount(ITEM_BAG,1)
+                self.ruin_items_found[3] = 1
             else:
                 vplayer.add_item(item,0,0)
+                # hammer,sword,boot = 0,1,2
+                self.ruin_items_found[item] = 1
 
             logger.debug(f"\tThe Vagabond found a {ID_TO_ITEM[item]}!")
             self.change_score(PIND_VAGABOND,1)

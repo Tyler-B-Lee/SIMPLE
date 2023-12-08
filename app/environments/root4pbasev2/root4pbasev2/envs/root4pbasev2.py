@@ -32,8 +32,8 @@ class rootEnv(gym.Env):
         self.manual = manual
 
         self.action_space = gym.spaces.Discrete(5679)
-        self.observation_space = gym.spaces.Box(-1, 4, (
-            1536
+        self.observation_space = gym.spaces.Box(-1, 1, (
+            1540
             + self.action_space.n
             , )
         )  

@@ -76,11 +76,14 @@ AID_CRAFT_RC_MAPPING = {
 
 N_PLAYERS = 4
 TURN_MEMORY = 2
-WIN_SCALAR = 0.011
+WIN_SCALAR = 0.023
+POINT_WIN_REWARD = 10
+DOM_WIN_REWARD = 12
+# WIN_SCALAR = 0.011
+# POINT_WIN_REWARD = 50
+# DOM_WIN_REWARD = 60
 GAME_SCALAR = WIN_SCALAR
-POINT_WIN_REWARD = 50
-DOM_WIN_REWARD = 60
-MAX_ACTIONS = 1100
+MAX_ACTIONS = 1000
 
 PIND_MARQUISE = 0
 PIND_EYRIE = 1
@@ -443,25 +446,25 @@ class Clearing:
         # size of each info piece and scale them more drastically for
         # unusually high amounts of a thing in one clearing
         ret = np.zeros(3)
-        ret[0] = self.get_num_warriors(PIND_MARQUISE) / 8
-        ret[1] = self.get_num_tokens(PIND_MARQUISE,TIND_WOOD) / 2
+        ret[0] = self.get_num_warriors(PIND_MARQUISE) / 25
+        ret[1] = self.get_num_tokens(PIND_MARQUISE,TIND_WOOD) / 8
         if self.get_num_tokens(PIND_MARQUISE,TIND_KEEP) > 0:
             ret[2] = 1
 
         foo = np.zeros(3)
-        foo[0] = self.get_num_buildings(PIND_MARQUISE,BIND_SAWMILL)
-        foo[1] = self.get_num_buildings(PIND_MARQUISE,BIND_WORKSHOP)
-        foo[2] = self.get_num_buildings(PIND_MARQUISE,BIND_RECRUITER)
+        foo[0] = self.get_num_buildings(PIND_MARQUISE,BIND_SAWMILL) / 3
+        foo[1] = self.get_num_buildings(PIND_MARQUISE,BIND_WORKSHOP) / 3
+        foo[2] = self.get_num_buildings(PIND_MARQUISE,BIND_RECRUITER) / 3
         ret = np.append(ret,foo)
 
         foo = np.zeros(2)
-        foo[0] = self.get_num_warriors(PIND_EYRIE) / 6
+        foo[0] = self.get_num_warriors(PIND_EYRIE) / 20
         if self.get_num_buildings(PIND_EYRIE,BIND_ROOST) > 0:
             foo[1] = 1
         ret = np.append(ret,foo)
 
         foo = np.zeros(2)
-        foo[0] = self.get_num_warriors(PIND_ALLIANCE) / 3
+        foo[0] = self.get_num_warriors(PIND_ALLIANCE) / 10
         if self.get_num_tokens(PIND_ALLIANCE,TIND_SYMPATHY) > 0:
             foo[1] = 1
         ret = np.append(ret,foo)
@@ -477,7 +480,7 @@ class Clearing:
         foo[3] = self.vagabond_present
         if self.num_ruins > 0:
             foo[4] = 1
-        foo[5] = self.get_num_empty_slots()
+        foo[5] = self.get_num_empty_slots() / 3
 
         ruler = self.get_ruler()
         if ruler != -1:
@@ -1150,7 +1153,7 @@ class Marquise(Player):
         ret = np.append(ret,foo)
 
         # cards in hand = 0,1,2,3, 4 or more
-        hand_size = min(4, len(self.hand))
+        hand_size = min(5, len(self.hand)) / 5
         ret = np.append(ret,hand_size)
         
         foo = np.zeros(11)
@@ -1159,7 +1162,7 @@ class Marquise(Player):
         
         foo = np.zeros(7)
         for i,a in self.crafted_items.items():
-            foo[i] = a
+            foo[i] = a / 2
         return np.append(ret,foo)
 
     def get_num_cards_to_draw(self) -> int:
@@ -1218,7 +1221,7 @@ class Eyrie(Player):
             foo[self.buildings[BIND_ROOST] - 1] = 1
         ret = np.append((self.warrior_storage / 20),foo)
 
-        hand_size = min(4, len(self.hand))
+        hand_size = min(5, len(self.hand)) / 5
         ret = np.append(ret,hand_size)
         
         foo = np.zeros(11)
@@ -1227,7 +1230,7 @@ class Eyrie(Player):
         
         foo = np.zeros(7)
         for i,a in self.crafted_items.items():
-            foo[i] = a
+            foo[i] = a / 2
         ret = np.append(ret,foo)
 
         foo = np.zeros(8)
@@ -1241,7 +1244,7 @@ class Eyrie(Player):
         for dec_i in range(4):
             for c in self.decree[dec_i]:
                 # count one more of this card
-                foo[dec_i][c.id] += 1
+                foo[dec_i][c.id] += 1/3
                 # count this card's suit
                 if sum(bar[dec_i][c.suit]) == 0:
                     bar[dec_i][c.suit][0] = 1
@@ -1369,7 +1372,7 @@ class Alliance(Player):
         ret = np.append(ret,foo)
 
         foo = np.zeros(6)
-        foo[0] = len(self.supporters) / 18
+        foo[0] = len(self.supporters) / 54
 
         supp_amount = min(len(self.supporters),5)
         if supp_amount > 0:
@@ -1381,7 +1384,7 @@ class Alliance(Player):
             foo[self.num_officers - 1] = 1
         ret = np.append(ret,foo)
 
-        hand_size = min(4, len(self.hand))
+        hand_size = min(5, len(self.hand)) / 5
         ret = np.append(ret,hand_size)
         
         foo = np.zeros(11)
@@ -1390,7 +1393,7 @@ class Alliance(Player):
         
         foo = np.zeros(7)
         for i,a in self.crafted_items.items():
-            foo[i] = a
+            foo[i] = a / 2
         return np.append(ret,foo)
 
     def get_num_cards_to_draw(self) -> int:
@@ -1458,11 +1461,11 @@ class Vagabond(Player):
     def get_obs_array(self):
         ret = np.zeros(3)
         if self.tea_track > 0:
-            ret[0] = self.tea_track
+            ret[0] = self.tea_track / 3
         if self.coins_track > 0:
-            ret[1] = self.coins_track
+            ret[1] = self.coins_track / 3
         if self.bag_track > 0:
-            ret[2] = self.bag_track
+            ret[2] = self.bag_track / 3
         
         foo = np.zeros((4,8))
         for dam,sat_section in [(0,self.satchel_undamaged),(2,self.satchel_damaged)]:
@@ -1475,9 +1478,9 @@ class Vagabond(Player):
                     unexh_counts[i] += 1
 
             for item_id,amount in unexh_counts.items():
-                foo[dam][item_id] = amount
+                foo[dam][item_id] = amount / 4
             for item_id,amount in exh_counts.items():
-                foo[dam + 1][item_id] = amount
+                foo[dam + 1][item_id] = amount / 4
         ret = np.append(ret,foo)
 
         item_limit = 6 + 2 * self.bag_track
@@ -1497,7 +1500,7 @@ class Vagabond(Player):
         for suit,qlist in self.completed_quests.items():
             for qcard in qlist:
                 foo[qcard.id + 3] = 1
-            bar[suit] = min(4,len(qlist))
+            bar[suit] = min(4,len(qlist)) / 4
         foo = np.append(foo,bar)
         ret = np.append(ret,foo)
         
@@ -1506,7 +1509,7 @@ class Vagabond(Player):
             foo[self.location] = 1
         ret = np.append(ret,foo)
 
-        hand_size = min(4, len(self.hand))
+        hand_size = min(5, len(self.hand)) / 5
         ret = np.append(ret,hand_size)
         
         foo = np.zeros(11)
@@ -1735,22 +1738,22 @@ class Battle:
 
         foo = np.zeros(6)
         if self.att_rolled_hits is not None:
-            foo[0] = self.att_rolled_hits
+            foo[0] = self.att_rolled_hits / 3
         if self.def_rolled_hits is not None:
-            foo[1] = self.def_rolled_hits
-        foo[2] = self.att_extra_hits
-        foo[3] = self.def_extra_hits
+            foo[1] = self.def_rolled_hits / 3
+        foo[2] = self.att_extra_hits / 4
+        foo[3] = self.def_extra_hits / 4
         if self.att_ambush_id is not None:
-            foo[4] = self.att_ambush_id
+            foo[4] = (self.att_ambush_id + 1) / 4
         if self.def_ambush_id is not None:
-            foo[5] = self.def_ambush_id
+            foo[5] = (self.def_ambush_id + 1) / 4
         ret = np.append(ret,foo)
 
         foo = np.zeros(4)
-        foo[0] = min(4, self.att_hits_to_deal)
-        foo[1] = min(4, self.def_hits_to_deal)
-        foo[2] = min(4, self.vagabond_ally_hits_taken)
-        foo[3] = min(4, self.vagabond_hits_taken)
+        foo[0] = min(4, self.att_hits_to_deal) / 4
+        foo[1] = min(4, self.def_hits_to_deal) / 4
+        foo[2] = min(4, self.vagabond_ally_hits_taken) / 4
+        foo[3] = min(4, self.vagabond_hits_taken) / 4
         
         return np.append(ret,foo)
 

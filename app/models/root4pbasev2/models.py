@@ -10,10 +10,10 @@ from stable_baselines.common.distributions import CategoricalProbabilityDistribu
 
 
 ACTIONS = 5679
-# FEATURE_SIZE = 128
-DEPTH = 3
+FEATURE_SIZE = 128
+DEPTH = 4
 VALUE_DEPTH = 1
-POLICY_DEPTH = 2
+POLICY_DEPTH = 1
 
 class CustomPolicy(ActorCriticPolicy):
     def __init__(self, sess, ob_space, ac_space, n_env, n_steps, n_batch, reuse=False, **kwargs):
@@ -53,7 +53,7 @@ def split_input(obs, split):
 
 def value_head(y):
     for _ in range(VALUE_DEPTH):
-        y = dense(y, 128)
+        y = dense(y, FEATURE_SIZE)
     vf = dense(y, 1, batch_norm = False, activation = 'tanh', name='vf')
     q = dense(y, ACTIONS, batch_norm = False, activation = 'tanh', name='q')
     return vf, q
@@ -62,7 +62,7 @@ def value_head(y):
 def policy_head(y, legal_actions):
 
     for _ in range(POLICY_DEPTH):
-        y = dense(y, 128)
+        y = dense(y, FEATURE_SIZE)
     policy = dense(y, ACTIONS, batch_norm = False, activation = None, name='pi')
     
     mask = Lambda(lambda x: (1 - x) * -1e8)(legal_actions)   
@@ -72,9 +72,9 @@ def policy_head(y, legal_actions):
 
 
 def resnet_extractor(y, **kwargs):
-    y = dense(y, 256)
+    y = dense(y, FEATURE_SIZE)
     for _ in range(DEPTH):
-        y = residual(y, 128)
+        y = residual(y, FEATURE_SIZE)
 
     return y
 
