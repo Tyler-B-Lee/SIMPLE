@@ -5,6 +5,15 @@ def get_environment(env_name):
         if env_name in ('tictactoe'):
             from tictactoe.envs.tictactoe import TicTacToeEnv
             return TicTacToeEnv
+        elif env_name in ('tictactoesolo'):
+            from tictactoesolo.envs.tictactoesolo import TicTacToeSoloEnv
+            return TicTacToeSoloEnv
+        elif env_name in ('proxyrunner'):
+            from proxyrunner.envs.proxyrunner import ProxyEnv
+            return ProxyEnv
+        elif env_name in ('proxychaser'):
+            from proxychaser.envs.proxychaser import ProxyEnv
+            return ProxyEnv
         elif env_name in ('connect4'):
             from connect4.envs.connect4 import Connect4Env
             return Connect4Env
@@ -84,8 +93,14 @@ def get_environment(env_name):
     
 
 def get_network_arch(env_name):
-    if env_name in ('tictactoe'):
+    if env_name in ('tictactoe','tictactoesolo'):
         from models.tictactoe.models import CustomPolicy
+        return CustomPolicy
+    elif env_name in ('proxyrunner'):
+        from models.proxyrunner.models import CustomPolicy
+        return CustomPolicy
+    elif env_name in ('proxychaser'):
+        from models.proxychaser.models import CustomPolicy
         return CustomPolicy
     elif env_name in ('connect4'):
         from models.connect4.models import CustomPolicy
