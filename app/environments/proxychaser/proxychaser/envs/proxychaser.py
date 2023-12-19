@@ -190,8 +190,8 @@ class ProxyEnv(gym.Env):
         self.done = done
 
         # play the game until it comes back to the main player's turn or the game ends
-        while self.current_player != MAIN_PLAYER_ID and (not self.done):
-            r, done = self.run_opponent_turn(reward)
+        while self.current_player_num != MAIN_PLAYER_ID and (not self.done):
+            r, done = self.run_opponent_turn()
 
             reward = [reward[i] + r[i] for i in range(2)]
             self.done = done

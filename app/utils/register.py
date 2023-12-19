@@ -53,6 +53,9 @@ def get_environment(env_name):
         elif env_name in ('root4pbasev2'):
             from root4pbasev2.envs.root4pbasev2 import rootEnv
             return rootEnv
+        elif env_name in ('root4pbasemarquise'):
+            from root4pbasemarquise.envs.root4pbasemarquise import rootEnv
+            return rootEnv
         elif env_name in ('sushigo'):
             from sushigo.envs.sushigo import SushiGoEnv
             return SushiGoEnv
@@ -140,6 +143,9 @@ def get_network_arch(env_name):
         return CustomPolicy
     elif env_name in ('root4pbasev2'):
         from models.root4pbasev2.models import CustomPolicy
+        return CustomPolicy
+    elif env_name in ('root4pbasemarquise'):
+        from models.root4pbasemarquise.models import CustomPolicy
         return CustomPolicy
     elif env_name in ('sushigo'):
         from models.sushigo.models import CustomPolicy
