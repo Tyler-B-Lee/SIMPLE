@@ -798,7 +798,7 @@ class Board:
                     if self.clearings[dest_id].is_ruler(faction_index):
                         valid_dest_ids.append(dest_id)
             
-            if faction_index in {PIND_MARQUISE,PIND_EYRIE}:
+            if faction_index in {PIND_MARQUISE,PIND_EYRIE,PIND_ALLIANCE}:
                 ans += [(i*12 + j + GEN_MOVE_CLEARINGS) for j in valid_dest_ids]
             else:
                 ans += [(i*300+j*25+a+AID_MOVE) for j in valid_dest_ids for a in range(n_warriors)]
@@ -1516,6 +1516,44 @@ class Alliance(Player):
         n = self.get_num_tokens_in_store(TIND_SYMPATHY)
         self.change_num_tokens(TIND_SYMPATHY,-1)
         return self.point_track[10 - n]
+    
+    def get_ambush_actions(self, clearing_suit: int):
+        ans = set()
+        valid_suits = {SUIT_BIRD,clearing_suit}
+        for card in self.hand:
+            if card.is_ambush and card.suit in valid_suits:
+                ans.add(GEN_USE_AMBUSH+4)
+                ans.add(card.suit + GEN_USE_AMBUSH)
+        return list(ans)
+    
+    def get_attacker_card_actions(self):
+        "Returns a list of all valid attacking AID's this player can do with their current persistent cards."
+        ans = set()
+        for card in self.persistent_cards:
+            if card.id == CID_ARMORERS:
+                ans.add(GEN_EFFECTS_NONE)
+                ans.add(GEN_EFFECTS_ARMORERS)
+            elif card.id == CID_BRUTAL_TACTICS:
+                ans.add(GEN_EFFECTS_NONE)
+                ans.add(GEN_EFFECTS_BRUTTACT)
+        if len(ans) == 3:
+            ans.add(GEN_EFFECTS_ARM_BT)
+        return list(ans)
+
+    def get_defender_card_actions(self):
+        "Returns a list of all valid defending AID's this player can do with their current persistent cards."
+        ans = set()
+        for card in self.persistent_cards:
+            if card.id == CID_ARMORERS:
+                ans.add(GEN_EFFECTS_NONE)
+                ans.add(GEN_EFFECTS_ARMORERS)
+            elif card.id == CID_SAPPERS:
+                ans.add(GEN_EFFECTS_NONE)
+                ans.add(GEN_EFFECTS_SAPPERS)
+        if len(ans) == 3:
+            ans.add(GEN_EFFECTS_ARMSAP)
+        return list(ans)
+
 
 class QuestCard():
     def __init__(self,id:int,suit:int,name:str,requirements:dict) -> None:

@@ -14,18 +14,18 @@ from .rootGameClasses.rootMechanics import *
 #        - Some papers have it as small as 1e-6 at the end
 
 # start
-# docker-compose exec app mpirun -np 2 python3 train.py -e root4pbasemarquise -ne 50 -t 0.05 -ef 20480 -tpa 2048 -ent 0.03 -oe 10 -ob 128
-# docker-compose exec app mpirun -np 2 python3 train.py -e root4pbasemarquise -ne 50 -t 0.15 -ef 20480 -tpa 2048 -ent 0.025 -ob 128 -g 0.995
+# docker-compose exec app mpirun -np 2 python3 train.py -e root4pbasemarquise -ne 50 -t 0 -ef 20480 -tpa 2048 -ent 0.025 -ob 128 -g 0.995
 
 MARQUISE_ID = 0
 EYRIE_ID = 1
 ALLIANCE_ID = 2
 VAGABOND_ID = 3
 
-MAIN_PLAYER_ID = EYRIE_ID
+MAIN_PLAYER_ID = ALLIANCE_ID
 
 # marquise - 1538 obs / 548 actions
 # eyrie - 1522 / 492
+# alliance - 1571 / 530
 
 class rootEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -36,9 +36,9 @@ class rootEnv(gym.Env):
         self.n_players = 1
         self.manual = manual
 
-        self.action_space = gym.spaces.Discrete(492)
+        self.action_space = gym.spaces.Discrete(530)
         self.observation_space = gym.spaces.Box(-1, 1, (
-            1522
+            1571
             + self.action_space.n
             , )
         )  
@@ -56,7 +56,7 @@ class rootEnv(gym.Env):
         
     @property
     def observation(self):
-        ret = np.append(self.env.get_eyrie_observation(),self.legal_actions)
+        ret = np.append(self.env.get_alliance_observation(),self.legal_actions)
         return ret
 
     @property

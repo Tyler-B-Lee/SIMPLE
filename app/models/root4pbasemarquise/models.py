@@ -9,7 +9,9 @@ from stable_baselines.common.policies import ActorCriticPolicy
 from stable_baselines.common.distributions import CategoricalProbabilityDistribution
 
 # marquise 548
-ACTIONS = 492
+# eyrie 492
+# alliance 530
+ACTIONS = 530
 FEATURE_SIZE = 128
 DEPTH = 3
 VALUE_DEPTH = 2
