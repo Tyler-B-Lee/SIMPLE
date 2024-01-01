@@ -11,7 +11,9 @@ from stable_baselines.common.distributions import CategoricalProbabilityDistribu
 # marquise 548
 # eyrie 492
 # alliance 530
-ACTIONS = 530
+# vagabond 604
+
+ACTIONS = 604
 FEATURE_SIZE = 128
 DEPTH = 3
 VALUE_DEPTH = 2

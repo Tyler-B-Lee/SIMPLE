@@ -21,11 +21,12 @@ EYRIE_ID = 1
 ALLIANCE_ID = 2
 VAGABOND_ID = 3
 
-MAIN_PLAYER_ID = ALLIANCE_ID
+MAIN_PLAYER_ID = VAGABOND_ID
 
 # marquise - 1538 obs / 548 actions
 # eyrie - 1522 / 492
 # alliance - 1571 / 530
+# vagabond - 1547 / 604
 
 class rootEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -36,9 +37,9 @@ class rootEnv(gym.Env):
         self.n_players = 1
         self.manual = manual
 
-        self.action_space = gym.spaces.Discrete(530)
+        self.action_space = gym.spaces.Discrete(604)
         self.observation_space = gym.spaces.Box(-1, 1, (
-            1571
+            1547
             + self.action_space.n
             , )
         )  
@@ -56,7 +57,7 @@ class rootEnv(gym.Env):
         
     @property
     def observation(self):
-        ret = np.append(self.env.get_alliance_observation(),self.legal_actions)
+        ret = np.append(self.env.get_vagabond_observation(),self.legal_actions)
         return ret
 
     @property

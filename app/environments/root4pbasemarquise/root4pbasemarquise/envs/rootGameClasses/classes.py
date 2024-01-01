@@ -798,10 +798,7 @@ class Board:
                     if self.clearings[dest_id].is_ruler(faction_index):
                         valid_dest_ids.append(dest_id)
             
-            if faction_index in {PIND_MARQUISE,PIND_EYRIE,PIND_ALLIANCE}:
-                ans += [(i*12 + j + GEN_MOVE_CLEARINGS) for j in valid_dest_ids]
-            else:
-                ans += [(i*300+j*25+a+AID_MOVE) for j in valid_dest_ids for a in range(n_warriors)]
+            ans += [(i*12 + j + GEN_MOVE_CLEARINGS) for j in valid_dest_ids]
         return ans
     
     def move_warriors(self,faction_index:int,amount:int,start_index:int,end_index:int):
@@ -947,15 +944,15 @@ class Board:
         if vb_location <= 11: # in clearing
             clearing = self.clearings[vb_location]
             for end_i in clearing.adjacent_clearing_ids:
-                ans.append(AID_VB_MOVE + 19*vb_location + end_i)
+                ans.append(VB_MOVE + end_i)
             for end_i in clearing.adjacent_forest_ids:
-                ans.append(AID_VB_MOVE + 19*vb_location + (end_i + 12))
+                ans.append(VB_MOVE + (end_i + 12))
         else: # in forest
             forest = self.forests[vb_location - 12]
             for end_i in forest.adjacent_clearing_ids:
-                ans.append(AID_VB_MOVE + 19*vb_location + end_i)
+                ans.append(VB_MOVE + end_i)
             for end_i in forest.adjacent_forest_ids:
-                ans.append(AID_VB_MOVE + 19*vb_location + (end_i + 12))
+                ans.append(VB_MOVE + (end_i + 12))
         return ans
 
 
@@ -1085,14 +1082,13 @@ class Player:
         """
         return any((c.suit in {suit_id, SUIT_BIRD}) for c in self.hand)
 
-    def get_ambush_actions(self,clearing_suit:int):
-        "Returns a list of all valid ambush AID's this player can do with their current hand in a clearing of the given suit."
+    def get_ambush_actions(self, clearing_suit: int):
         ans = set()
         valid_suits = {SUIT_BIRD,clearing_suit}
         for card in self.hand:
             if card.is_ambush and card.suit in valid_suits:
-                ans.add(AID_AMBUSH_NONE)
-                ans.add(card.suit + AID_AMBUSH_MOUSE)
+                ans.add(GEN_USE_AMBUSH+4)
+                ans.add(card.suit + GEN_USE_AMBUSH)
         return list(ans)
     
     def get_attacker_card_actions(self):
@@ -1100,13 +1096,13 @@ class Player:
         ans = set()
         for card in self.persistent_cards:
             if card.id == CID_ARMORERS:
-                ans.add(AID_EFFECTS_NONE)
-                ans.add(AID_EFFECTS_ARMORERS)
+                ans.add(GEN_EFFECTS_NONE)
+                ans.add(GEN_EFFECTS_ARMORERS)
             elif card.id == CID_BRUTAL_TACTICS:
-                ans.add(AID_EFFECTS_NONE)
-                ans.add(AID_EFFECTS_BRUTTACT)
+                ans.add(GEN_EFFECTS_NONE)
+                ans.add(GEN_EFFECTS_BRUTTACT)
         if len(ans) == 3:
-            ans.add(AID_EFFECTS_ARM_BT)
+            ans.add(GEN_EFFECTS_ARM_BT)
         return list(ans)
 
     def get_defender_card_actions(self):
@@ -1114,13 +1110,13 @@ class Player:
         ans = set()
         for card in self.persistent_cards:
             if card.id == CID_ARMORERS:
-                ans.add(AID_EFFECTS_NONE)
-                ans.add(AID_EFFECTS_ARMORERS)
+                ans.add(GEN_EFFECTS_NONE)
+                ans.add(GEN_EFFECTS_ARMORERS)
             elif card.id == CID_SAPPERS:
-                ans.add(AID_EFFECTS_NONE)
-                ans.add(AID_EFFECTS_SAPPERS)
+                ans.add(GEN_EFFECTS_NONE)
+                ans.add(GEN_EFFECTS_SAPPERS)
         if len(ans) == 3:
-            ans.add(AID_EFFECTS_ARMSAP)
+            ans.add(GEN_EFFECTS_ARMSAP)
         return list(ans)
     
     def has_card_id_in_hand(self,id:int):
@@ -1196,43 +1192,6 @@ class Marquise(Player):
         self.change_num_buildings(building_index,-1)
 
         return Marquise.building_costs[i], Marquise.point_tracks[building_index][i]
-
-    def get_ambush_actions(self, clearing_suit: int):
-        ans = set()
-        valid_suits = {SUIT_BIRD,clearing_suit}
-        for card in self.hand:
-            if card.is_ambush and card.suit in valid_suits:
-                ans.add(GEN_USE_AMBUSH+4)
-                ans.add(card.suit + GEN_USE_AMBUSH)
-        return list(ans)
-    
-    def get_attacker_card_actions(self):
-        "Returns a list of all valid attacking AID's this player can do with their current persistent cards."
-        ans = set()
-        for card in self.persistent_cards:
-            if card.id == CID_ARMORERS:
-                ans.add(GEN_EFFECTS_NONE)
-                ans.add(GEN_EFFECTS_ARMORERS)
-            elif card.id == CID_BRUTAL_TACTICS:
-                ans.add(GEN_EFFECTS_NONE)
-                ans.add(GEN_EFFECTS_BRUTTACT)
-        if len(ans) == 3:
-            ans.add(GEN_EFFECTS_ARM_BT)
-        return list(ans)
-
-    def get_defender_card_actions(self):
-        "Returns a list of all valid defending AID's this player can do with their current persistent cards."
-        ans = set()
-        for card in self.persistent_cards:
-            if card.id == CID_ARMORERS:
-                ans.add(GEN_EFFECTS_NONE)
-                ans.add(GEN_EFFECTS_ARMORERS)
-            elif card.id == CID_SAPPERS:
-                ans.add(GEN_EFFECTS_NONE)
-                ans.add(GEN_EFFECTS_SAPPERS)
-        if len(ans) == 3:
-            ans.add(GEN_EFFECTS_ARMSAP)
-        return list(ans)
     
 
 class Eyrie(Player):
@@ -1388,42 +1347,6 @@ class Eyrie(Player):
 
         return cards_to_discard, num_bird_cards
     
-    def get_ambush_actions(self, clearing_suit: int):
-        ans = set()
-        valid_suits = {SUIT_BIRD,clearing_suit}
-        for card in self.hand:
-            if card.is_ambush and card.suit in valid_suits:
-                ans.add(GEN_USE_AMBUSH+4)
-                ans.add(card.suit + GEN_USE_AMBUSH)
-        return list(ans)
-    
-    def get_attacker_card_actions(self):
-        "Returns a list of all valid attacking AID's this player can do with their current persistent cards."
-        ans = set()
-        for card in self.persistent_cards:
-            if card.id == CID_ARMORERS:
-                ans.add(GEN_EFFECTS_NONE)
-                ans.add(GEN_EFFECTS_ARMORERS)
-            elif card.id == CID_BRUTAL_TACTICS:
-                ans.add(GEN_EFFECTS_NONE)
-                ans.add(GEN_EFFECTS_BRUTTACT)
-        if len(ans) == 3:
-            ans.add(GEN_EFFECTS_ARM_BT)
-        return list(ans)
-
-    def get_defender_card_actions(self):
-        "Returns a list of all valid defending AID's this player can do with their current persistent cards."
-        ans = set()
-        for card in self.persistent_cards:
-            if card.id == CID_ARMORERS:
-                ans.add(GEN_EFFECTS_NONE)
-                ans.add(GEN_EFFECTS_ARMORERS)
-            elif card.id == CID_SAPPERS:
-                ans.add(GEN_EFFECTS_NONE)
-                ans.add(GEN_EFFECTS_SAPPERS)
-        if len(ans) == 3:
-            ans.add(GEN_EFFECTS_ARMSAP)
-        return list(ans)
 
 class Alliance(Player):
     sympathy_costs = [1,1,1,2,2,2,3,3,3,3,500]
@@ -1516,43 +1439,6 @@ class Alliance(Player):
         n = self.get_num_tokens_in_store(TIND_SYMPATHY)
         self.change_num_tokens(TIND_SYMPATHY,-1)
         return self.point_track[10 - n]
-    
-    def get_ambush_actions(self, clearing_suit: int):
-        ans = set()
-        valid_suits = {SUIT_BIRD,clearing_suit}
-        for card in self.hand:
-            if card.is_ambush and card.suit in valid_suits:
-                ans.add(GEN_USE_AMBUSH+4)
-                ans.add(card.suit + GEN_USE_AMBUSH)
-        return list(ans)
-    
-    def get_attacker_card_actions(self):
-        "Returns a list of all valid attacking AID's this player can do with their current persistent cards."
-        ans = set()
-        for card in self.persistent_cards:
-            if card.id == CID_ARMORERS:
-                ans.add(GEN_EFFECTS_NONE)
-                ans.add(GEN_EFFECTS_ARMORERS)
-            elif card.id == CID_BRUTAL_TACTICS:
-                ans.add(GEN_EFFECTS_NONE)
-                ans.add(GEN_EFFECTS_BRUTTACT)
-        if len(ans) == 3:
-            ans.add(GEN_EFFECTS_ARM_BT)
-        return list(ans)
-
-    def get_defender_card_actions(self):
-        "Returns a list of all valid defending AID's this player can do with their current persistent cards."
-        ans = set()
-        for card in self.persistent_cards:
-            if card.id == CID_ARMORERS:
-                ans.add(GEN_EFFECTS_NONE)
-                ans.add(GEN_EFFECTS_ARMORERS)
-            elif card.id == CID_SAPPERS:
-                ans.add(GEN_EFFECTS_NONE)
-                ans.add(GEN_EFFECTS_SAPPERS)
-        if len(ans) == 3:
-            ans.add(GEN_EFFECTS_ARMSAP)
-        return list(ans)
 
 
 class QuestCard():
@@ -1651,10 +1537,10 @@ class Vagabond(Player):
         ans = set()
         for i,exh in self.satchel_undamaged:
             if exh == 1:
-                ans.add(i+AID_REFRESH_UNDAM)
+                ans.add(i+VB_REFRESH_UNDAM)
         for i,exh in self.satchel_damaged:
             if exh == 1:
-                ans.add(i+AID_REFRESH_DAM)
+                ans.add(i+VB_REFRESH_DAM)
         return list(ans)
     
     def get_damage_actions(self):
@@ -1662,17 +1548,17 @@ class Vagabond(Player):
         ans = set()
         # track items
         if self.tea_track > 0:
-            ans.add(AID_DAMAGE_UNEXH + ITEM_TEA)
+            ans.add(VB_DAMAGE_UNEXH + ITEM_TEA)
         if self.coins_track > 0:
-            ans.add(AID_DAMAGE_UNEXH + ITEM_COINS)
+            ans.add(VB_DAMAGE_UNEXH + ITEM_COINS)
         if self.bag_track > 0:
-            ans.add(AID_DAMAGE_UNEXH + ITEM_BAG)
+            ans.add(VB_DAMAGE_UNEXH + ITEM_BAG)
         # satchel items
         for i,exh in self.satchel_undamaged:
             if exh == 1:
-                ans.add(AID_DAMAGE_EXH + i)
+                ans.add(VB_DAMAGE_EXH + i)
             else:
-                ans.add(AID_DAMAGE_UNEXH + i)
+                ans.add(VB_DAMAGE_UNEXH + i)
         return list(ans)
     
     def has_exhaustable(self,item_id:int,amount:int=1):
