@@ -13,7 +13,7 @@ from stable_baselines.common.distributions import CategoricalProbabilityDistribu
 # alliance 530
 # vagabond 604
 
-ACTIONS = 548
+ACTIONS = 530
 FEATURE_SIZE = 128
 DEPTH = 3
 VALUE_DEPTH = 2

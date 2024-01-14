@@ -11,7 +11,6 @@ from stable_baselines.ppo1 import PPO1
 
 from .rootGameClasses.rootMechanics import *
 
-# Game Obs length: 1487 (down from 4474 i think)
 # docker-compose exec app tensorboard --logdir ./logs
 # notes:
 # - os (optimizer stepsize) I think is the 'learning rate' parameter
@@ -19,16 +18,16 @@ from .rootGameClasses.rootMechanics import *
 #        - Some papers have it as small as 1e-6 at the end
 
 # start
-# docker-compose exec app mpirun -np 2 python3 train.py -e root4pbasemarquise -ne 25 -ef 20480 -tpa 2048 -ent 0.025 -ob 128 -g 0.995 -oe 6 -t 0
+# docker-compose exec app mpirun -np 2 python3 train.py -e root4pbasevagabond -ne 25 -ef 20480 -tpa 2048 -ent 0.025 -ob 128 -g 0.995 -oe 6 -t 0
 
 MARQUISE_ID = 0
 EYRIE_ID = 1
 ALLIANCE_ID = 2
 VAGABOND_ID = 3
 
-MAIN_PLAYER_ID = MARQUISE_ID
+MAIN_PLAYER_ID = VAGABOND_ID
 BEST_MODEL_CHANCE = 0.8
-OPPONENT_INFO = [(EYRIE_ID,"root4pbaseeyrie"),(ALLIANCE_ID,"root4pbasealliance"),(VAGABOND_ID,"root4pbasevagabond")]
+OPPONENT_INFO = [(MARQUISE_ID,"root4pbasemarquise"),(ALLIANCE_ID,"root4pbasealliance"),(EYRIE_ID,"root4pbaseeyrie")]
 
 # marquise - 1538 obs / 548 actions
 # eyrie - 1522 / 492
@@ -40,13 +39,13 @@ class rootEnv(gym.Env):
 
     def __init__(self, verbose = False, manual = False):
         super(rootEnv, self).__init__()
-        self.name = 'root4pbasemarquise'
+        self.name = 'root4pbasevagabond'
         self.n_players = 1
         self.manual = manual
 
-        self.action_space = gym.spaces.Discrete(548)
+        self.action_space = gym.spaces.Discrete(604)
         self.observation_space = gym.spaces.Box(-1, 1, (
-            1538
+            1547
             + self.action_space.n
             , )
         )  
@@ -94,7 +93,7 @@ class rootEnv(gym.Env):
         
     @property
     def observation(self):
-        ret = np.append(self.env.get_marquise_observation(),self.legal_actions)
+        ret = np.append(self.env.get_vagabond_observation(),self.legal_actions)
         return ret
 
     @property
@@ -109,18 +108,18 @@ class rootEnv(gym.Env):
         logger.debug(f'\n{opp.name} model choices')
         # action_chosen = random.choice(self.get_legal_action_numbers())
 
-        if opponent_id == PIND_EYRIE:
-            la = np.zeros(492)
+        if opponent_id == PIND_MARQUISE:
+            la = np.zeros(548)
             la.put(self.env.legal_actions(),1)
-            opponent_obs = np.append(self.env.get_eyrie_observation(), la)
+            opponent_obs = np.append(self.env.get_marquise_observation(), la)
         elif opponent_id == PIND_ALLIANCE:
             la = np.zeros(530)
             la.put(self.env.legal_actions(),1)
             opponent_obs = np.append(self.env.get_alliance_observation(), la)
         else:
-            la = np.zeros(604)
+            la = np.zeros(492)
             la.put(self.env.legal_actions(),1)
-            opponent_obs = np.append(self.env.get_vagabond_observation(), la)
+            opponent_obs = np.append(self.env.get_eyrie_observation(), la)
 
         action_probs = opp.model.action_probability(opponent_obs)
         value = opp.model.policy_pi.value(np.array([opponent_obs]))[0]
@@ -168,7 +167,7 @@ class rootEnv(gym.Env):
         # play the game until it comes back to the main player's turn or the game ends
         while self.current_player_num != 0 and (not self.done):
             r, self.done = self.run_opponent_turn()
-            
+
             self.current_player_num = (self.env.to_play() - MAIN_PLAYER_ID)
 
         return self.observation

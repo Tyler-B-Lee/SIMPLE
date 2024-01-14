@@ -2248,6 +2248,8 @@ class RootGame:
             self.score_battle_points(self.battle.attacker_id,self.battle.defender_id,1)
             # see if there is a choice anymore
             self.battle.att_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.defender_id, self.battle.att_hits_to_deal - 1, self.battle.clearing_id)
+            if cardboard_removed:
+                self.score_battle_points(self.battle.attacker_id,self.battle.defender_id,cardboard_removed)
             if warriors_killed:
                 if self.battle.defender_id == PIND_MARQUISE and defender.has_suit_in_hand(clearing.suit) and self.keep_is_up():
                     self.field_hospitals.append((warriors_killed,clearing.suit))
@@ -2262,8 +2264,6 @@ class RootGame:
                     else:
                         logger.debug("> The Vagabond scores bonus points from infamy")
                         self.change_score(PIND_VAGABOND,warriors_killed)
-            if cardboard_removed:
-                self.score_battle_points(self.battle.attacker_id,self.battle.defender_id,cardboard_removed)
             
         elif self.battle.stage == Battle.STAGE_ATT_ORDER:
             # action is what attacker building/token to hit with the next hit
@@ -2317,6 +2317,8 @@ class RootGame:
             self.score_battle_points(self.battle.defender_id,self.battle.attacker_id,1)
             # see if there is a choice in the attacker taking hits
             self.battle.def_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.attacker_id, self.battle.def_hits_to_deal, self.battle.clearing_id)
+            if cardboard_removed:
+                self.score_battle_points(self.battle.defender_id,self.battle.attacker_id,cardboard_removed)
             # Vagabond does not score infamy here,
             # assuming they cannot attack when it's not their turn
             if warriors_killed:
@@ -2326,8 +2328,6 @@ class RootGame:
                         defender.relationships[attacker.id] = 0
                 if self.battle.attacker_id == PIND_MARQUISE and attacker.has_suit_in_hand(clearing.suit) and self.keep_is_up():
                     self.field_hospitals.append((warriors_killed,clearing.suit))
-            if cardboard_removed:
-                self.score_battle_points(self.battle.defender_id,self.battle.attacker_id,cardboard_removed)
         
         elif self.battle.stage == Battle.STAGE_DEF_AMBUSH:
             # action is the defender's choice to ambush or not
@@ -2365,6 +2365,8 @@ class RootGame:
                 
                 # deal_hits returns the number of remaining hits there are; if >0, it means a choice is possible for the one getting hit
                 self.battle.def_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.attacker_id, 2, self.battle.clearing_id)
+                if cardboard_removed:
+                    self.score_battle_points(self.battle.defender_id,self.battle.attacker_id,cardboard_removed)
                 # no VB infamy scoring not on their turn
                 if warriors_killed:
                     if self.battle.defender_id == PIND_VAGABOND:
@@ -2373,8 +2375,6 @@ class RootGame:
                             defender.relationships[attacker.id] = 0
                     if self.battle.attacker_id == PIND_MARQUISE and attacker.has_suit_in_hand(clearing.suit) and self.keep_is_up():
                         self.field_hospitals.append((warriors_killed,clearing.suit))
-                if cardboard_removed:
-                    self.score_battle_points(self.battle.defender_id,self.battle.attacker_id,cardboard_removed)
             else:
                 # save which ambush card is played
                 logger.debug(f"{ID_TO_PLAYER[self.battle.attacker_id]} chooses to COUNTER-AMBUSH!")
@@ -2553,6 +2553,8 @@ class RootGame:
                             self.battle.def_hits_to_deal = 0
                     else:
                         self.battle.def_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.attacker_id, 2, self.battle.clearing_id)
+                        if cardboard_removed:
+                            self.score_battle_points(self.battle.defender_id,self.battle.attacker_id,cardboard_removed)
                         if warriors_killed:
                             if self.battle.defender_id == PIND_VAGABOND:
                                 if not defender.is_hostile(attacker.id):
@@ -2560,8 +2562,6 @@ class RootGame:
                                     defender.relationships[attacker.id] = 0
                             if self.battle.attacker_id == PIND_MARQUISE and attacker.has_suit_in_hand(clearing.suit) and self.keep_is_up():
                                 self.field_hospitals.append((warriors_killed,clearing.suit))
-                        if cardboard_removed:
-                            self.score_battle_points(self.battle.defender_id,self.battle.attacker_id,cardboard_removed)
             
             # Checking for STAGE_ATT_AMBUSH is unnecessary because we will move onto another
             # battle stage after any choice by the attacker:
@@ -2595,6 +2595,8 @@ class RootGame:
                         self.battle.att_hits_to_deal = 0
                 else:
                     self.battle.att_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.defender_id,self.battle.att_extra_hits+self.battle.att_rolled_hits,self.battle.clearing_id)
+                    if cardboard_removed:
+                        self.score_battle_points(self.battle.attacker_id,self.battle.defender_id,cardboard_removed)
                     if warriors_killed:
                         if self.battle.defender_id == PIND_MARQUISE and defender.has_suit_in_hand(clearing.suit) and self.keep_is_up():
                             self.field_hospitals.append((warriors_killed,clearing.suit))
@@ -2609,8 +2611,6 @@ class RootGame:
                             else:
                                 logger.debug("> The Vagabond scores bonus points from infamy")
                                 self.change_score(PIND_VAGABOND,warriors_killed)
-                    if cardboard_removed:
-                        self.score_battle_points(self.battle.attacker_id,self.battle.defender_id,cardboard_removed)
                 
                 self.battle.stage = Battle.STAGE_DEF_ORDER
 
@@ -2640,6 +2640,8 @@ class RootGame:
                         self.battle.def_hits_to_deal = 0
                 else:
                     self.battle.def_hits_to_deal,warriors_killed,cardboard_removed = self.deal_hits(self.battle.attacker_id,self.battle.def_hits_to_deal,self.battle.clearing_id)
+                    if cardboard_removed:
+                        self.score_battle_points(self.battle.defender_id,self.battle.attacker_id,cardboard_removed)
                     if warriors_killed:
                         if self.battle.defender_id == PIND_VAGABOND:
                             if not defender.is_hostile(attacker.id):
@@ -2647,8 +2649,6 @@ class RootGame:
                                 defender.relationships[attacker.id] = 0
                         if self.battle.attacker_id == PIND_MARQUISE and attacker.has_suit_in_hand(clearing.suit) and self.keep_is_up():
                             self.field_hospitals.append((warriors_killed,clearing.suit))
-                    if cardboard_removed:
-                        self.score_battle_points(self.battle.defender_id,self.battle.attacker_id,cardboard_removed)
                 
                 self.battle.stage = Battle.STAGE_ATT_ORDER
                 
@@ -6015,74 +6015,75 @@ if __name__ == "__main__":
     np.set_printoptions(threshold=np.inf)
     env.reset()
 
-    # total_rewards = np.zeros(N_PLAYERS)
-    # # while action_count < 200:
-    # while not done:
-    #     legal_actions = env.legal_actions()
-    #     logger.debug(f"> Action {action_count} - Player: {ID_TO_PLAYER[env.current_player]}")
-    #     logger.info(f"Legal Actions: {legal_actions}")
-    #     # print(f"Player: {ID_TO_PLAYER[env.current_player]}")
-    #     # print(f"> Action {action_count} - Legal Actions: {legal_actions}")
+    total_rewards = np.zeros(N_PLAYERS)
+    # while action_count < 200:
+    while not done:
+        legal_actions = env.legal_actions()
+        logger.debug(f"> Action {action_count} - Player: {ID_TO_PLAYER[env.current_player]}")
+        logger.info(f"Legal Actions: {legal_actions}")
+        # print(f"Player: {ID_TO_PLAYER[env.current_player]}")
+        # print(f"> Action {action_count} - Legal Actions: {legal_actions}")
 
-    #     # action = -1
-    #     # while action not in legal_actions:
-    #     #     action = int(input("Choose a valid action: "))
-    #     action = random.choice(legal_actions)
-    #     # print(f"\tAction Chosen: {action}")
-    #     logger.info(f"\t> Action Chosen: {action}")
-    #     reward,done = env.step(action)
+        # action = -1
+        # while action not in legal_actions:
+        #     action = int(input("Choose a valid action: "))
+        action = random.choice(legal_actions)
+        # print(f"\tAction Chosen: {action}")
+        logger.info(f"\t> Action Chosen: {action}")
+        reward,done = env.step(action)
 
-    #     logger.debug(f"- Reward for this action: {reward}")
-    #     total_rewards += reward
-    #     logger.debug(f"\t> New reward total: {total_rewards}")
-    #     if env.current_player == PIND_VAGABOND:
-    #         logger.debug(f"Observation length: {len(env.get_vagabond_observation())}")
-    #     # if action_count % 10 == 0:
-    #     #     logger.debug(f"{obs}")
-    #     # if env.battle.stage != Battle.STAGE_DONE:
-    #     #     for i,sq in enumerate(obs.reshape((139,5,5))):
-    #     #         logger.debug(f"- Observation Square {i}:\n{sq}\n")
-    #     # if done:
-    #     #     env.render()
+        logger.debug(f"- Reward for this action: {reward}")
+        total_rewards += reward
+        logger.debug(f"\t> New reward total: {total_rewards}")
+        if env.current_player == PIND_VAGABOND:
+            logger.debug(f"Observation length: {len(env.get_vagabond_observation())}")
+        # if action_count % 10 == 0:
+        #     logger.debug(f"{obs}")
+        # if env.battle.stage != Battle.STAGE_DONE:
+        #     for i,sq in enumerate(obs.reshape((139,5,5))):
+        #         logger.debug(f"- Observation Square {i}:\n{sq}\n")
+        # if done:
+        #     env.render()
 
-    #     action_count += 1
+        action_count += 1
 
     # logger.debug(f"Length: {len(obs)}\n{obs}")
     # for i,sq in enumerate(obs.reshape((139,5,5))):
     #     logger.debug(f"- Observation Square {i}:\n{sq}\n")
 
-    glens = []
-    for _ in range(25):
-        done = False
-        action_count = 0
-        total_rewards = np.zeros(N_PLAYERS)
-        while not done:
-            legal_actions = env.legal_actions()
-            logger.info(f"Player: {ID_TO_PLAYER[env.current_player]}")
-            logger.info(f"> Action {action_count} - Legal Actions: {legal_actions}")
-            # print(f"Player: {ID_TO_PLAYER[env.current_player]}")
-            # print(f"> Action {action_count} - Legal Actions: {legal_actions}")
+    # glens = []
+    # for _ in range(25):
+    #     done = False
+    #     action_count = 0
+    #     total_rewards = np.zeros(N_PLAYERS)
+    #     while not done:
+    #         legal_actions = env.legal_actions()
+    #         logger.info(f"Player: {ID_TO_PLAYER[env.current_player]}")
+    #         logger.info(f"> Action {action_count} - Legal Actions: {legal_actions}")
+    #         # print(f"Player: {ID_TO_PLAYER[env.current_player]}")
+    #         # print(f"> Action {action_count} - Legal Actions: {legal_actions}")
 
-            # action = -1
-            # while action not in legal_actions:
-            #     action = int(input("Choose a valid action: "))
-            action = random.choice(legal_actions)
-            # print(f"\tAction Chosen: {action}")
-            logger.info(f"\t> Action Chosen: {action}")
-            reward,done = env.step(action)
+    #         # action = -1
+    #         # while action not in legal_actions:
+    #         #     action = int(input("Choose a valid action: "))
+    #         action = random.choice(legal_actions)
+    #         # print(f"\tAction Chosen: {action}")
+    #         logger.info(f"\t> Action Chosen: {action}")
+    #         obs,reward,done = env.step(action)
             
-            logger.debug(f"- Reward for this action: {reward}")
-            total_rewards += reward
-            logger.debug(f"\t> New reward total: {total_rewards}")
+    #         logger.debug(f"- Reward for this action: {reward}")
+    #         total_rewards += reward
+    #         logger.debug(f"\t> New reward total: {total_rewards}")
             
-            action_count += 1
+    #         action_count += 1
 
-        glens.append(action_count)
-        print(f"{total_rewards} from {action_count} actions")
+    #     glens.append(action_count)
+    #     print(f"{total_rewards} from {action_count} actions")
+    #     logger.debug(f"Length: {len(obs)}")
 
-        env.reset()
+    #     env.reset()
 
-    print(f"\nGames: {glens}")
-    print(f"\nLongest Length: {max(glens)}")
-    print(f"Shortest Length: {min(glens)}")
-    print(f"Average Length: {sum(glens)/25}")
+    # print(f"\nGames: {glens}")
+    # print(f"\nLongest Length: {max(glens)}")
+    # print(f"Shortest Length: {min(glens)}")
+    # print(f"Average Length: {sum(glens)/25}")
